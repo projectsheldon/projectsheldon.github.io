@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHELDON | Secure Checkout</title>
-    
+    <title>Sheldon</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
-    
+    <script
+        src="https://www.paypal.com/sdk/js?client-id=Ac4pEXZjrMyP7l5K8FVEgipGAflzIO2__tficxrHykX0FCScVAGstxzBxyiThzMuSs-fD6dI_a4JNFmo&currency=USD"></script>
+
     <link href="../css/checkout.css" rel="stylesheet">
     <script src="../js/render.js"></script>
 </head>
+
 <body class="font-mono antialiased min-h-screen grid-bg flex flex-col items-center py-10 px-4 relative">
 
-    <div class="fixed inset-0 bg-gradient-to-t from-hacker-black via-transparent to-transparent pointer-events-none -z-10"></div>
+    <div
+        class="fixed inset-0 bg-gradient-to-t from-hacker-black via-transparent to-transparent pointer-events-none -z-10">
+    </div>
 
     <header class="w-full max-w-5xl flex justify-between items-center mb-10">
         <div class="text-2xl font-extrabold text-white tracking-tighter">
@@ -24,73 +30,70 @@
         </a>
     </header>
 
-    <main class="w-full max-w-5xl bg-hacker-dark border border-gray-800 rounded-lg shadow-2xl overflow-hidden flex flex-col md:flex-row relative z-10">
-        
-        <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-hacker-blue to-transparent"></div>
+    <main
+        class="w-full max-w-5xl bg-hacker-dark border border-gray-800 rounded-lg shadow-2xl overflow-hidden flex flex-col md:flex-row relative z-10">
 
-        <!-- LEFT COLUMN -->
+        <div
+            class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-hacker-blue to-transparent">
+        </div>
+
         <div class="w-full md:w-1/3 bg-black/40 border-b md:border-b-0 md:border-r border-gray-800 p-8 flex flex-col">
             <h2 class="text-gray-400 text-xs uppercase tracking-widest mb-6">Order Summary</h2>
-            
+
             <div class="flex items-start gap-4 mb-6">
-                <div class="w-16 h-16 bg-hacker-blue-dim border border-hacker-blue/30 rounded flex items-center justify-center flex-shrink-0">
+                <div
+                    class="w-16 h-16 bg-hacker-blue-dim border border-hacker-blue/30 rounded flex items-center justify-center flex-shrink-0">
                     <svg class="w-8 h-8 text-hacker-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                 </div>
                 <div>
-                    <h3 id="product-name" class="text-white font-bold text-lg">Lifetime Access</h3>
-                    <p id="product-desc" class="text-gray-500 text-sm">One-time payment</p>
-                    <p class="text-hacker-blue text-xs mt-1">Includes all future updates</p>
+                    <h3 id="product-name" class="text-white font-bold text-lg">{product-name}</h3>
+                    <p id="product-desc" class="text-gray-500 text-sm">Includes future updates.</p>
                 </div>
             </div>
 
             <div class="mt-auto space-y-3 pt-6 border-t border-gray-800/50">
                 <div class="flex justify-between text-white font-bold text-xl pt-2">
                     <span>Total</span>
-                    <span id="total-price">€14.99</span>
+                    <span class="total-price">{total-price}</span>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT COLUMN -->
         <div class="w-full md:w-2/3 p-8">
             <h1 class="title-scanlines text-3xl font-bold text-white mb-8">SECURE CHECKOUT</h1>
 
-            <!-- PAYMENT METHOD TABS -->
             <div class="mb-8">
                 <label class="block text-gray-400 text-sm mb-2">Select Payment Method</label>
                 <div class="flex gap-4">
-                    <button onclick="switchMethod('paypal')" id="tab-paypal" class="flex-1 py-3 border border-hacker-blue bg-hacker-blue/10 text-hacker-blue font-bold rounded hover:bg-hacker-blue/20 transition-all flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M7.076 21.337l.756-4.728H9.57a3.535 3.535 0 0 0 3.123-2.09l.117-.25a3.528 3.528 0 0 0 .285-1.393c0-3.155-2.227-4.888-5.698-4.888H3.328l-.337 2.115-.008.053-1.465 9.176h3.402l.666-4.175.148.91c.07.443.454.773.903.773h.44z"/><path d="M10.156 16.608h-.44c-.45 0-.833-.33-.903-.773l-1.015-6.326h3.6c3.47 0 5.698 1.733 5.698 4.888 0 3.235-2.58 4.965-5.91 4.965l-.014.083.023-.133a3.528 3.528 0 0 1-.285 1.393l-1.353 2.894z" opacity=".2"/></svg>
+                    <button onclick="switchMethod('paypal')" id="tab-paypal"
+                        class="flex-1 py-3 border border-hacker-blue bg-hacker-blue/10 text-hacker-blue font-bold rounded hover:bg-hacker-blue/20 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M7.076 21.337l.756-4.728H9.57a3.535 3.535 0 0 0 3.123-2.09l.117-.25a3.528 3.528 0 0 0 .285-1.393c0-3.155-2.227-4.888-5.698-4.888H3.328l-.337 2.115-.008.053-1.465 9.176h3.402l.666-4.175.148.91c.07.443.454.773.903.773h.44z" />
+                            <path
+                                d="M10.156 16.608h-.44c-.45 0-.833-.33-.903-.773l-1.015-6.326h3.6c3.47 0 5.698 1.733 5.698 4.888 0 3.235-2.58 4.965-5.91 4.965l-.014.083.023-.133a3.528 3.528 0 0 1-.285 1.393l-1.353 2.894z"
+                                opacity=".2" />
+                        </svg>
                         PayPal
                     </button>
-                    <button onclick="switchMethod('crypto')" id="tab-crypto" class="flex-1 py-3 border border-gray-700 bg-hacker-black text-gray-400 font-bold rounded hover:border-gray-500 transition-all flex items-center justify-center gap-2">
+                    <button onclick="switchMethod('crypto')" id="tab-crypto"
+                        class="flex-1 py-3 border border-gray-700 bg-hacker-black text-gray-400 font-bold rounded hover:border-gray-500 transition-all flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                             <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l2.45 2.65L12.056 4.93l4.912 9.946L19.42 12.22 12.056 0z"/>
+                            <path
+                                d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l2.45 2.65L12.056 4.93l4.912 9.946L19.42 12.22 12.056 0z" />
                         </svg>
                         Litecoin
                     </button>
                 </div>
             </div>
 
-            <!-- EMAIL INPUT (Hidden by default, shown for Crypto) -->
-            <div id="email-section" class="mb-8 hidden">
-                <label class="block text-gray-400 text-sm mb-2" for="email">Delivery Email Address</label>
-                <div class="relative">
-                    <input type="email" id="email" placeholder="you@example.com" class="w-full bg-hacker-black border border-gray-700 rounded p-3 pl-10 text-white focus:outline-none focus:border-hacker-blue focus:shadow-neon-sm transition-all placeholder-gray-600">
-                    <svg class="w-5 h-5 text-gray-500 absolute left-3 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <p class="text-xs text-gray-600 mt-2">* Your license key will be sent here.</p>
-            </div>
-
-            <!-- PAYPAL CONTENT -->
             <div id="content-paypal" class="block animate-pulse-slow">
                 <div class="bg-hacker-black border border-gray-700 p-6 rounded mb-6 text-center">
-                    <p class="text-gray-400 text-sm mb-4">You will be redirected to PayPal to complete your secure transaction.</p>
-                    <button class="w-full py-4 bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold rounded shadow-[0_0_15px_#0070BA] transition-all flex justify-center items-center gap-2 group">
+                    <p class="text-gray-400 text-sm mb-4">A popup should open for you to login and pay.</p>
+                    <!-- <button class="w-full py-4 bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold rounded shadow-[0_0_15px_#0070BA] transition-all flex justify-center items-center gap-2 group">
                         <span>Pay with</span> 
                         <span class="font-extrabold italic">PayPal</span>
                     </button>
@@ -98,33 +101,40 @@
                         <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" class="h-6" alt="PayPal">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="h-6" alt="Mastercard">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="h-6" alt="Visa">
-                    </div>
+                    </div> -->
+                    <div id="paypal"></div>
                 </div>
             </div>
 
-            <!-- CRYPTO CONTENT -->
             <div id="content-crypto" class="hidden">
                 <div class="bg-hacker-black border border-gray-700 p-6 rounded mb-6">
-                    <p class="text-gray-400 text-sm mb-4 text-center">Send exactly <span class="text-white font-bold" id="crypto-amount">€14.99</span> (in LTC) to the address below.</p>
-                    
+                    <p class="text-gray-400 text-sm mb-4 text-center">
+                        Send exactly <span class="text-white font-bold total-price">{total-price}</span> (in LTC) to the
+                        address below.
+                    </p>
                     <div class="flex flex-col md:flex-row gap-6 items-center">
                         <div class="bg-white p-2 rounded shrink-0">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=ltc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" alt="LTC QR" class="w-24 h-24">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=ltc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+                                alt="LTC QR" class="w-24 h-24">
                         </div>
-                        
+
                         <div class="w-full">
                             <label class="text-xs text-hacker-blue uppercase font-bold">LTC Wallet Address</label>
                             <div class="flex mt-1">
-                                <input type="text" readonly value="ltc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" class="w-full bg-black border border-gray-700 border-r-0 rounded-l p-3 text-xs md:text-sm text-gray-300 font-mono focus:outline-none">
-                                <button class="bg-gray-800 border border-gray-700 border-l-0 rounded-r px-4 text-gray-400 hover:text-white hover:bg-gray-700 transition-all text-xs font-bold">
+                                <input type="text" readonly value="ltc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+                                    class="w-full bg-black border border-gray-700 border-r-0 rounded-l p-3 text-xs md:text-sm text-gray-300 font-mono focus:outline-none">
+                                <button
+                                    class="bg-gray-800 border border-gray-700 border-l-0 rounded-r px-4 text-gray-400 hover:text-white hover:bg-gray-700 transition-all text-xs font-bold">
                                     COPY
                                 </button>
                             </div>
-                            <p class="text-[10px] text-gray-500 mt-2">Network: Litecoin (LTC) only. Sending other coins may result in loss.</p>
+                            <p class="text-[10px] text-gray-500 mt-2">Make sure to open a ticket with your transaction
+                                id.</p>
                         </div>
                     </div>
 
-                    <button class="w-full mt-6 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all">
+                    <button
+                        class="w-full mt-6 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all">
                         I HAVE SENT PAYMENT
                     </button>
                 </div>
@@ -133,11 +143,14 @@
         </div>
     </main>
 
-    <footer class="mt-10 text-gray-600 text-xs text-center">
+    <footer class="text-gray-600 text-xs text-center mt-10">
         &copy; 2026 Sheldon Software. All rights reserved. <br>
         <span class="opacity-50">Refunds are manual. I review transactions personally.</span>
     </footer>
 
-    <script src="../js/checkout/index.js"></script>
+    <script type="module" src="../js/checkout/index.js"></script>
+    <script src="../js/checkout/tabs.js"></script>
+    <script src="../js/checkout/payment/paypal.js"></script>
 </body>
+
 </html>
