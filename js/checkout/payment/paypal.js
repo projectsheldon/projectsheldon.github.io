@@ -11,15 +11,16 @@ paypal.Buttons({
             headers: { "Content-Type": "application/json" }
         });
         const createData = await createRes.json();
-        const orderId = createData.id;
+        return createData.id;
+    },
+    onApprove: async (data, actions) => {
+        const captureRes = await fetch(`${API_URL}sheldon/paypal/capture`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.orderID })
+        });
 
-        // fetch(`${API_URL}sheldon/paypal/savedata`, {
-        //     method: "POST",
-        //     headers: { "Content-Type": "application/json" },
-        //     body: JSON.stringify({ "save": "pending", id: orderId, "type": type })
-        // });
-
-        return orderId;
-    }
+        const captureData = await captureRes.json();
+    },
 
 }).render("#paypal");
