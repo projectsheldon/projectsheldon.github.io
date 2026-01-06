@@ -1,56 +1,29 @@
-const apiHost = (window.location.protocol === 'https:') ? 'https://localhost:8443' : 'http://localhost';
+import { API_URL } from "../../global.js";
 
 paypal.Buttons({
-    style: {
-        layout: 'vertical',
-        color: 'blue',
-        shape: 'rect',
-        label: 'paypal'
-    },
+    style: { layout: 'vertical', color: 'black', shape: 'pill', label: 'pay' },
 
     createOrder: async () => {
-        try {
-            const res = await fetch(`${apiHost}/sheldon/paypal/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: new URLSearchParams(window.location.search).get("type") })
-            });
+        // const type = new URLSearchParams(window.location.search).get("type") || "";
 
-            console.log('createOrder response status:', res.status);
-            const body = await res.text();
-            let data;
-            try { data = JSON.parse(body); } catch (e) { data = body; }
-            console.log('createOrder response body:', data);
+        // const createRes = await fetch(`${API_URL}sheldon/paypal/create/${type}`, {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" }
+        // });
+        // const createData = await createRes.json();
+        // const orderId = createData.id;
+        // console.log(JSON.stringify({ "save": "pending", id: orderId, "type": type }));
 
-            if (!res.ok) throw new Error('Server returned ' + res.status);
+        const orderId = 123;
+        const type2 = "lifetime";
 
-            // If server returned an object with `id`, use it; otherwise assume body itself is the id string
-            const orderId = (data && data.id) ? data.id : data;
-            console.log('Returning orderId to PayPal SDK:', orderId);
-            return orderId;
-        } catch (err) {
-            console.error('createOrder failed:', err);
-            throw err;
-        }
-    },
+        fetch(`${API_URL}sheldon/paypal/savedata`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "save": "pending", id: orderId, "type": type2 })
+        });
 
-    onApprove: async (data, actions) => {
-        console.log('onApprove data:', data);
-        try {
-            const res = await fetch(`${apiHost}/sheldon/paypal/capture`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderID: data.orderID || data.id || data })
-            });
-            const details = await res.json();
-            console.log('capture response:', details);
-        } catch (err) {
-            console.error('capture error:', err);
-        }
-    },
-
-    onError: (err) => {
-        console.error('PayPal Buttons error:', err);
+        return "TEMPO";
     }
 
-}).render('#paypal');
+}).render("#paypal");
