@@ -5,71 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SHELDON | Secure Checkout</title>
     
-    <!-- Tailwind CSS & Config -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     
-    <!-- If you are using external files, keep them, but I have included the logic inline below to ensure it works immediately -->
-    <!-- <link href="../css/checkout.css" rel="stylesheet"> -->
-    <!-- <script src="../js/render.js"></script> -->
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'hacker-black': '#050505',
-                        'hacker-dark': '#0a0a0a',
-                        'hacker-blue': '#3b82f6',
-                        'hacker-blue-dim': 'rgba(59, 130, 246, 0.1)',
-                    },
-                    fontFamily: {
-                        mono: ['"JetBrains Mono"', 'monospace'],
-                    },
-                    boxShadow: {
-                        'neon': '0 0 10px #3b82f6, 0 0 20px #3b82f6',
-                        'neon-sm': '0 0 5px #3b82f6',
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #050505;
-            color: #e5e5e5;
-        }
-        
-        /* Grid Background */
-        .grid-bg {
-            background-image: linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-
-        /* Title Scanlines */
-        .title-scanlines {
-            position: relative;
-            display: inline-block;
-        }
-        .title-scanlines::after {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(to bottom, rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
-    </style>
+    <link href="../css/checkout.css" rel="stylesheet">
+    <script src="../js/render.js"></script>
 </head>
 <body class="font-mono antialiased min-h-screen grid-bg flex flex-col items-center py-10 px-4 relative">
 
