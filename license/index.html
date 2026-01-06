@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>License</title>
+</head>
+<body>
+    <h1>License Page</h1>
+    <p>Your key:</p>
+    <h2 id="key">Loading...</h2>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const key = params.get("key");
+
+        document.getElementById("key").textContent =
+            key ? key : "No key provided";
+    </script>
+</body>
+</html>
