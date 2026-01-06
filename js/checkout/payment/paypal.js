@@ -19,7 +19,7 @@ paypal.Buttons({
         //     body: JSON.stringify({ "save": "pending", id: orderId, "type": type })
         // });
 
-        return "TEMPO";
+        return orderId;
     }
 
 }).render("#paypal");
