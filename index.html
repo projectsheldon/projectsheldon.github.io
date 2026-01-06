@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/base.css">
+    <title>Sheldon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/index/render.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+
+
+</head>
+
+<body class="font-mono antialiased overflow-x-hidden">
+    <section id="hero"
+        class="h-screen w-full flex flex-col justify-center items-center relative grid-bg border-b border-hacker-blue/30 overflow-hidden">
+        <canvas id="bg-canvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
+
+        <div
+            class="absolute inset-0 bg-gradient-to-t from-hacker-black via-transparent to-transparent pointer-events-none z-0">
+        </div>
+
+        <div class="z-10 text-center space-y-6 px-4">
+            <p class="text-hacker-blue tracking-widest text-sm uppercase animate-pulse">External Software / By Penguu
+            </p>
+
+            <div class="relative">
+                <h1
+                    class="title-scanlines text-7xl md:text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-hacker-blue drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                    SHELDON
+                </h1>
+            </div>
+
+            <p class="text-gray-400 max-w-lg mx-auto text-sm md:text-base pt-2">
+                Powerful. Straight forward. Developed with users in mind.
+                <br>
+                <span class="text-hacker-blue opacity-80 text-xs mt-2 block font-bold tracking-wide">[its true
+                    tho]</span>
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                <a href="https://github.com/OgPenguu/Sheldon-Download/releases/download/tag2/Sheldon.7z"
+                    class="px-8 py-3 bg-hacker-blue text-black font-bold hover:bg-blue-400 transition-all duration-300 shadow-neon transform hover:-translate-y-1">
+                    DOWNLOAD
+                </a>
+                <a href="#pricing"
+                    class="px-8 py-3 border border-hacker-blue text-hacker-blue hover:bg-hacker-blue hover:text-black transition-all duration-300 transform hover:-translate-y-1">
+                    GET ACCESS
+                </a>
+            </div>
+        </div>
+
+        <div class="absolute bottom-5 animate-bounce text-hacker-blue text-center w-full z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+        </div>
+    </section>
+
+    <section class="py-24 bg-hacker-dark relative">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-2"><span class="text-hacker-blue">/</span>
+                    RUNDOWN</h2>
+                <p class="text-gray-500">Optimized for performance and stealth.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div
+                    class="bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group">
+                    <div
+                        class="w-12 h-12 bg-hacker-blue-dim flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-neon-sm transition-all">
+                        <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">Visuals</h3>
+                    <p class="text-gray-400 text-sm">Highly customizable ESP with a wide range of visualizers.
+                        Engineered to run with absolutely 0 FPS drop.</p>
+                </div>
+
+                <div
+                    class="bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group">
+                    <div
+                        class="w-12 h-12 bg-hacker-blue-dim flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-neon-sm transition-all">
+                        <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">Unique Features
+                    </h3>
+                    <p class="text-gray-400 text-sm">Packed with functionality you won't find anywhere else. From
+                        movement exploits to advanced logic.</p>
+                </div>
+
+                <div
+                    class="bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group">
+                    <div
+                        class="w-12 h-12 bg-hacker-blue-dim flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-neon-sm transition-all">
+                        <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">Straightforward
+                    </h3>
+                    <p class="text-gray-400 text-sm">Designed for ease of use. Clean menu, instant injection, and
+                        user-friendly configuration.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/index/polygons.js"></script>
+
+    <section id="pricing" class="py-24 bg-black relative border-t border-gray-900">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-2"><span class="text-hacker-blue">/</span>
+                    ACCESS PLANS</h2>
+                <p class="text-gray-500">Same features. Pls support me</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                <div
+                    class="relative bg-hacker-dark border border-gray-800 p-8 flex flex-col hover:border-gray-600 transition-all">
+                    <h3 class="text-2xl font-bold text-white mb-2">Free</h3>
+                    <div class="text-4xl font-bold text-hacker-blue mb-1">2 CHECKPOINTS</div>
+                    <p class="text-sm text-gray-500 mb-6">/ 8 hours</p>
+
+                    <button
+                        class="w-full py-3 border border-gray-600 text-white hover:bg-white hover:text-black font-bold transition-all">
+                        GET KEY
+                    </button>
+                </div>
+
+                <div
+                    class="relative bg-hacker-dark border border-gray-800 p-8 flex flex-col hover:border-gray-600 transition-all">
+                    <h3 class="text-2xl font-bold text-white mb-2">Day Pass</h3>
+                    <div class="text-4xl font-bold text-hacker-blue mb-1">€2.00</div>
+                    <p class="text-sm text-gray-500 mb-6">/ 2 days</p>
+
+                    <button
+                        class="w-full py-3 border border-hacker-blue text-hacker-blue hover:bg-hacker-blue hover:text-black font-bold transition-all">
+                        PURCHASE
+                    </button>
+                </div>
+
+                <div
+                    class="relative bg-hacker-dark border border-hacker-blue p-8 flex flex-col shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                    <div class="absolute top-0 right-0 bg-hacker-blue text-black text-xs font-bold px-3 py-1">
+                        RECOMMENDED</div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Lifetime</h3>
+                    <div class="text-4xl font-bold text-hacker-blue mb-1">€14.99</div>
+                    <p class="text-sm text-gray-500 mb-6">/ One-time</p>
+
+                    <button
+                        class="w-full py-3 bg-hacker-blue text-black font-bold hover:bg-blue-400 shadow-neon transition-all">
+                        GET LIFETIME
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-black py-8 border-t border-gray-900">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col items-center justify-center">
+            <h4 class="text-2xl font-bold text-white mb-4">SHELDON</h4>
+            <div class="flex space-x-6 mb-6">
+                <a href="#" class="text-gray-500 hover:text-hacker-blue transition-colors">Terms</a>
+                <a href="#" class="text-gray-500 hover:text-hacker-blue transition-colors">Privacy</a>
+                <a href="https://discord.gg/SbGUYquj8b"
+                    class="text-gray-500 hover:text-hacker-blue transition-colors">Discord</a>
+            </div>
+            <p class="text-gray-600 text-sm">
+                &copy; 2026 Sheldon Software. All rights reserved. <br>
+                <span class="text-xs opacity-50">Developed by Penguu.</span>
+            </p>
+        </div>
+    </footer>
+</body>
+
+</html>
