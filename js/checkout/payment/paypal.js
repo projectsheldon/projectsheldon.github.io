@@ -21,6 +21,7 @@ paypal.Buttons({
         });
 
         const captureData = await captureRes.json();
+        console.log(captureData);
     },
 
 }).render("#paypal");
