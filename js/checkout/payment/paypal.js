@@ -11,7 +11,10 @@ paypal.Buttons({
             const createRes = await fetch(`${await GetApiUrl()}sheldon/paypal/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productId: type, discordId: GetSessionToken() })
+                body: JSON.stringify({
+                    productId: type,
+                    discordId: GetSessionToken()
+                })
             });
 
             if (!createRes.ok) {
@@ -30,14 +33,17 @@ paypal.Buttons({
             return createData.id;
         } catch (e) {
             console.error('createOrder error', e);
-            throw e; // let PayPal SDK handle the rejection
+            throw e;
         }
     },
     onApprove: async (data, actions) => {
         const captureRes = await fetch(`${await GetApiUrl()}sheldon/paypal/capture`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: data.orderID })
+            body: JSON.stringify({
+                id: data.orderID,
+                discordId: GetSessionToken()
+            })
         });
 
         const captureData = await captureRes.json();
