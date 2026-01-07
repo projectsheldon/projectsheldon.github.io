@@ -43,14 +43,4 @@ paypal.Buttons({
         const captureData = await captureRes.json();
     },
 
-    onCancel: (data) => {
-        console.log('PayPal payment cancelled', data);
-        window.AddNotification?.('Payment cancelled', { type: 'warning' });
-    },
-
-    onError: (err) => {
-        console.error('PayPal SDK error', err);
-        window.AddNotification?.('Payment could not be completed. Check console for details.', { type: 'error' });
-    },
-
 }).render("#paypal");
