@@ -7,8 +7,9 @@
     <title>Sheldon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/base.css">
-    <script src="js/render.js"></script>
+    <script src="js/render/render.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <base href="/projectsheldon.github.io/">
 </head>
 
 <body class="font-mono antialiased overflow-x-hidden">
@@ -116,7 +117,7 @@
         </div>
     </section>
 
-    <script src="js/index/polygons.js"></script>
+    <script src="js/render/polygons.js"></script>
 
     <section id="pricing" class="py-24 bg-black relative border-t border-gray-900">
         <div class="max-w-7xl mx-auto px-6">
@@ -148,7 +149,7 @@
 
                     <button
                         class="w-full py-3 border border-hacker-blue text-hacker-blue hover:bg-hacker-blue hover:text-black font-bold transition-all"
-                        onclick="window.location.href='/checkout?type=daily'">
+                        onclick="window.location.href='checkout/?type=daily'">
                         PURCHASE
                     </button>
                 </div>
@@ -187,6 +188,8 @@
             </p>
         </div>
     </footer>
+
+    <script src="js/index/index.js"></script>
 </body>
 
 </html>

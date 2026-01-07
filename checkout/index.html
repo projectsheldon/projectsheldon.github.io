@@ -11,7 +11,7 @@
     <script src="https://www.paypal.com/sdk/js?client-id=Ac4pEXZjrMyP7l5K8FVEgipGAflzIO2__tficxrHykX0FCScVAGstxzBxyiThzMuSs-fD6dI_a4JNFmo&currency=EUR"></script>
 
     <link href="../css/checkout.css" rel="stylesheet">
-    <script src="../js/render.js"></script>
+    <script src="../js/render/render.js"></script>
 </head>
 
 <body class="font-mono antialiased min-h-screen grid-bg flex flex-col items-center py-10 px-4 relative">
@@ -139,9 +139,11 @@
         <span class="opacity-50">Refunds are manual. I review transactions personally.</span>
     </footer>
 
+    <script src="../js/render/notification.js"></script>
     <script type="module" src="../js/checkout/index.js"></script>
     <script src="../js/checkout/tabs.js"></script>
     <script type="module" src="../js/checkout/payment/paypal.js"></script>
+    <script type="module" src="../js/auth/discord.js"></script>
 </body>
 
 </html>
