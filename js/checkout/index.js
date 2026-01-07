@@ -1,10 +1,14 @@
-import { GetSessionToken } from "../auth/discord.js";
+import { GetSessionToken, LoginDiscord } from "../auth/discord.js";
 import { GetCookie, GetProducts } from "../global.js"
 
 const params = new URLSearchParams(window.location.search);
 const type = params.get('type');
 
 (async () => {
+    if (!await GetSessionToken()) {
+        LoginDiscord();
+    }
+
     const products = await GetProducts();
 
     let selected = products ? products[type] : null;
