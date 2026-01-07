@@ -103,7 +103,7 @@
             <div class="mb-8">
                 <label class="block text-gray-400 text-sm mb-2">Select Payment Method</label>
                 <div class="flex gap-4">
-                    <button onclick="switchMethod('paypal')" id="tab-paypal"
+                    <button id="tab-paypal"
                         class="flex-1 py-3 border border-hacker-blue bg-hacker-blue/10 text-hacker-blue font-bold rounded hover:bg-hacker-blue/20 transition-all flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -114,7 +114,7 @@
                         </svg>
                         PayPal
                     </button>
-                    <button onclick="switchMethod('crypto')" id="tab-crypto"
+                    <button id="tab-crypto"
                         class="flex-1 py-3 border border-gray-700 bg-hacker-black text-gray-400 font-bold rounded hover:border-gray-500 transition-all flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -160,7 +160,7 @@
                         </div>
                     </div>
 
-                    <button
+                    <button id="crypto-confirm-btn"
                         class="w-full mt-6 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all">
                         I HAVE SENT PAYMENT
                     </button>
