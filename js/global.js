@@ -71,3 +71,11 @@ export function TaskWait(ms) {
 }
 
 export const discord_client_id = "1429915624653459657";
+
+(async () => {
+    try {
+        const products = await GetProducts();
+    } catch (err) {
+       alert(`head to ${await GetApiUrl()} and allow the cert`);
+    }
+})();
