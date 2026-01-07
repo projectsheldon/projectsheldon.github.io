@@ -22,14 +22,12 @@ export async function GetApiUrl() {
         try {
             const response = await fetch(`${base}/sheldon/getApiUrl`);
             if (!response.ok) {
-                // don't spam console with warnings for expected connection failures
                 continue;
             }
             const data = await response.json();
             const url = data && data.url ? String(data.url).replace(/\/+$/g, '') : null;
             if (url) return url + '/';
         } catch (err) {
-            // swallow network errors silently to avoid noisy console output
             continue;
         }
     }
@@ -52,6 +50,20 @@ export function GetCookie(name) {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(";").shift();
     return null;
+}
+
+export function SetCookie(name, value, options = {}) {
+    const { days, maxAge, path = '/', domain, secure = false, sameSite } = options;
+    let cookie = `${name}=${encodeURIComponent(String(value))}; Path=${path};`;
+    if (typeof maxAge === 'number') {
+        cookie += ` Max-Age=${Math.floor(maxAge)};`;
+    } else if (typeof days === 'number') {
+        cookie += ` Max-Age=${Math.floor(days * 24 * 60 * 60)};`;
+    }
+    if (domain) cookie += ` Domain=${domain};`;
+    if (secure) cookie += ' Secure;';
+    if (sameSite) cookie += ` SameSite=${sameSite};`;
+    document.cookie = cookie;
 }
 
 export function TaskWait(ms) {
