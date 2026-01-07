@@ -38,8 +38,8 @@
           return;
         }
 
-        // set cookie on frontend domain so main page can read it
-        document.cookie = `session=${data.session}; Path=/; Max-Age=604800`;
+        // set cookie on frontend domain so main page can read it (long-lived)
+        document.cookie = `session=${data.session}; Path=/; Max-Age=${315360000}`; // ~10 years
 
         // inform opener (if opened as popup)
         if (window.opener) {

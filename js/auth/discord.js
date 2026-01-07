@@ -1,4 +1,4 @@
-import { GetApiUrl, discord_client_id, GetCookie, TaskWait } from "../global.js";
+import { GetApiUrl, discord_client_id, GetCookie, TaskWait, SetCookie } from "../global.js";
 
 function showOverlay() {
     const overlay = document.createElement("div");
@@ -49,11 +49,11 @@ let _sessionCache = {
     user: null,
     ts: 0,
     promise: null,
-    ttl: 60 * 1000 // 1 minute
+    ttl: 0 // always fetch fresh data
 };
 
 export function ClearSessionCache() {
-    _sessionCache = { token: null, user: null, ts: 0, promise: null, ttl: 60 * 1000 };
+    _sessionCache = { token: null, user: null, ts: 0, promise: null, ttl: 0 };
 }
 
 export async function GetSessionInfo(force = false) {
@@ -111,7 +111,7 @@ export async function LoginDiscord() {
             try {
                 const msg = evt.data;
                 if (msg && msg.loggedIn && msg.session) {
-                    document.cookie = `session=${msg.session}; Path=/; Max-Age=604800`;
+                    try { SetCookie('session', msg.session, { days: 3650, path: '/' }); } catch (e) { document.cookie = `session=${msg.session}; Path=/; Max-Age=${3650*24*60*60}`; }
 
                     window.removeEventListener('message', handleMessage);
                     removeOverlay();
