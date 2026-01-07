@@ -1,14 +1,33 @@
-// export const API_URL = "http://localhost:3350/";
-export const API_URL = "https://5.249.161.40:3350/";
+export async function GetApiUrl() {
+    const candidates = [
+        'http://localhost:3350',
+        'https://5.249.161.40:3350'
+    ];
 
+    for (const base of candidates) {
+        try {
+            const response = await fetch(`${base}/sheldon/getApiUrl`);
+            if (!response.ok) {
+                console.warn('GetApiUrl non-ok response from', base, response.status);
+                continue;
+            }
+            const data = await response.json();
+            const url = data && data.url ? String(data.url).replace(/\/+$/g, '') : null;
+            if (url) return url + '/';
+        } catch (err) {
+            continue;
+        }
+    }
+
+    return '';
+}
 
 export async function GetProducts() {
     try {
-        const response = await fetch(`${API_URL}sheldon/products`); 
-        const data = await response.json(); 
+        const response = await fetch(`${await GetApiUrl()}sheldon/products`);
+        const data = await response.json();
         return data;
     } catch (err) {
-        // alert("Please head to https://5.249.161.40:3350/ and allow the certificate.");
         return null;
     }
 }
@@ -18,15 +37,6 @@ export function GetCookie(name) {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(";").shift();
     return null;
-}
-
-export async function CheckPermission(permissionName) {
-    try {
-        const status = await navigator.permissions.query({ name: permissionName });
-
-        return status.state; 
-    } catch (err) {
-    }
 }
 
 export function TaskWait(ms) {

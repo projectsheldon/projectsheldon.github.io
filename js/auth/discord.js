@@ -1,4 +1,4 @@
-import { API_URL, discord_client_id, GetCookie, TaskWait } from "../global.js";
+import { GetApiUrl, discord_client_id, GetCookie, TaskWait } from "../global.js";
 
 function showOverlay() {
     const overlay = document.createElement("div");
@@ -39,23 +39,70 @@ export function DeleteSessionToken() {
             document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
         }
     });
+    // Clear any cached session info when deleting the token
+    try { ClearSessionCache(); } catch (e) { }
 }
 
-export async function GetSessionInfo() {
+// Simple in-module cache to avoid repeated network calls for the same session
+let _sessionCache = {
+    token: null,
+    user: null,
+    ts: 0,
+    promise: null,
+    ttl: 60 * 1000 // 1 minute
+};
+
+export function ClearSessionCache() {
+    _sessionCache = { token: null, user: null, ts: 0, promise: null, ttl: 60 * 1000 };
+}
+
+export async function GetSessionInfo(force = false) {
     const token = GetSessionToken();
     if (!token) return null;
-    const res = await fetch(`${API_URL}sheldon/discord/me?token=${token}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json;
+
+    const now = Date.now();
+
+    // If cached and still fresh, return it
+    if (!force && _sessionCache.token === token) {
+        if (_sessionCache.user && (now - _sessionCache.ts) < _sessionCache.ttl) {
+            return _sessionCache.user;
+        }
+        // If a fetch is already in progress, await it
+        if (_sessionCache.promise) {
+            return await _sessionCache.promise;
+        }
+    }
+
+    // Start fetch and store promise so concurrent callers share it
+    const fetchPromise = (async () => {
+        const res = await fetch(`${await GetApiUrl()}sheldon/discord/me?token=${token}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        _sessionCache.token = token;
+        _sessionCache.user = json;
+        _sessionCache.ts = Date.now();
+        _sessionCache.promise = null;
+        return json;
+    })();
+
+    _sessionCache.promise = fetchPromise;
+    const result = await fetchPromise;
+    if (!result) {
+        // ensure we don't keep stale user data
+        _sessionCache.user = null;
+        _sessionCache.ts = Date.now();
+        _sessionCache.promise = null;
+    }
+    return result;
 }
 
 export async function LoginDiscord() {
     showOverlay();
 
-    const redirectUri = encodeURIComponent(`${API_URL}sheldon/discord/callback`);
-    // Added prompt=consent to ensure we get fresh data if needed
+    const redirectUri = encodeURIComponent(`${await GetApiUrl()}sheldon/discord/callback`);
     const discordUrl = `https://discord.com/oauth2/authorize?client_id=${discord_client_id}&response_type=code&redirect_uri=${redirectUri}&scope=identify`;
+
+    console.log(discordUrl);
 
     const loginTab = window.open(discordUrl, "_blank");
     const loginPromise = new Promise((resolve, reject) => {
@@ -93,7 +140,7 @@ export async function LoginDiscord() {
     try {
         const user = await GetSessionInfo();
         if (user) setAuthUsername(user);
-    } catch (e) {}
+    } catch (e) { }
 
     return session;
 }
@@ -113,7 +160,7 @@ function setAuthUsername(user) {
     // 1. Setup Avatar
     // Check if the API gives a full URL, or if we need to construct it from ID + Hash
     let avatarSrc = "https://cdn.discordapp.com/embed/avatars/0.png"; // Default
-    
+
     if (user.avatar_url) {
         avatarSrc = user.avatar_url;
     } else if (user.avatar && user.id) {
@@ -125,7 +172,7 @@ function setAuthUsername(user) {
     img.src = avatarSrc;
     img.alt = user.username;
     img.className = "w-8 h-8 rounded-full border border-hacker-blue/50 shadow-[0_0_10px_rgba(59,130,246,0.3)]";
-    
+
     // 2. Setup Username
     const nameSpan = document.createElement('span');
     nameSpan.className = 'text-sm font-bold text-gray-200 hidden sm:block'; // Hidden on very small screens
@@ -139,13 +186,11 @@ function setAuthUsername(user) {
     authBtn.parentNode.insertBefore(container, authBtn);
 }
 
-// Exported function to clear the UI (called from index.js on logout)
-export function ClearAuthUser(){
+export function ClearAuthUser() {
     const el = document.getElementById('auth-user-info');
     if (el) el.remove();
 }
 
-// On module load
 (async () => {
     const token = GetSessionToken();
     if (!token) return ClearAuthUser();
