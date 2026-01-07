@@ -1,4 +1,5 @@
-import { GetProducts } from "../global.js"
+import { GetSessionToken } from "../auth/discord.js";
+import { GetCookie, GetProducts } from "../global.js"
 
 const params = new URLSearchParams(window.location.search);
 const type = params.get('type');
@@ -6,7 +7,7 @@ const type = params.get('type');
 (async () => {
     const products = await GetProducts();
 
-    let selected = products ? products[type] : null; 
+    let selected = products ? products[type] : null;
     if (type === "free") {
         selected = null;
     }
