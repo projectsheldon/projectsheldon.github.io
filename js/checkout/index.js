@@ -5,10 +5,6 @@ const params = new URLSearchParams(window.location.search);
 const type = params.get('type');
 
 (async () => {
-    if (!await GetSessionToken()) {
-        LoginDiscord();
-    }
-
     const products = await GetProducts();
 
     let selected = products ? products[type] : null;
