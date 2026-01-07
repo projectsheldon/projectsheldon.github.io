@@ -1,5 +1,5 @@
-export const API_URL = "http://localhost:3350/";
-// export const API_URL = "https://5.249.161.40:3350/";
+// export const API_URL = "http://localhost:3350/";
+export const API_URL = "https://5.249.161.40:3350/";
 
 export async function GetProducts() {
     try {
