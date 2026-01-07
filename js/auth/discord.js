@@ -42,6 +42,7 @@ async function loginWithDiscord() {
         const loginTab = window.open(discordUrl, "_blank");
         if (!loginTab) {
             alert("Please allow popups for this site!");
+            window.location.reload();
             return;
         }
 
@@ -61,12 +62,14 @@ async function loginWithDiscord() {
         }
         window.addEventListener('message', handleMessage);
 
-        const fallbackInterval = setInterval(() => {
+        const fallbackInterval = setInterval(async () => {
             if (!loginTab || loginTab.closed) {
                 clearInterval(fallbackInterval);
                 window.removeEventListener('message', handleMessage);
                 removeOverlay();
                 AddNotification('Login canceled.', { type: 'error', duration: 3000 });
+                await TaskWait(1500);
+                window.location.reload();
             }
         }, 500);
     } else {
@@ -76,6 +79,4 @@ async function loginWithDiscord() {
         AddNotification(`Logged in as ${json.username}`, { type: 'success', duration: 3000 });
     }
 }
-
-// Call it
 loginWithDiscord();

@@ -19,6 +19,15 @@ export function GetCookie(name) {
     return null;
 }
 
+export async function CheckPermission(permissionName) {
+    try {
+        const status = await navigator.permissions.query({ name: permissionName });
+
+        return status.state; 
+    } catch (err) {
+    }
+}
+
 export function TaskWait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
