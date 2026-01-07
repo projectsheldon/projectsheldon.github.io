@@ -47,6 +47,25 @@ paypal.Buttons({
         });
 
         const captureData = await captureRes.json();
+        if (captureData.licenseKey) {
+            // Support server returning either an object or a key string
+            let key = null;
+            try {
+                if (typeof captureData.licenseKey === 'string') key = captureData.licenseKey;
+                else if (captureData.licenseKey && typeof captureData.licenseKey === 'object') {
+                    if (captureData.licenseKey.k) key = captureData.licenseKey.k;
+                    else if (captureData.licenseKey.key) key = captureData.licenseKey.key;
+                }
+            } catch (e) {
+                console.error('Error parsing licenseKey', e);
+            }
+
+            if (key) {
+                // Redirect user to license display page
+                window.location.href = `/license?key=${encodeURIComponent(key)}`;
+                return;
+            }
+        }
     },
 
 }).render("#paypal");
