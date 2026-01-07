@@ -1,4 +1,4 @@
-import { GetSessionToken } from "../../auth/discord.js";
+import { GetSessionToken, GetSessionInfo } from "../../auth/discord.js";
 import { GetApiUrl, SetCookie } from "../../global.js";
 
 paypal.Buttons({
@@ -8,12 +8,16 @@ paypal.Buttons({
         const type = new URLSearchParams(window.location.search).get("type") || "";
 
         try {
+            // try to resolve the Discord user id (not the session token)
+            const authUser = await GetSessionInfo().catch(() => null);
+            const discordIdToSend = authUser && authUser.id ? authUser.id : null;
+
             const createRes = await fetch(`${await GetApiUrl()}sheldon/paypal/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     productId: type,
-                    discordId: GetSessionToken()
+                    discordId: discordIdToSend
                 })
             });
 
@@ -37,12 +41,15 @@ paypal.Buttons({
         }
     },
     onApprove: async (data, actions) => {
+        const authUser = await GetSessionInfo().catch(() => null);
+        const discordIdToSend = authUser && authUser.id ? authUser.id : null;
+
         const captureRes = await fetch(`${await GetApiUrl()}sheldon/paypal/capture`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 id: data.orderID,
-                discordId: GetSessionToken()
+                discordId: discordIdToSend
             })
         });
 
