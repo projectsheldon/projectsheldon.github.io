@@ -41,6 +41,7 @@ export function DeleteSessionToken() {
     });
     // Clear any cached session info when deleting the token
     try { ClearSessionCache(); } catch (e) { }
+    window.location.reload();
 }
 
 // Simple in-module cache to avoid repeated network calls for the same session

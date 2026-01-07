@@ -17,7 +17,8 @@ export async function LoginButton() {
         await Discord.LoginDiscord(); 
         hasToken = !!Discord.GetSessionToken();
     }
-
+    
+    window.location.reload();
     SetAuthButtonText(hasToken);
 }
 

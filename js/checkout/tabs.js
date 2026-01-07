@@ -1,4 +1,8 @@
-function switchMethod(method) {
+import { GetSessionToken } from "../auth/discord.js";
+
+async function switchMethod(method) {
+    if (!await GetSessionToken()) return;
+
     const paypalTab = document.getElementById('tab-paypal');
     const cryptoTab = document.getElementById('tab-crypto');
     const paypalContent = document.getElementById('content-paypal');
@@ -29,3 +33,11 @@ function switchMethod(method) {
         paypalContent.classList.add('hidden');
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('tab-paypal')
+        .addEventListener('click', () => switchMethod('paypal'));
+
+    document.getElementById('tab-crypto')
+        .addEventListener('click', () => switchMethod('crypto'));
+});
