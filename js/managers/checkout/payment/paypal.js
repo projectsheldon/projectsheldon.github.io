@@ -1,5 +1,5 @@
-import { GetSessionToken, GetSessionInfo } from "../../auth/discord.js";
-import { GetApiUrl, SetCookie } from "../../global.js";
+import { GetSessionToken, GetSessionInfo } from "../../discord/api.js";
+import { GetApiUrl, SetCookie } from "../../../global.js";
 
 function createPayPalButtons() {
     return paypal.Buttons({
@@ -76,41 +76,3 @@ function createPayPalButtons() {
         },
     });
 }
-
-async function ensureLoggedInAndInit() {
-    const container = document.getElementById('paypal');
-    const authUser = await GetSessionInfo().catch(() => null);
-
-    if (!authUser) {
-        if (container) {
-            container.innerHTML = `
-                <div class="text-center">
-                    <p class="mb-3 text-sm text-gray-300">You must be logged in with Discord to checkout.</p>
-                    <button id="checkout-login-btn" class="px-4 py-2 bg-hacker-blue text-white rounded">Login with Discord</button>
-                </div>`;
-            const btn = document.getElementById('checkout-login-btn');
-            if (btn) btn.addEventListener('click', async () => {
-                try {
-                    if (window.LoginButton) await window.LoginButton();
-                    const u = await GetSessionInfo().catch(() => null);
-                    if (u) {
-                        // replace container and initialize PayPal
-                        container.innerHTML = '<div id="paypal-buttons-container"></div>';
-                        createPayPalButtons().render('#paypal');
-                    } else {
-                        window.AddNotification?.('Login failed or was cancelled', { type: 'error' });
-                    }
-                } catch (e) {
-                    console.error('Login/init error', e);
-                    window.AddNotification?.('Login failed', { type: 'error' });
-                }
-            });
-        }
-        return;
-    }
-
-    // already logged in -> init
-    createPayPalButtons().render('#paypal');
-}
-
-ensureLoggedInAndInit();

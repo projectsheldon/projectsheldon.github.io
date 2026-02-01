@@ -1,38 +1,11 @@
 export async function GetApiUrl() {
-    const defaultCandidates = [
-        'http://localhost:3350',
-        'https://5.249.161.40:3350'
-    ];
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
-    // Prefer a candidate that matches the current page (localhost when developing),
-    // to avoid noisy connection attempts to unreachable hosts.
-    let candidates = defaultCandidates.slice();
-    try {
-        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-            candidates = ['http://localhost:3350', 'https://5.249.161.40:3350'];
-        }
-        else {
-            candidates = ['https://5.249.161.40:3350', 'http://localhost:3350'];
-        }
-    } catch (e) {
-        candidates = defaultCandidates.slice();
+    if (isHttps) {
+        return 'https://5.249.161.40:3350/';
+    } else {
+        return 'http://localhost:3350/';
     }
-
-    for (const base of candidates) {
-        try {
-            const response = await fetch(`${base}/sheldon/getApiUrl`);
-            if (!response.ok) {
-                continue;
-            }
-            const data = await response.json();
-            const url = data && data.url ? String(data.url).replace(/\/+$/g, '') : null;
-            if (url) return url + '/';
-        } catch (err) {
-            continue;
-        }
-    }
-
-    return '';
 }
 
 export async function GetProducts() {

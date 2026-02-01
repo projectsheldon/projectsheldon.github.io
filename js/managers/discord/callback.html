@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Discord callback</title>
+</head>
+
+<body
+    style="background:#050505;color:white;font-family:monospace;display:flex;justify-content:center;align-items:center;height:100vh;">
+    <div id="message">Processing login...</div>
+    <script type="module">
+        import { GetApiUrl } from '/js/global.js';
+
+        async function run() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const error = params.get('error');
+            if (error) {
+                document.getElementById('message').textContent = 'OAuth error: ' + error;
+                return;
+            }
+            if (!code) {
+                document.getElementById('message').textContent = 'No code found';
+                return;
+            }
+
+            try {
+                const apiBase = await GetApiUrl();
+                const res = await fetch(`${apiBase}sheldon/discord/exchange`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, redirect: window.location.href })
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data.session) {
+                    document.getElementById('message').textContent = 'Login failed';
+                    console.error('exchange failed', res.status, data);
+                    return;
+                }
+
+                document.cookie = `session=${data.session}; Path=/; Max-Age=${315360000}`; // ~10 years
+
+                if (window.opener) {
+                    window.opener.postMessage({ loggedIn: true, session: data.session }, '*');
+                }
+
+                document.getElementById('message').textContent = 'Logged in! Closing...';
+                setTimeout(() => window.close(), 600);
+            } catch (err) {
+                console.error('callback error', err);
+                document.getElementById('message').textContent = 'Login error';
+            }
+        }
+
+        run();
+    </script>
+</body>
+
+</html>
