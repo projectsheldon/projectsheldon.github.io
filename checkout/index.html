@@ -15,7 +15,6 @@
     <script src="../js/managers/render/options.js"></script>
 
     <style>
-        /* Mobile height fix */
         .min-h-safe {
             min-height: 100vh;
             min-height: 100dvh;
@@ -25,7 +24,6 @@
 
 <body class="font-mono antialiased min-h-safe grid-bg flex flex-col items-center pt-20 md:pt-24 pb-10 px-4 relative">
 
-    <!-- Navbar: px-4 for mobile, px-6 for PC -->
     <nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 md:px-6 py-4 bg-black/60 backdrop-blur-md border-b border-hacker-blue/20">
         <div class="flex items-center gap-4">
             <a href="https://discord.gg/SbGUYquj8b" target="_blank"
@@ -61,20 +59,15 @@
         class="fixed inset-0 bg-gradient-to-t from-hacker-black via-transparent to-transparent pointer-events-none -z-10">
     </div>
 
-    <!-- Header Return Link -->
     <header class="w-full max-w-6xl flex justify-center md:justify-end items-center mb-6 px-2">
         <a href="/" class="text-xs md:text-sm text-gray-500 hover:text-hacker-blue flex items-center gap-2 transition-colors">
             <span>[ RETURN HOME ]</span>
         </a>
     </header>
 
-    <!-- Main Card -->
-    <!-- Added flex-col for mobile, flex-row for PC -->
     <main
     class="w-full max-w-6xl bg-hacker-dark border border-gray-800 rounded-lg shadow-2xl overflow-hidden flex flex-col md:flex-row relative z-10 md:min-h-[500px]">
 
-        <!-- Left Column (Order Info) -->
-        <!-- Added order-1 so it stays on top on mobile -->
         <div class="w-full md:w-1/3 bg-black/40 border-b md:border-b-0 md:border-r border-gray-800 p-6 md:p-8 flex flex-col order-1">
             <h2 class="text-gray-400 text-xs uppercase tracking-widest mb-6">Your Order</h2>
 
@@ -88,11 +81,10 @@
                 </div>
                 <div>
                     <h3 id="product-name" class="text-white font-bold text-lg leading-tight">{product-name}</h3>
-                    <p id="product-desc" class="text-gray-500 text-sm mt-1">thank you so much</p>
+                    <p id="product-desc" class="text-gray-500 text-sm mt-1">Includes future updates.</p>
                 </div>
             </div>
 
-            <!-- Total Price Section -->
             <div class="mt-auto space-y-3 pt-6 border-t border-gray-800/50">
                 <div class="flex justify-between text-white font-bold text-xl pt-2">
                     <span>Total</span>
@@ -101,13 +93,10 @@
             </div>
         </div>
 
-        <!-- Right Column (Checkout/Paypal) -->
-        <!-- Added order-2 -->
         <div class="w-full md:w-2/3 p-6 md:p-8 order-2">
             <h1 class="title-scanlines text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">CHECKOUT</h1>
 
             <div class="mb-8">
-                <!-- Paypal Buttons Container should go here usually -->
                 <div id="paypal-button-container" class="w-full"></div>
             </div>
         </div>
@@ -117,6 +106,7 @@
         &copy; 2026 Sheldon Software
     </footer>
 
+    <script src="../js/html/checkout.js" type="module"></script>
     <script type="module">
         import DiscordRender from "../js/managers/discord/render.js";
 
