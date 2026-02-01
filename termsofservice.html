@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHELDON | Terms of Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hacker-black': '#050505',
+                        'hacker-dark': '#0a0a0a',
+                        'hacker-blue': '#3b82f6',
+                        'hacker-blue-dim': 'rgba(59, 130, 246, 0.1)',
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 10px #3b82f6, 0 0 20px #3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #e5e5e5;
+        }
+        
+        .grid-bg {
+            background-image: linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .title-scanlines {
+            position: relative;
+            display: inline-block;
+        }
+        .title-scanlines::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+    </style>
+</head>
+<body class="font-mono antialiased min-h-screen grid-bg flex flex-col items-center py-12 px-4 relative">
+
+    <div class="fixed inset-0 bg-gradient-to-t from-hacker-black via-transparent to-transparent pointer-events-none -z-10"></div>
+
+    <header class="w-full max-w-4xl flex justify-between items-center mb-12">
+        <div class="text-2xl font-extrabold text-white tracking-tighter">
+            SHELDON
+        </div>
+        <a href="/" class="text-sm text-gray-500 hover:text-hacker-blue flex items-center gap-2 transition-colors">
+            <span>[ RETURN ]</span>
+        </a>
+    </header>
+
+    <main class="w-full max-w-4xl bg-hacker-dark border border-gray-800 rounded-lg shadow-2xl overflow-hidden relative z-10">
+        
+        <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-hacker-blue to-transparent"></div>
+
+        <div class="p-8 md:p-12">
+            <h1 class="title-scanlines text-3xl md:text-4xl font-bold text-white mb-2">TERMS OF SERVICE</h1>
+            <p class="text-gray-500 text-sm mb-10">Hello, world!</p>
+
+            <div class="space-y-10 text-gray-300">
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-3 flex items-center">
+                        <span class="text-hacker-blue mr-2">01.</span> Liability & Bans
+                    </h2>
+                    <div class="pl-4 border-l border-gray-800">
+                        <p class="text-sm leading-relaxed mb-2">
+                            By downloading or purchasing Sheldon, you acknowledge that you are using this software entirely at your own risk. 
+                        </p>
+                        <p class="text-sm leading-relaxed text-red-400">
+                            I'm NOT responsible for any administrative actions taken against your account, including but not limited to: suspensions, bans, or account deletions.
+                        </p>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-3 flex items-center">
+                        <span class="text-hacker-blue mr-2">02.</span> Privacy & Telemetry
+                    </h2>
+                    <div class="pl-4 border-l border-gray-800">
+                        <p class="text-sm leading-relaxed mb-2">
+                            Sheldon is designed with user privacy in mind. We explicitly state the following:
+                        </p>
+                        <ul class="list-disc list-inside text-sm space-y-2 ml-2 text-gray-400">
+                            <li><span class="text-white">NO Telemetry:</span> I don't collect usage, screenshots or any stuff like that.</li>
+                            <li><span class="text-white">NO Data Harvesting:</span> I don't scan files, e.g Documents, Saved Cookies. But only live Processes.</li>
+                            <li><span class="text-white">HWID Usage:</span> Your Hardware ID is collected <span class="underline">only</span> for the purpose of license verification (binding your key to your PC).</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-3 flex items-center">
+                        <span class="text-hacker-blue mr-2">03.</span> Refund Policy
+                    </h2>
+                    <div class="pl-4 border-l border-gray-800">
+                        <p class="text-sm leading-relaxed mb-2">
+                            Due to the nature of digital licenses, refunds are <span class="font-bold text-white">not guaranteed</span>.
+                        </p>
+                        <p class="text-sm leading-relaxed">
+                            Refund requests are handled manually by me. Attempting to buy a license and then refund it <span class="font-bold text-white">is prohibited</span>.
+                        </p>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-bold text-white mb-3 flex items-center">
+                        <span class="text-hacker-blue mr-2">04.</span> Prohibited Actions
+                    </h2>
+                    <div class="pl-4 border-l border-gray-800">
+                        <p class="text-sm leading-relaxed">
+                            You may not crack, decompile or bypass Sheldon. Doing so will result in a termination of your access to Sheldon.
+                        </p>
+                    </div>
+                </section>
+
+            </div>
+
+            <div class="mt-12 pt-8 border-t border-gray-800 text-center">
+                <p class="text-xs text-gray-500">By continuing to use Sheldon, you agree to these terms.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 text-gray-600 text-xs text-center">
+        &copy; 2026 Sheldon Software. All rights reserved.
+    </footer>
+
+</body>
+</html>

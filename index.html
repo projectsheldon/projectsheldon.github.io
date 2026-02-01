@@ -1,7 +1,3 @@
-<!-- hi pls forgive me for using ai for the frontend but idk how to make website in html -->
-<!-- but to be fair i did make most of the backend alongside payment system so thats a dub for me -->
-<!-- yeah also hi -->
-
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 
@@ -12,21 +8,36 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="./js/managers/render/options.js"></script>
-    
+
     <link rel="stylesheet" href="css/base.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
 
     <base href="/">
+    
+    <!-- Added custom CSS for some mobile tweaks -->
+    <style>
+        /* Fix for mobile browsers where the address bar changes height */
+        .h-screen-safe {
+            height: 100vh; /* Fallback */
+            height: 100dvh; /* Dynamic viewport height */
+        }
+    </style>
 </head>
 
-<body class="font-mono antialiased overflow-x-hidden bg-black">
+<body class="font-mono antialiased overflow-x-hidden bg-black text-white">
+    
+    <!-- Navbar -->
+    <!-- Changed px-6 to px-4 for mobile, md:px-6 for PC -->
     <nav
-        class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-black/60 backdrop-blur-md border-b border-hacker-blue/20">
+        class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 md:px-6 py-4 bg-black/60 backdrop-blur-md border-b border-hacker-blue/20">
+        
+        <!-- Social Icons -->
         <div class="flex items-center gap-4">
             <a href="https://discord.gg/SbGUYquj8b" target="_blank"
                 class="text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
                 <span class="sr-only">Discord</span>
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill-rule="evenodd"
                         d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2763-3.68-.2763-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"
                         clip-rule="evenodd" />
@@ -46,51 +57,52 @@
 
         <div class="flex items-center">
             <button id="auth-btn"
-                class="px-6 py-1.5 border border-hacker-blue text-hacker-blue text-sm font-bold tracking-wider hover:bg-hacker-blue hover:text-black transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.2)] hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                class="px-4 md:px-6 py-1.5 border border-hacker-blue text-hacker-blue text-sm font-bold tracking-wider hover:bg-hacker-blue hover:text-black transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.2)] hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">
                 LOGIN
             </button>
         </div>
     </nav>
-e
+    
+    <!-- Hero Section -->
+    <!-- Removed stray 'e'. Used h-screen-safe for mobile browsers. -->
     <section id="hero"
-        class="h-screen w-full flex flex-col justify-center items-center relative grid-bg border-b border-hacker-blue/30 overflow-hidden">
+        class="h-screen-safe w-full flex flex-col justify-center items-center relative grid-bg border-b border-hacker-blue/30 overflow-hidden min-h-[600px]">
         <canvas id="bg-canvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
 
         <div
-            class="absolute inset-0 bg-gradient-to-t from-hacker-black via-transparent to-transparent pointer-events-none z-0">
+            class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-0">
         </div>
 
         <div class="z-10 text-center space-y-6 px-4 pt-16">
-            <p class="text-hacker-blue tracking-widest text-sm uppercase animate-pulse">External Software / By Penguu
-            </p>
+            <p class="text-hacker-blue tracking-widest text-xs md:text-sm uppercase animate-pulse">External Software / By Penguu</p>
 
             <div class="relative">
+                <!-- Adjusted Text Size: text-5xl on mobile, text-9xl on desktop -->
                 <h1
-                    class="title-scanlines text-7xl md:text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-hacker-blue drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                    class="title-scanlines text-5xl sm:text-7xl md:text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-hacker-blue drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] leading-tight">
                     SHELDON
                 </h1>
             </div>
 
-            <p class="text-gray-400 max-w-lg mx-auto text-sm md:text-base pt-2">
+            <p class="text-gray-400 max-w-xs md:max-w-lg mx-auto text-sm md:text-base pt-2">
                 Powerful. Straight forward. Developed with users in mind.
-                <br>
-                <span class="text-hacker-blue opacity-80 text-xs mt-2 block font-bold tracking-wide">[its true
-                    tho]</span>
+                <span class="text-hacker-blue opacity-80 text-xs mt-2 block font-bold tracking-wide">[its true tho]</span>
             </p>
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+            <!-- Buttons: Stacks vertical on mobile, horizontal on PC -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8 w-full max-w-md mx-auto sm:w-auto">
                 <a href="https://github.com/OgPenguu/Sheldon-Download/releases/download/tag2/Sheldon.7z"
-                    class="px-8 py-3 bg-hacker-blue text-black font-bold hover:bg-blue-400 transition-all duration-300 shadow-neon transform hover:-translate-y-1">
+                    class="w-full sm:w-auto text-center px-8 py-3 bg-hacker-blue text-black font-bold hover:bg-blue-400 transition-all duration-300 shadow-neon transform hover:-translate-y-1">
                     DOWNLOAD
                 </a>
                 <a href="#pricing"
-                    class="px-8 py-3 border border-hacker-blue text-hacker-blue hover:bg-hacker-blue hover:text-black transition-all duration-300 transform hover:-translate-y-1">
+                    class="w-full sm:w-auto text-center px-8 py-3 border border-hacker-blue text-hacker-blue hover:bg-hacker-blue hover:text-black transition-all duration-300 transform hover:-translate-y-1">
                     GET ACCESS
                 </a>
             </div>
         </div>
 
-        <div class="absolute bottom-5 animate-bounce text-hacker-blue text-center w-full z-10">
+        <div class="absolute bottom-5 animate-bounce text-hacker-blue text-center w-full z-10 hidden sm:block">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -98,19 +110,21 @@ e
         </div>
     </section>
 
-    <section class="py-24 bg-hacker-dark relative">
-        <div class="max-w-6xl mx-auto px-6">
-            <div class="text-center mb-16">
+    <!-- Rundown Section -->
+    <section class="py-16 md:py-24 bg-hacker-dark relative">
+        <div class="max-w-6xl mx-auto px-4 md:px-6">
+            <div class="text-center mb-12 md:mb-16">
                 <h2 class="text-3xl md:text-4xl font-bold text-white mb-2"><span class="text-hacker-blue">/</span>
                     RUNDOWN</h2>
-                <p class="text-gray-500">Optimized for performance and stealth.</p>
+                <p class="text-gray-500">i try the best i can.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                <!-- Visuals -->
                 <div
-                    class="bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group">
+                    class="bg-black/50 border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group rounded-sm">
                     <div
-                        class="w-12 h-12 bg-hacker-blue-dim flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-neon-sm transition-all">
+                        class="w-12 h-12 bg-gray-900 flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all">
                         <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -118,64 +132,64 @@ e
                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">Visuals</h3>
-                    <p class="text-gray-400 text-sm">Highly customizable ESP with a wide range of visualizers.
-                        Engineered to run with absolutely 0 FPS drop.</p>
+                    <h3 class="text-xl font-bold mb-2 text-white group-hover:text-hacker-blue transition-colors">Visuals</h3>
+                    <p class="text-gray-400 text-sm">Customizable visuals. But not the best performance (It's really
+                        difficult)</p>
                 </div>
 
+                <!-- Features -->
                 <div
-                    class="bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group">
+                    class="bg-black/50 border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group rounded-sm">
                     <div
-                        class="w-12 h-12 bg-hacker-blue-dim flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-neon-sm transition-all">
+                        class="w-12 h-12 bg-gray-900 flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all">
                         <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">Unique Features
+                    <h3 class="text-xl font-bold mb-2 text-white group-hover:text-hacker-blue transition-colors">Features
                     </h3>
-                    <p class="text-gray-400 text-sm">Packed with functionality you won't find anywhere else. From
-                        movement exploits to advanced logic.</p>
+                    <p class="text-gray-400 text-sm">Alot of cool and useful features to have fun in all games</p>
                 </div>
 
+                <!-- Straightforward -->
                 <div
-                    class="bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group">
+                    class="bg-black/50 border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group rounded-sm">
                     <div
-                        class="w-12 h-12 bg-hacker-blue-dim flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-neon-sm transition-all">
+                        class="w-12 h-12 bg-gray-900 flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all">
                         <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">Straightforward
+                    <h3 class="text-xl font-bold mb-2 text-white group-hover:text-hacker-blue transition-colors">Straightforward
                     </h3>
-                    <p class="text-gray-400 text-sm">Designed for ease of use. Clean menu, instant injection, and
-                        user-friendly configuration.</p>
+                    <p class="text-gray-400 text-sm">Designed with ease of use (I also try to fix all bugs found)</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="pricing" class="py-24 bg-black relative border-t border-gray-900">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center mb-16">
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-16 md:py-24 bg-black relative border-t border-gray-900">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="text-center mb-12 md:mb-16">
                 <h2 class="text-3xl md:text-4xl font-bold text-white mb-2"><span class="text-hacker-blue">/</span>
                     ACCESS PLANS</h2>
-                <p class="text-gray-500">Same features. Pls support me</p>
+                <p class="text-gray-500">same features, but pls support me :D</p>
             </div>
 
             <div id="pricing-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
+                <!-- Javascript will render pricing here -->
             </div>
         </div>
     </section>
 
     <footer class="bg-black py-8 border-t border-gray-900">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col items-center justify-center">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col items-center justify-center text-center">
             <h4 class="text-2xl font-bold text-white mb-4">SHELDON</h4>
             <div class="flex space-x-6 mb-6">
-                <a href="#" class="text-gray-500 hover:text-hacker-blue transition-colors">Terms</a>
-                <a href="#" class="text-gray-500 hover:text-hacker-blue transition-colors">Privacy</a>
+                <a href="./termsofservice.html" class="text-gray-500 hover:text-hacker-blue transition-colors">Terms</a>
                 <a href="https://discord.gg/SbGUYquj8b"
                     class="text-gray-500 hover:text-hacker-blue transition-colors">Discord</a>
             </div>
@@ -186,11 +200,14 @@ e
         </div>
     </footer>
 
-    <script src="./js/managers/discord/api.js" type="module"></script>
-    <script src="./js/managers/discord/render.js" type="module"></script>
+    <script src="./js/html/index.js" type="module"></script>
     <script type="module">
         import DiscordRender from "./js/managers/discord/render.js";
-        document.getElementById('auth-btn').addEventListener('click', () => DiscordRender.LoginLogic());
+
+        const authBtn = document.getElementById('auth-btn');
+        if (authBtn) {
+            authBtn.addEventListener('click', () => DiscordRender.LoginLogic());
+        }
     </script>
 </body>
 

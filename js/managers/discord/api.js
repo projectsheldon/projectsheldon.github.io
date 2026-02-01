@@ -5,17 +5,17 @@ let _sessionCache = {
     user: null,
     ts: 0,
     promise: null,
-    ttl: 0 
+    ttl: 0
 };
 
 const DiscordApi = {
     GetSessionToken() {
-        return GetCookie("session");
+        return GetCookie('session');
     },
     DeleteSessionToken() {
         const cookieName = "session";
         const cookies = document.cookie.split(";");
-    
+
         cookies.forEach(cookie => {
             const [name] = cookie.split("=");
             if (name.trim() === cookieName) {
@@ -31,11 +31,11 @@ const DiscordApi = {
     },
 
     async GetSessionInfo(force = false) {
-        const token = GetSessionToken();
+        const token = this.GetSessionToken();
         if (!token) return null;
-    
+
         const now = Date.now();
-    
+
         // If cached and still fresh, return it
         if (!force && _sessionCache.token === token) {
             if (_sessionCache.user && (now - _sessionCache.ts) < _sessionCache.ttl) {
@@ -46,7 +46,7 @@ const DiscordApi = {
                 return await _sessionCache.promise;
             }
         }
-    
+
         // Start fetch and store promise so concurrent callers share it
         const fetchPromise = (async () => {
             const res = await fetch(`${await GetApiUrl()}sheldon/discord/me?token=${token}`);
@@ -58,7 +58,7 @@ const DiscordApi = {
             _sessionCache.promise = null;
             return json;
         })();
-    
+
         _sessionCache.promise = fetchPromise;
         const result = await fetchPromise;
         if (!result) {
@@ -71,3 +71,4 @@ const DiscordApi = {
     }
 }
 export default DiscordApi;
+window.DiscordApi = DiscordApi;
