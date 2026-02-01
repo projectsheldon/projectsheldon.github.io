@@ -162,6 +162,10 @@ const DiscordRender = {
         if (user) {
             SetAuthUsername(user);
             SetAuthButtonText(true);
+            // Update checkout status if on checkout page
+            if (window.checkLoginStatus) {
+                window.checkLoginStatus();
+            }
         }
     }
 };

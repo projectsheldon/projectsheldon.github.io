@@ -1,4 +1,4 @@
-import { GetSessionToken, GetSessionInfo } from "../../discord/api.js";
+import DiscordApi from "../../discord/api.js"
 import { GetApiUrl, SetCookie } from "../../../global.js";
 
 export function createPayPalButtons() {
@@ -10,7 +10,7 @@ export function createPayPalButtons() {
 
             try {
                 // try to resolve the Discord user id (not the session token)
-                const authUser = await GetSessionInfo().catch(() => null);
+                const authUser = await DiscordApi.GetSessionInfo().catch(() => null);
                 const discordIdToSend = authUser && authUser.id ? authUser.id : null;
 
                 const createRes = await fetch(`${await GetApiUrl()}sheldon/paypal/create`, {
@@ -43,7 +43,7 @@ export function createPayPalButtons() {
         },
 
         onApprove: async (data, actions) => {
-            const authUser = await GetSessionInfo().catch(() => null);
+            const authUser = await DiscordApi.GetSessionInfo().catch(() => null);
             const discordIdToSend = authUser && authUser.id ? authUser.id : null;
 
             const captureRes = await fetch(`${await GetApiUrl()}sheldon/paypal/capture`, {
