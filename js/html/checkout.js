@@ -1,4 +1,5 @@
 import { GetProducts } from "../global.js";
+import { createPayPalButtons } from "../managers/checkout/payment/paypal.js";
 
 async function OnLoad() {
     const typeParam = new URLSearchParams(window.location.search).get('type') || '';
@@ -28,4 +29,13 @@ async function OnLoad() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', OnLoad);
+document.addEventListener('DOMContentLoaded', () => {
+    OnLoad();
+    
+    // Render PayPal buttons
+    const paypalContainer = document.getElementById('paypal-button-container');
+    if (paypalContainer && window.paypal) {
+        const paypalButtons = createPayPalButtons();
+        paypalButtons.render('#paypal-button-container');
+    }
+});

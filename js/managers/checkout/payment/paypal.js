@@ -1,7 +1,7 @@
 import { GetSessionToken, GetSessionInfo } from "../../discord/api.js";
 import { GetApiUrl, SetCookie } from "../../../global.js";
 
-function createPayPalButtons() {
+export function createPayPalButtons() {
     return paypal.Buttons({
         style: { layout: 'vertical', color: 'black', shape: 'pill', label: 'pay' },
 
