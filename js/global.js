@@ -2,7 +2,7 @@ export async function GetApiUrl() {
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
     if (isHttps) {
-        return 'https://5.249.161.40:3350/';
+        return 'https://projectsheldon.xyz/';
     } else {
         return 'http://localhost:3350/';
     }
