@@ -9,7 +9,6 @@ export function createPayPalButtons() {
             const type = new URLSearchParams(window.location.search).get("type") || "";
 
             try {
-                // try to resolve the Discord user id (not the session token)
                 const authUser = await DiscordApi.GetSessionInfo().catch(() => null);
                 const discordIdToSend = authUser && authUser.id ? authUser.id : null;
 
@@ -17,7 +16,7 @@ export function createPayPalButtons() {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        productId: type,
+                        productId: type.toLowerCase(),
                         discordId: discordIdToSend
                     })
                 });

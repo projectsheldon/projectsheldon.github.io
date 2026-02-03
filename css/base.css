@@ -42,3 +42,9 @@ body {
     z-index: 20;
     pointer-events: none;
 }
+
+nav {
+  width: 100%;          /* full viewport width ignoring scrollbar */
+  left: 0;
+  top: 0;
+}

@@ -5,12 +5,12 @@ let _sessionCache = {
     user: null,
     ts: 0,
     promise: null,
-    ttl: 0
+    ttl: 600000
 };
 
 const DiscordApi = {
     GetSessionToken() {
-        return GetCookie('session');
+          return localStorage.getItem('session') || GetCookie('session');
     },
     DeleteSessionToken() {
         const cookieName = "session";
@@ -36,33 +36,34 @@ const DiscordApi = {
 
         const now = Date.now();
 
-        // If cached and still fresh, return it
         if (!force && _sessionCache.token === token) {
             if (_sessionCache.user && (now - _sessionCache.ts) < _sessionCache.ttl) {
                 return _sessionCache.user;
             }
-            // If a fetch is already in progress, await it
             if (_sessionCache.promise) {
                 return await _sessionCache.promise;
             }
         }
 
-        // Start fetch and store promise so concurrent callers share it
         const fetchPromise = (async () => {
-            const res = await fetch(`${await GetApiUrl()}sheldon/discord/me?token=${token}`);
-            if (!res.ok) return null;
-            const json = await res.json();
-            _sessionCache.token = token;
-            _sessionCache.user = json;
-            _sessionCache.ts = Date.now();
-            _sessionCache.promise = null;
-            return json;
+            try {
+                const res = await fetch(`${await GetApiUrl()}sheldon/discord/me?token=${token}`);
+                if (!res.ok) return null;
+                const json = await res.json();
+                _sessionCache.token = token;
+                _sessionCache.user = json;
+                _sessionCache.ts = Date.now();
+                _sessionCache.promise = null;
+                return json;
+            } catch (err) {
+                _sessionCache.promise = null;
+                return null;
+            }
         })();
 
         _sessionCache.promise = fetchPromise;
         const result = await fetchPromise;
         if (!result) {
-            // ensure we don't keep stale user data
             _sessionCache.user = null;
             _sessionCache.ts = Date.now();
             _sessionCache.promise = null;

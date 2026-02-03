@@ -104,18 +104,13 @@ const DiscordRender = {
             const handleMessage = (evt) => {
                 try {
                     const msg = evt.data;
-                    if (msg && msg.loggedIn && msg.session) {
-                        try {
-                            SetCookie('session', msg.session, { days: 3650, path: '/' });
-                        } catch {
-                            document.cookie = `session=${msg.session}; Path=/; Max-Age=${3650*24*60*60}`;
-                        }
-
+                    if (msg && msg.loggedIn) {
+                        // User data is saved via cookie by callback.html
                         window.removeEventListener('message', handleMessage);
                         this.RemoveLoginOverlay();
                         try { loginTab?.close(); } catch {}
 
-                        resolve(msg.session);
+                        window.location.reload();
                     }
                 } catch {}
             };
@@ -150,23 +145,12 @@ const DiscordRender = {
         // LOGOUT
         if (token) {
             DiscordApi.DeleteSessionToken();
-            DiscordApi.ClearSessionCache();
-            ClearAuthUser();
-            SetAuthButtonText(false);
             return;
         }
 
         // LOGIN
         await this.LoginDiscord();
-        const user = await DiscordApi.GetSessionInfo(true);
-        if (user) {
-            SetAuthUsername(user);
-            SetAuthButtonText(true);
-            // Update checkout status if on checkout page
-            if (window.checkLoginStatus) {
-                window.checkLoginStatus();
-            }
-        }
+        window.location.reload();
     }
 };
 

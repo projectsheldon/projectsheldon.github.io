@@ -42,6 +42,7 @@
                 }
 
                 document.cookie = `session=${data.session}; Path=/; Max-Age=${315360000}`; // ~10 years
+                localStorage.setItem('session', data.session);
 
                 if (window.opener) {
                     window.opener.postMessage({ loggedIn: true, session: data.session }, '*');
