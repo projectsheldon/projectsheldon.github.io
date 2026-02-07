@@ -105,7 +105,11 @@ const DiscordRender = {
                 try {
                     const msg = evt.data;
                     if (msg && msg.loggedIn) {
-                        // User data is saved via cookie by callback.html
+                        // Persist session locally (needed when callback is on API domain)
+                        if (msg.session) {
+                            try { localStorage.setItem('session', msg.session); } catch {}
+                            try { SetCookie('session', msg.session, { maxAge: 315360000, path: '/' }); } catch {}
+                        }
                         window.removeEventListener('message', handleMessage);
                         this.RemoveLoginOverlay();
                         try { loginTab?.close(); } catch {}
