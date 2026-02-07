@@ -32,8 +32,6 @@ async function AssignLicense() {
     try {
         const sessionInfo = await DiscordApi.GetSessionInfo();
 
-        console.log('sessionInfo', sessionInfo);
-
         if (!sessionInfo?.id) {
             console.error("login discord bruh");
             return null;
