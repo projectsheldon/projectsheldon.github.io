@@ -14,6 +14,7 @@ const DiscordApi = {
     },
     DeleteSessionToken() {
         const cookieName = "session";
+        try { localStorage.removeItem('session'); } catch (e) {}
         const cookies = document.cookie.split(";");
 
         cookies.forEach(cookie => {
