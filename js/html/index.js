@@ -32,8 +32,6 @@ async function RenderProducts() {
             <p class="text-gray-400 text-sm mb-2">Duration: ${product.duration}</p>
             <p class="text-hacker-blue font-bold text-lg mb-4">${priceDisplay}</p>
             
-            <!-- FIXED: Removed sm:w-[340px]. Used w-full to fill the card container. -->
-            <!-- Added mt-auto to push button to bottom if descriptions vary in length -->
             <button class="mt-auto w-full px-6 py-2 border border-hacker-blue text-hacker-blue font-bold bg-transparent transition-all duration-300 hover:bg-hacker-blue hover:text-black hover:shadow-[0_0_15px_rgba(59,130,246,0.8)]">
                 GET
             </button>

@@ -145,15 +145,15 @@ async function CreateCryptoTicket() {
 
         const data = await res.json().catch(() => null);
         if (!res.ok) {
-            SetCryptoTicketStatus(data?.error || "Ticket request failed.", true);
+            const msg = data?.message || data?.error || "Ticket request failed.";
+            SetCryptoTicketStatus(msg, true);
             return;
         }
 
-        console.log(data);
-        
-        SetCryptoTicketStatus(data?.message || "Ticket request sent. Check Discord.", false);
+        const isValid = data?.valid === true;
+        const msg = data?.message || (isValid ? "Ticket created successfully." : "Ticket request failed.");
+        SetCryptoTicketStatus(msg, !isValid);
     } catch (error) {
-        console.error("Ticket Error:", error);
         SetCryptoTicketStatus("Connection failed.", true);
     } finally {
         if (btn) {
