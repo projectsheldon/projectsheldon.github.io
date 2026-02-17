@@ -3,6 +3,80 @@ import { createPayPalButtons } from "../managers/payment/paypal/paypal.js";
 import DiscordApi from "../managers/discord/api.js";
 import DiscordRender from "../managers/discord/render.js";
 
+let cryptoStatusClearTimer = null;
+let cryptoStatusSequence = 0;
+let paypalSdkLoadPromise = null;
+let paypalButtonsRendered = false;
+
+async function GetPaypalClientConfig() {
+    const baseUrl = await GetApiUrl();
+    const response = await fetch(`${baseUrl}sheldon/paypal/client_id`);
+    if (!response.ok) {
+        throw new Error(`PayPal config request failed (${response.status})`);
+    }
+
+    const data = await response.json().catch(() => null);
+    const clientId = data?.clientId;
+    const currency = data?.currency || "EUR";
+
+    if (!clientId || typeof clientId !== "string") {
+        throw new Error("Missing PayPal client id");
+    }
+
+    return { clientId, currency };
+}
+
+async function LoadPaypalSdk() {
+    if (window.paypal) return true;
+    if (paypalSdkLoadPromise) return paypalSdkLoadPromise;
+
+    paypalSdkLoadPromise = (async () => {
+        const { clientId, currency } = await GetPaypalClientConfig();
+
+        await new Promise((resolve, reject) => {
+            const existingScript = document.getElementById("paypal-sdk-script");
+            if (existingScript) {
+                existingScript.addEventListener("load", () => resolve(), { once: true });
+                existingScript.addEventListener("error", () => reject(new Error("PayPal SDK failed to load")), { once: true });
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.id = "paypal-sdk-script";
+            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency)}`;
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("PayPal SDK failed to load"));
+            document.head.appendChild(script);
+        });
+
+        return true;
+    })();
+
+    try {
+        return await paypalSdkLoadPromise;
+    } catch (error) {
+        paypalSdkLoadPromise = null;
+        console.error(error);
+        return false;
+    }
+}
+
+async function InitPaypalButtons() {
+    const paypalContainer = document.getElementById('paypal-button-container');
+    if (!paypalContainer || paypalContainer.style.display === 'none' || paypalButtonsRendered) return;
+
+    const sdkLoaded = await LoadPaypalSdk();
+    if (!sdkLoaded || !window.paypal) {
+        paypalContainer.innerHTML = '<p class="text-sm text-red-400">PayPal is currently unavailable.</p>';
+        return;
+    }
+
+    const paypalButtons = createPayPalButtons();
+    await paypalButtons.render('#paypal-button-container');
+    paypalButtonsRendered = true;
+}
+
 async function CheckDiscordLoginStatus() {
     const authUser = await DiscordApi.GetSessionInfo().catch(() => null);
     const loginOverlay = document.getElementById('login-overlay');
@@ -17,6 +91,7 @@ async function CheckDiscordLoginStatus() {
     else {
         if (loginOverlay) loginOverlay.classList.add('hidden');
         if (paypalContainer) paypalContainer.style.display = 'block';
+        await InitPaypalButtons();
 
         return true;
     }
@@ -28,85 +103,43 @@ function GetProductFromUrl() {
     return type;
 }
 
-window.copyWalletAddress = function() {
-    const input = document.getElementById('crypto-wallet-address');
-    const btn = document.getElementById('copy-btn');
-    
-    if (!input || !input.value) return;
-
-    input.select();
-    input.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(input.value);
-
-    if (btn) {
-        const originalText = btn.innerText;
-        btn.innerText = "COPIED!";
-        btn.classList.add("bg-hacker-blue", "text-black", "border-hacker-blue");
-        
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.classList.remove("bg-hacker-blue", "text-black", "border-hacker-blue");
-        }, 2000);
-    }
-}
-
-async function UpdateCryptoTab() {
-    const discordId = await DiscordApi.GetSessionInfo().then(info => info?.id).catch(() => null);
-    const productId = GetProductFromUrl();
-    
-    if (!discordId || !productId || productId === "free") return;
-
-    const qrPlaceholder = document.getElementById('qr-placeholder');
-    const qrWrapper = document.getElementById('crypto-qr-wrapper');
-    const walletInput = document.getElementById('crypto-wallet-address');
-    const qrEl = document.getElementById('crypto-qr');
-
-    if (qrPlaceholder) qrPlaceholder.classList.remove('hidden');
-    if (qrWrapper) qrWrapper.classList.add('hidden');
-    if (walletInput) walletInput.value = "Generating address...";
-
-    const baseUrl = await GetApiUrl();
-    const payload = { productId, discordId };
-
-    try {
-        const res = await fetch(`${baseUrl}sheldon/crypto/seller_wallet`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        const info = await res.json();
-
-        if (walletInput) walletInput.value = info?.wallet || "Error retrieving wallet";
-
-        if (info?.wallet && qrEl) {
-            qrEl.innerHTML = ""; 
-            
-            new QRCode(qrEl, {
-                text: info.wallet,
-                width: 110,  
-                height: 110,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
-
-            if (qrPlaceholder) qrPlaceholder.classList.add('hidden');
-            if (qrWrapper) qrWrapper.classList.remove('hidden');
-        }
-        
-    } catch (error) {
-        console.error("Crypto Error:", error);
-        if (walletInput) walletInput.value = "Connection Failed";
-    }
-}
-
 function SetCryptoTicketStatus(message, isError = false) {
     const statusEl = document.getElementById('crypto-ticket-status');
     if (!statusEl) return;
-    statusEl.textContent = message;
-    statusEl.classList.remove('text-gray-500');
-    statusEl.classList.toggle('text-red-400', isError);
-    statusEl.classList.toggle('text-hacker-blue', !isError);
+
+    cryptoStatusSequence += 1;
+    const sequence = cryptoStatusSequence;
+
+    if (cryptoStatusClearTimer) {
+        clearTimeout(cryptoStatusClearTimer);
+        cryptoStatusClearTimer = null;
+    }
+
+    statusEl.style.transition = "opacity 250ms ease";
+    statusEl.style.opacity = "0";
+
+    setTimeout(() => {
+        if (sequence !== cryptoStatusSequence) return;
+
+        statusEl.textContent = message;
+        statusEl.classList.remove('text-gray-500', 'text-red-400', 'text-hacker-blue');
+        statusEl.classList.add(isError ? 'text-red-400' : 'text-hacker-blue');
+        statusEl.style.opacity = "1";
+    }, 60);
+
+    cryptoStatusClearTimer = setTimeout(() => {
+        if (sequence !== cryptoStatusSequence) return;
+
+        statusEl.style.opacity = "0";
+
+        setTimeout(() => {
+            if (sequence !== cryptoStatusSequence) return;
+
+            statusEl.textContent = "";
+            statusEl.classList.remove('text-red-400', 'text-hacker-blue');
+            statusEl.classList.add('text-gray-500');
+        }, 260);
+    }, 10000);
 }
 
 async function CreateCryptoTicket() {
@@ -151,8 +184,12 @@ async function CreateCryptoTicket() {
         }
 
         const isValid = data?.valid === true;
-        const msg = data?.message || (isValid ? "Ticket created successfully." : "Ticket request failed.");
-        SetCryptoTicketStatus(msg, !isValid);
+        if (isValid) {
+            SetCryptoTicketStatus("Ticket created. Check the Discord server for your ticket.");
+        } else {
+            const msg = data?.message || "Ticket request failed.";
+            SetCryptoTicketStatus(msg, true);
+        }
     } catch (error) {
         SetCryptoTicketStatus("Connection failed.", true);
     } finally {
@@ -172,7 +209,7 @@ async function OnLoad() {
 
     if (type === "free") {
         if (loginStatus)
-            window.location.href = 'https://work.ink/236z/sheldon';
+            window.location.href = 'https://work.ink/2jEb/sheldon-free-license';
     } else {
         const priceElement = document.querySelector('.total-price');
         const nameElement = document.getElementById('product-name');
@@ -190,9 +227,6 @@ async function OnLoad() {
         if (priceElement) priceElement.textContent = priceDisplay;
         if (nameElement) nameElement.textContent = product.name;
 
-        if (loginStatus) {
-            await UpdateCryptoTab();
-        }
     }
 }
 
@@ -204,14 +238,7 @@ window.checkLoginStatus = CheckDiscordLoginStatus;
 window.CryptoTestRequest = CryptoTestRequest;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Paypal Buttons
     {
-        const paypalContainer = document.getElementById('paypal-button-container');
-        if (paypalContainer && window.paypal && paypalContainer.style.display !== 'none') {
-            const paypalButtons = createPayPalButtons();
-            paypalButtons.render('#paypal-button-container');
-        }
-
         const overlayLoginBtn = document.getElementById('overlay-login-btn');
         if (overlayLoginBtn) {
             overlayLoginBtn.addEventListener('click', () => {

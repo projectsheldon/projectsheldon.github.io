@@ -9,9 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 
-    <script
-        src="https://www.paypal.com/sdk/js?client-id=Ac4pEXZjrMyP7l5K8FVEgipGAflzIO2__tficxrHykX0FCScVAGstxzBxyiThzMuSs-fD6dI_a4JNFmo&currency=EUR"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="icon" type="image/png" href="../favicon/favicon.ico">
 
     <link href="../css/checkout.css" rel="stylesheet">
@@ -162,59 +159,38 @@
             <div class="space-y-6">
                 <div class="tab-content block" data-content="paypal">
                     <div class="bg-black/40 border border-gray-800 rounded p-6">
-                        <!-- <div id="paypal-button-container"></div> -->
-                         <h1>because of technical issues with paypal, i cant support paypal as i am restricted.</h1>
+                        <div id="paypal-button-container"></div>
+                         <!-- <h1>because of technical issues with paypal, i cant support paypal as i am restricted.</h1> -->
                     </div>
                 </div>
 
                 <div class="tab-content hidden" data-content="crypto">
                     <div class="bg-black/40 border border-gray-800 rounded p-6">
-                        <div class="flex flex-col md:flex-row gap-6 items-start">
-
-                            <div class="shrink-0 mx-auto md:mx-0">
-                                <div id="crypto-qr-wrapper" class="hidden flex flex-col items-center gap-2">
-                                    <div class="bg-white p-2 rounded shadow-[0_0_20px_rgba(59,130,246,0.25)]">
-                                        <div id="crypto-qr"></div>
-                                    </div>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3 p-4 rounded border border-gray-800 bg-black/30">
+                                <div
+                                    class="w-10 h-10 bg-hacker-blue-dim border border-hacker-blue/30 rounded flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-hacker-blue" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12h6m-6 4h6M7 8h10M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
+                                    </svg>
                                 </div>
-
-                                <div id="qr-placeholder"
-                                    class="w-[200px] h-[200px] bg-gray-900/50 border border-gray-800 rounded flex items-center justify-center text-gray-600 text-xs text-center animate-pulse">
-                                    <span class="px-4">Loading...</span>
-                                </div>
-                            </div>
-
-                            <div class="flex-1 w-full space-y-4">
-                                <div>
-                                    <label
-                                        class="block text-xs uppercase tracking-widest text-hacker-blue mb-2 font-bold">
-                                        My Crypto Wallet
-                                    </label>
-
-                                    <div class="relative group">
-                                        <input id="crypto-wallet-address" type="text" readonly
-                                            class="w-full bg-black/60 border border-gray-700 text-gray-300 text-sm font-mono rounded px-4 py-3 pr-24 focus:outline-none focus:border-hacker-blue focus:ring-1 focus:ring-hacker-blue/50 transition-all"
-                                            placeholder="Initializing..." />
-
-                                        <button id="copy-btn" onclick="copyWalletAddress()"
-                                            class="absolute right-1 top-1 bottom-1 px-3 bg-gray-800 hover:bg-hacker-blue text-gray-300 hover:text-black text-[10px] font-bold rounded transition-colors uppercase tracking-wider border border-gray-700 hover:border-hacker-blue z-10 flex items-center justify-center">
-                                            COPY
-                                        </button>
-                                    </div>
-
-                                    <div class="flex items-center gap-3 mt-4">
-                                        <button id="crypto-ticket-btn"
-                                            class="px-4 py-2 border border-hacker-blue text-hacker-blue text-[11px] font-bold tracking-wider hover:bg-hacker-blue hover:text-black transition-all duration-300 uppercase">
-                                            Create Ticket
-                                        </button>
-                                        <p class="text-[11px] text-red-400 font-bold uppercase tracking-wide">
-                                            Don't send crypto without making a ticket
-                                        </p>
-                                        <div id="crypto-ticket-status" class="text-xs text-gray-500 font-mono"></div>
-                                    </div>
+                                <div class="space-y-1">
+                                    <h3 class="text-white text-sm font-bold tracking-wider uppercase">Create Discord Ticket</h3>
+                                    <p class="text-xs text-gray-500 leading-relaxed">
+                                        Open a ticket to buy with crypto, I manually review the tickets.
+                                    </p>
                                 </div>
                             </div>
 
+                            <button id="crypto-ticket-btn"
+                                class="w-full px-4 py-2.5 border border-hacker-blue text-hacker-blue text-xs font-bold tracking-wider hover:bg-hacker-blue hover:text-black transition-all duration-300 uppercase shadow-[0_0_10px_rgba(59,130,246,0.18)] hover:shadow-[0_0_16px_rgba(59,130,246,0.4)]">
+                                Create Ticket
+                            </button>
+
+                            <div id="crypto-ticket-status"
+                                class="text-xs text-gray-500 font-mono break-words min-h-[20px]"></div>
                         </div>
                     </div>
                 </div>

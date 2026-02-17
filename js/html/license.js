@@ -3,51 +3,43 @@ import DiscordApi from "../managers/discord/api.js";
 
 let apiKey;
 
-async function GenerateBackendKey() {
-    const sessionInfo = await DiscordApi.GetSessionInfo();
+function IsLikelyWorkInkToken(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || "").trim());
+}
 
-    if (!sessionInfo?.id) {
-        return null;
-    }
-    if (!apiKey) {
-        return null;
-    }
+async function GenerateBackendKey(discordId) {
+    if (!discordId || !apiKey) return null;
 
     try {
-        const url = `${await GetApiUrl()}sheldon/license/create?apiKey=${encodeURIComponent(apiKey)}`;
-        const response = await fetch(url, {
-            body: JSON.stringify({
-                discordId: sessionInfo.id
-            })
-        });
-        const text = await response.text();
-        const data = JSON.parse(text);
-        return data.key ?? null;
+        const baseUrl = await GetApiUrl();
+        const url = `${baseUrl}sheldon/license/create?apiKey=${encodeURIComponent(apiKey)}&discordId=${encodeURIComponent(discordId)}`;
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) return null;
+
+        const data = await response.json().catch(() => null);
+        return data?.key ?? null;
     } catch (err) {
         return null;
     }
 }
 
-async function AssignLicense() {
+async function AssignLicense(licenseKey, discordId) {
+    if (!licenseKey || !discordId) return null;
+
     try {
-        const sessionInfo = await DiscordApi.GetSessionInfo();
-
-        if (!sessionInfo?.id) {
-            console.error("login discord bruh");
-            return null;
-        }
-
         const response = await fetch(`${await GetApiUrl()}sheldon/license/assign`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                apiKey,
-                discordId: sessionInfo.id
+                apiKey: licenseKey,
+                discordId
             })
         });
 
-        const text = await response.text();
-        const data = JSON.parse(text);
-        return data;
+        const data = await response.json().catch(() => null);
+        return { ok: response.ok, data };
     } catch (err) {
+        return null;
     }
 }
 
@@ -55,12 +47,30 @@ async function InitLicensePage() {
     apiKey = new URLSearchParams(window.location.search).get('key');
 
     const keyTextEl = document.getElementById("key-text");
+    if (!keyTextEl) return;
 
-    const backendKey = await GenerateBackendKey();
+    if (!apiKey) {
+        keyTextEl.textContent = "Missing key";
+        return;
+    }
+
+    const sessionInfo = await DiscordApi.GetSessionInfo().catch(() => null);
+    if (!sessionInfo?.id) {
+        keyTextEl.textContent = "Login required";
+        return;
+    }
+
+    const backendKey = await GenerateBackendKey(sessionInfo.id);
     const finalKey = backendKey || apiKey;
 
-    keyTextEl.textContent = apiKey;
-    await AssignLicense(finalKey);
+    if (!backendKey && IsLikelyWorkInkToken(apiKey)) {
+        keyTextEl.textContent = "Token is invalidated";
+        return;
+    }
+
+    keyTextEl.textContent = finalKey;
+
+    await AssignLicense(finalKey, sessionInfo.id);
 }
 
 document.addEventListener("DOMContentLoaded", InitLicensePage);
