@@ -5,6 +5,8 @@ export function createPayPalButtons() {
     return paypal.Buttons({
         style: { layout: 'vertical', color: 'black', shape: 'pill', label: 'pay' },
 
+        // fundingSource: paypal.FUNDING.CARD,
+
         createOrder: async () => {
             const type = new URLSearchParams(window.location.search).get("type") || "";
 
@@ -17,7 +19,7 @@ export function createPayPalButtons() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         productId: type.toLowerCase(),
-                        discordId: discordIdToSend
+                        discordId: discordIdToSend,
                     })
                 });
 
