@@ -1,17 +1,13 @@
 {
-  // Project name
-  "name": "sheldon",
-
-  // Cloudflare Workers compatibility date
+  "name": "sheldon",  // Project name
   "compatibility_date": "2026-02-19",
 
-  // Build settings
   "build": {
-    "command": "" // Leave empty if no build step
+    "command": ""     // No build step needed
   },
 
-  // Dev settings
-  "dev": {
-    "local_protocol": "http"
+  "site": {
+    "bucket": "./",    // Serve all files from project root
+    "entry-point": "." // Root folder
   }
 }
