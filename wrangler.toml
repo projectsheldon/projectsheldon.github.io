@@ -2,6 +2,7 @@ name = "sheldon"
 compatibility_date = "2026-02-19"
 
 [build]
-command = ""       # Leave empty if no build command
-[dev]
-local_protocol = "http"
+command = ""       # No build command needed
+[site]
+bucket = "./"      # Serve files directly from project root
+entry-point = "."  # Root folder
