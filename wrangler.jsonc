@@ -1,0 +1,17 @@
+{
+  // Project name
+  "name": "sheldon",
+
+  // Cloudflare Workers compatibility date
+  "compatibility_date": "2026-02-19",
+
+  // Build settings
+  "build": {
+    "command": "" // Leave empty if no build step
+  },
+
+  // Dev settings
+  "dev": {
+    "local_protocol": "http"
+  }
+}
