@@ -4,7 +4,8 @@
   "build": {
     "command": ""
   },
-  "dev": {
-    "local_protocol": "http"
+  "site": {
+    "bucket": "./",
+    "entry-point": "."
   }
 }
