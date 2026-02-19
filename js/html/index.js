@@ -1,5 +1,7 @@
 import { GetProducts } from '../global.js';
 
+const MANIFEST_URL = 'https://raw.githubusercontent.com/projectsheldon/sheldon-binaries/refs/heads/main/manifest.json';
+
 async function RenderProducts() {
     const container = document.getElementById('pricing-grid');
     if (!container) return;
@@ -46,4 +48,46 @@ async function RenderProducts() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', RenderProducts);
+async function HandleDownload() {
+    const downloadButton = document.getElementById('download-btn');
+    if (!downloadButton) return;
+
+    const originalText = downloadButton.textContent;
+    downloadButton.disabled = true;
+    downloadButton.textContent = 'LOADING...';
+
+    try {
+        const response = await fetch(MANIFEST_URL, { cache: 'no-store' });
+
+        if (!response.ok) {
+            throw new Error(`Manifest request failed with status ${response.status}`);
+        }
+
+        const manifest = await response.json();
+        const downloadUrl = manifest?.download_url;
+
+        if (typeof downloadUrl !== 'string' || downloadUrl.length === 0) {
+            throw new Error('Manifest is missing a valid download_url');
+        }
+
+        window.location.assign(downloadUrl);
+    } catch (err) {
+        console.error('Failed to download latest binary:', err);
+        alert('Failed to get the latest download. Please try again.');
+    } finally {
+        downloadButton.disabled = false;
+        downloadButton.textContent = originalText;
+    }
+}
+
+function SetupDownloadButton() {
+    const downloadButton = document.getElementById('download-btn');
+    if (!downloadButton) return;
+
+    downloadButton.addEventListener('click', HandleDownload);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    RenderProducts();
+    SetupDownloadButton();
+});
