@@ -1,0 +1,8 @@
+name = "sheldon"
+compatibility_date = "2026-02-19"
+
+[build]
+command = ""       # No build command needed
+[site]
+bucket = "./"      # Serve files directly from project root
+entry-point = "."  # Root folder
