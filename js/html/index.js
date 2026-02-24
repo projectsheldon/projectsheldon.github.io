@@ -64,7 +64,7 @@ async function HandleDownload() {
         }
 
         const manifest = await response.json();
-        const downloadUrl = manifest?.download_url;
+        const downloadUrl = manifest?.loader_url;
 
         if (typeof downloadUrl !== 'string' || downloadUrl.length === 0) {
             throw new Error('Manifest is missing a valid download_url');
