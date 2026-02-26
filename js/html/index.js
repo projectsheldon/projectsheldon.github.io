@@ -64,13 +64,13 @@ async function HandleDownload() {
         }
 
         const manifest = await response.json();
-        const downloadUrl = manifest?.loader_url;
+        const loaderUrl = manifest?.loader_url;
 
-        if (typeof downloadUrl !== 'string' || downloadUrl.length === 0) {
+        if (typeof loaderUrl !== 'string' || loaderUrl.length === 0) {
             throw new Error('Manifest is missing a valid download_url');
         }
 
-        window.location.assign(downloadUrl);
+        window.location.assign(loaderUrl);
     } catch (err) {
         console.error('Failed to download latest binary:', err);
         alert('Failed to get the latest download. Please try again.');
