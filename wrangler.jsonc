@@ -1,10 +1,13 @@
 {
   "name": "sheldon",  // Project name
-  "main": "worker.js",
   "compatibility_date": "2026-02-19",
 
-  "assets": {
-    "directory": "./",
-    "binding": "ASSETS"
+  "build": {
+    "command": ""     // No build step needed
+  },
+
+  "site": {
+    "bucket": "./",    // Serve all files from project root
+    "entry-point": "." // Root folder
   }
 }

@@ -1,6 +1,6 @@
 // render.js
 import DiscordApi from "./api.js";
-import { GetApiUrl, discord_client_id } from "../../global.js";
+import { GetApiUrl, discord_client_id, SetCookie } from "../../global.js";
 
 /**
  * Update auth button text
@@ -83,9 +83,7 @@ const DiscordRender = {
             color: white;
             font-size: 1.2rem;
         `;
-        const text = document.createElement("div");
-        text.textContent = "Logging in with Discord... Please wait";
-        overlay.appendChild(text);
+        overlay.innerHTML = `<div>Logging in with Discord... Please wait</div>`;
         document.body.appendChild(overlay);
     },
 
@@ -97,29 +95,25 @@ const DiscordRender = {
     async LoginDiscord() {
         this.ShowLoginOverlay();
 
-        const apiUrl = await GetApiUrl();
-        const redirectUri = encodeURIComponent(`${apiUrl}sheldon/discord/callback`);
+        const redirectUri = encodeURIComponent(`${await GetApiUrl()}sheldon/discord/callback`);
         const discordUrl = `https://discord.com/oauth2/authorize?client_id=${discord_client_id}&response_type=code&redirect_uri=${redirectUri}&scope=identify`;
 
         const loginTab = window.open(discordUrl, "_blank");
-        const allowedOrigins = new Set([window.location.origin]);
-        try {
-            allowedOrigins.add(new URL(apiUrl).origin);
-        } catch { }
 
-        const loginPromise = new Promise((resolve) => {
+        const loginPromise = new Promise((resolve, reject) => {
             const handleMessage = (evt) => {
                 try {
-                    if (!allowedOrigins.has(evt.origin)) return;
-                    if (loginTab && evt.source !== loginTab) return;
-
                     const msg = evt.data;
-                    if (msg && msg.loggedIn === true) {
+                    if (msg && msg.loggedIn) {
+                        // Persist session locally (needed when callback is on API domain)
+                        if (msg.session) {
+                            try { localStorage.setItem('session', msg.session); } catch {}
+                            try { SetCookie('session', msg.session, { maxAge: 315360000, path: '/' }); } catch {}
+                        }
                         window.removeEventListener('message', handleMessage);
                         this.RemoveLoginOverlay();
                         try { loginTab?.close(); } catch {}
 
-                        resolve(true);
                         window.location.reload();
                     }
                 } catch {}
@@ -132,7 +126,6 @@ const DiscordRender = {
                     clearInterval(fallbackInterval);
                     window.removeEventListener('message', handleMessage);
                     this.RemoveLoginOverlay();
-                    resolve(false);
                 }
             }, 500);
         });
@@ -151,32 +144,35 @@ const DiscordRender = {
      * Handles login/logout button click
      */
     async LoginLogic() {
-        const user = await DiscordApi.GetSessionInfo().catch(() => null);
+        const token = DiscordApi.GetSessionToken();
 
         // LOGOUT
-        if (user && user.id) {
-            await DiscordApi.DeleteSessionToken();
+        if (token) {
+            DiscordApi.DeleteSessionToken();
             return;
         }
 
         // LOGIN
         await this.LoginDiscord();
+        window.location.reload();
     }
 };
 
 export default DiscordRender;
+window.DiscordRender = DiscordRender;
 
 // Auto-run on page load
 (async () => {
-    let user = null;
+    const token = DiscordApi.GetSessionToken();
+    if (!token) return ClearAuthUser();
+
     try {
-        user = await DiscordApi.GetSessionInfo();
+        const user = await DiscordApi.GetSessionInfo();
+        if (user) SetAuthUsername(user);
+        else ClearAuthUser();
     } catch {
-        user = null;
+        ClearAuthUser();
     }
 
-    if (user) SetAuthUsername(user);
-    else ClearAuthUser();
-
-    SetAuthButtonText(!!user);
+    SetAuthButtonText(!!token);
 })();

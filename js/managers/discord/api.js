@@ -1,4 +1,4 @@
-import { GetApiUrl, GetCookie } from "../../global.js";
+import { GetApiUrl, discord_client_id, GetCookie, TaskWait, SetCookie } from "../../global.js";
 
 let _sessionCache = {
     token: null,
@@ -10,39 +10,34 @@ let _sessionCache = {
 
 const DiscordApi = {
     GetSessionToken() {
-        return GetCookie('session');
+          return localStorage.getItem('session') || GetCookie('session');
     },
-    async DeleteSessionToken() {
-        const token = this.GetSessionToken();
-        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-
-        try {
-            await fetch(`${await GetApiUrl()}sheldon/discord/logout`, {
-                method: "POST",
-                headers,
-                credentials: "include"
-            });
-        } catch (e) { }
-
-        // Cleanup legacy client-accessible cookie variants.
+    DeleteSessionToken() {
         const cookieName = "session";
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+        try { localStorage.removeItem('session'); } catch (e) {}
+        const cookies = document.cookie.split(";");
 
-        this.ClearSessionCache();
+        cookies.forEach(cookie => {
+            const [name] = cookie.split("=");
+            if (name.trim() === cookieName) {
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+            }
+        });
+        try { ClearSessionCache(); } catch (e) { }
         window.location.reload();
     },
     ClearSessionCache() {
-        _sessionCache = { token: null, user: null, ts: 0, promise: null, ttl: 600000 };
+        _sessionCache = { token: null, user: null, ts: 0, promise: null, ttl: 0 };
     },
 
     async GetSessionInfo(force = false) {
         const token = this.GetSessionToken();
-        const cacheToken = token || "__cookie__";
+        if (!token) return null;
 
         const now = Date.now();
 
-        if (!force && _sessionCache.token === cacheToken) {
+        if (!force && _sessionCache.token === token) {
             if (_sessionCache.user && (now - _sessionCache.ts) < _sessionCache.ttl) {
                 return _sessionCache.user;
             }
@@ -53,17 +48,10 @@ const DiscordApi = {
 
         const fetchPromise = (async () => {
             try {
-                const headers = {};
-                if (token) headers.Authorization = `Bearer ${token}`;
-
-                const res = await fetch(`${await GetApiUrl()}sheldon/discord/me`, {
-                    method: "GET",
-                    headers,
-                    credentials: "include"
-                });
+                const res = await fetch(`${await GetApiUrl()}sheldon/discord/me?token=${token}`);
                 if (!res.ok) return null;
                 const json = await res.json();
-                _sessionCache.token = cacheToken;
+                _sessionCache.token = token;
                 _sessionCache.user = json;
                 _sessionCache.ts = Date.now();
                 _sessionCache.promise = null;
@@ -77,7 +65,6 @@ const DiscordApi = {
         _sessionCache.promise = fetchPromise;
         const result = await fetchPromise;
         if (!result) {
-            _sessionCache.token = cacheToken;
             _sessionCache.user = null;
             _sessionCache.ts = Date.now();
             _sessionCache.promise = null;
@@ -86,3 +73,4 @@ const DiscordApi = {
     }
 }
 export default DiscordApi;
+window.DiscordApi = DiscordApi;

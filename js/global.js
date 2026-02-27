@@ -26,8 +26,7 @@ export function GetCookie(name) {
 }
 
 export function SetCookie(name, value, options = {}) {
-    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-    const { days, maxAge, path = '/', domain, secure = isHttps, sameSite = "Lax" } = options;
+    const { days, maxAge, path = '/', domain, secure = false, sameSite } = options;
     let cookie = `${name}=${encodeURIComponent(String(value))}; Path=${path};`;
     if (typeof maxAge === 'number') {
         cookie += ` Max-Age=${Math.floor(maxAge)};`;
@@ -45,8 +44,6 @@ export function TaskWait(ms) {
 }
 
 export const discord_client_id = "1429915624653459657";
-export const paypal_client_id = "AVrmU1ZomUtdo48O0oUmt8tU0tU1wxjYjYc0g6RxZZJnF9LWS6haPVap6RQiZB7vf2SHjf-TBqa4acPp";
-export const paypal_currency = "EUR";
 
 (async () => {
     try {

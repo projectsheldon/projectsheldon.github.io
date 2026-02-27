@@ -9,19 +9,13 @@ async function RenderProducts() {
     const products = await GetProducts();
     
     if (!products) {
-        container.textContent = '';
-        const errorText = document.createElement('p');
-        errorText.className = 'text-gray-500 col-span-3 text-center';
-        errorText.textContent = 'Failed to load products.';
-        container.appendChild(errorText);
+        container.innerHTML = `<p class="text-gray-500 col-span-3 text-center">Failed to load products.</p>`;
         return;
     }
 
-    container.textContent = '';
+    container.innerHTML = '';
 
     Object.values(products).forEach(product => {
-        const productName = typeof product?.name === 'string' ? product.name : 'Unknown';
-        const productDuration = typeof product?.duration === 'string' ? product.duration : '-';
         let priceDisplay;
 
         if (typeof product.price === 'string') {
@@ -34,30 +28,20 @@ async function RenderProducts() {
 
         const productCard = document.createElement('div');
         productCard.className = 'bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group flex flex-col';
+        
+        productCard.innerHTML = `
+            <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">${product.name}</h3>
+            <p class="text-gray-400 text-sm mb-2">Duration: ${product.duration}</p>
+            <p class="text-hacker-blue font-bold text-lg mb-4">${priceDisplay}</p>
+            
+            <button class="mt-auto w-full px-6 py-2 border border-hacker-blue text-hacker-blue font-bold bg-transparent transition-all duration-300 hover:bg-hacker-blue hover:text-black hover:shadow-[0_0_15px_rgba(59,130,246,0.8)]">
+                GET
+            </button>
+        `;
 
-        const title = document.createElement('h3');
-        title.className = 'text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors';
-        title.textContent = productName;
-
-        const duration = document.createElement('p');
-        duration.className = 'text-gray-400 text-sm mb-2';
-        duration.textContent = `Duration: ${productDuration}`;
-
-        const price = document.createElement('p');
-        price.className = 'text-hacker-blue font-bold text-lg mb-4';
-        price.textContent = priceDisplay;
-
-        const button = document.createElement('button');
-        button.className = 'mt-auto w-full px-6 py-2 border border-hacker-blue text-hacker-blue font-bold bg-transparent transition-all duration-300 hover:bg-hacker-blue hover:text-black hover:shadow-[0_0_15px_rgba(59,130,246,0.8)]';
-        button.textContent = 'GET';
-
-        productCard.appendChild(title);
-        productCard.appendChild(duration);
-        productCard.appendChild(price);
-        productCard.appendChild(button);
-
+        const button = productCard.querySelector('button');
         button.addEventListener('click', () => {
-            window.location.href = `/checkout?type=${encodeURIComponent(productName)}`;
+            window.location.href = `/checkout?type=${encodeURIComponent(product.name)}`;
         });
 
         container.appendChild(productCard);
