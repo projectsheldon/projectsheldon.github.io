@@ -12,8 +12,14 @@ async function GenerateBackendKey(discordId) {
 
     try {
         const baseUrl = await GetApiUrl();
-        const url = `${baseUrl}sheldon/license/create?apiKey=${encodeURIComponent(apiKey)}&discordId=${encodeURIComponent(discordId)}`;
-        const response = await fetch(url, { method: "GET" });
+        const response = await fetch(`${baseUrl}sheldon/license/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                apiKey,
+                discordId
+            })
+        });
         if (!response.ok) return null;
 
         const data = await response.json().catch(() => null);

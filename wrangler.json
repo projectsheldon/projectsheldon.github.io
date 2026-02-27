@@ -1,11 +1,9 @@
 {
   "name": "sheldon",
+  "main": "worker.js",
   "compatibility_date": "2026-02-19",
-  "build": {
-    "command": ""
-  },
-  "site": {
-    "bucket": "./",
-    "entry-point": "."
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
   }
 }

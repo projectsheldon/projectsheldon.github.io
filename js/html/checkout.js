@@ -1,4 +1,4 @@
-import { GetApiUrl, GetProducts } from "../global.js";
+import { GetApiUrl, GetProducts, paypal_client_id, paypal_currency } from "../global.js";
 import { createPayPalButtons } from "../managers/payment/paypal/paypal.js";
 import DiscordApi from "../managers/discord/api.js";
 import DiscordRender from "../managers/discord/render.js";
@@ -9,15 +9,8 @@ let paypalSdkLoadPromise = null;
 let paypalButtonsRendered = false;
 
 async function GetPaypalClientConfig() {
-    const baseUrl = await GetApiUrl();
-    const response = await fetch(`${baseUrl}sheldon/paypal/client_id`);
-    if (!response.ok) {
-        throw new Error(`PayPal config request failed (${response.status})`);
-    }
-
-    const data = await response.json().catch(() => null);
-    const clientId = data?.clientId;
-    const currency = data?.currency || "EUR";
+    const clientId = paypal_client_id;
+    const currency = paypal_currency || "EUR";
 
     if (!clientId || typeof clientId !== "string") {
         throw new Error("Missing PayPal client id");
