@@ -31,21 +31,19 @@
                 const res = await fetch(`${apiBase}sheldon/discord/exchange`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ code, redirect: window.location.href })
                 });
 
                 const data = await res.json();
-                if (!res.ok || !data.session) {
+                if (!res.ok || (!data?.success && !data?.loggedIn)) {
                     document.getElementById('message').textContent = 'Login failed';
                     console.error('exchange failed', res.status, data);
                     return;
                 }
 
-                document.cookie = `session=${data.session}; Path=/; Max-Age=${315360000}`; // ~10 years
-                localStorage.setItem('session', data.session);
-
                 if (window.opener) {
-                    window.opener.postMessage({ loggedIn: true, session: data.session }, '*');
+                    window.opener.postMessage({ loggedIn: true, session: data?.session || null }, window.location.origin);
                 }
 
                 document.getElementById('message').textContent = 'Logged in! Closing...';

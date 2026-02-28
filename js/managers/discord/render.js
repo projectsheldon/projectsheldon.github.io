@@ -1,6 +1,6 @@
 // render.js
 import DiscordApi from "./api.js";
-import { GetApiUrl, discord_client_id, SetCookie } from "../../global.js";
+import { GetApiUrl, discord_client_id } from "../../global.js";
 
 /**
  * Update auth button text
@@ -83,7 +83,9 @@ const DiscordRender = {
             color: white;
             font-size: 1.2rem;
         `;
-        overlay.innerHTML = `<div>Logging in with Discord... Please wait</div>`;
+        const text = document.createElement("div");
+        text.textContent = "Logging in with Discord... Please wait";
+        overlay.appendChild(text);
         document.body.appendChild(overlay);
     },
 
@@ -95,25 +97,27 @@ const DiscordRender = {
     async LoginDiscord() {
         this.ShowLoginOverlay();
 
-        const redirectUri = encodeURIComponent(`${await GetApiUrl()}sheldon/discord/callback`);
+        const apiBase = await GetApiUrl();
+        const redirectUri = encodeURIComponent(`${apiBase}sheldon/discord/callback`);
+        const apiOrigin = new URL(apiBase).origin;
         const discordUrl = `https://discord.com/oauth2/authorize?client_id=${discord_client_id}&response_type=code&redirect_uri=${redirectUri}&scope=identify`;
 
         const loginTab = window.open(discordUrl, "_blank");
 
-        const loginPromise = new Promise((resolve, reject) => {
+        const loginPromise = new Promise((resolve) => {
             const handleMessage = (evt) => {
                 try {
                     const msg = evt.data;
+                    if (evt.origin !== apiOrigin) return;
                     if (msg && msg.loggedIn) {
-                        // Persist session locally (needed when callback is on API domain)
-                        if (msg.session) {
-                            try { localStorage.setItem('session', msg.session); } catch {}
-                            try { SetCookie('session', msg.session, { maxAge: 315360000, path: '/' }); } catch {}
+                        if (typeof msg.session === "string" && msg.session.length > 0) {
+                            try { sessionStorage.setItem("session", msg.session); } catch (err) { }
                         }
                         window.removeEventListener('message', handleMessage);
                         this.RemoveLoginOverlay();
                         try { loginTab?.close(); } catch {}
 
+                        resolve(true);
                         window.location.reload();
                     }
                 } catch {}
@@ -126,6 +130,15 @@ const DiscordRender = {
                     clearInterval(fallbackInterval);
                     window.removeEventListener('message', handleMessage);
                     this.RemoveLoginOverlay();
+                    (async () => {
+                        const user = await DiscordApi.GetSessionInfo(true).catch(() => null);
+                        if (user?.id) {
+                            resolve(true);
+                            window.location.reload();
+                            return;
+                        }
+                        resolve(false);
+                    })();
                 }
             }, 500);
         });
@@ -144,35 +157,35 @@ const DiscordRender = {
      * Handles login/logout button click
      */
     async LoginLogic() {
-        const token = DiscordApi.GetSessionToken();
+        const user = await DiscordApi.GetSessionInfo().catch(() => null);
 
         // LOGOUT
-        if (token) {
-            DiscordApi.DeleteSessionToken();
+        if (user?.id) {
+            await DiscordApi.DeleteSessionToken();
             return;
         }
 
         // LOGIN
         await this.LoginDiscord();
-        window.location.reload();
     }
 };
 
 export default DiscordRender;
-window.DiscordRender = DiscordRender;
 
 // Auto-run on page load
 (async () => {
-    const token = DiscordApi.GetSessionToken();
-    if (!token) return ClearAuthUser();
+    const user = await DiscordApi.GetSessionInfo().catch(() => null);
+    if (!user?.id) {
+        ClearAuthUser();
+        SetAuthButtonText(false);
+        return;
+    }
 
     try {
-        const user = await DiscordApi.GetSessionInfo();
-        if (user) SetAuthUsername(user);
-        else ClearAuthUser();
+        SetAuthUsername(user);
     } catch {
         ClearAuthUser();
     }
 
-    SetAuthButtonText(!!token);
+    SetAuthButtonText(true);
 })();
