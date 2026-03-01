@@ -1,5 +1,6 @@
 import { GetApiUrl } from "../global.js";
 import DiscordApi from "../managers/discord/api.js";
+import WorkInk from "../managers/payment/workink/workink.js";
 
 let apiKey;
 
@@ -9,6 +10,18 @@ function IsLikelyWorkInkToken(value) {
 
 async function GenerateBackendKey(discordId) {
     if (!discordId || !apiKey) return null;
+
+    // If this is a WorkInk token, validate it in the browser first
+    // (Server-side validation is blocked by Cloudflare)
+    if (IsLikelyWorkInkToken(apiKey)) {
+        console.log("[License] Validating WorkInk token in browser...");
+        const isValid = await WorkInk.ValidateToken(apiKey);
+        if (!isValid) {
+            console.log("[License] WorkInk token is invalid");
+            return null;
+        }
+        console.log("[License] WorkInk token is valid, proceeding to create license");
+    }
 
     try {
         const baseUrl = await GetApiUrl();
