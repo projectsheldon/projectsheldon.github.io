@@ -26,10 +26,16 @@ async function RenderProducts() {
             priceDisplay = '-';
         }
 
+        // Generate comment HTML if comment exists and is not empty
+        const commentHtml = product.comment && product.comment.trim() !== '' 
+            ? `<div class="absolute top-0 right-0 bg-blue-500 text-black text-xs font-bold px-3 py-1 rounded-none shadow-[0_0_10px_rgba(59,130,246,0.5)]">${product.comment}</div>` 
+            : '';
+
         const productCard = document.createElement('div');
-        productCard.className = 'bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group flex flex-col';
+        productCard.className = 'bg-hacker-black border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group flex flex-col relative';
         
         productCard.innerHTML = `
+            ${commentHtml}
             <h3 class="text-xl font-bold mb-2 group-hover:text-hacker-blue transition-colors">${product.name}</h3>
             <p class="text-gray-400 text-sm mb-2">Duration: ${product.duration}</p>
             <p class="text-hacker-blue font-bold text-lg mb-4">${priceDisplay}</p>
