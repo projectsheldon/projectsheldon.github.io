@@ -1,5 +1,6 @@
 import { GetApiUrl } from "../global.js";
 import DiscordApi from "../managers/discord/api.js";
+import AuthApi from "../managers/auth/api.js";
 
 let apiKey;
 
@@ -65,6 +66,15 @@ async function InitLicensePage() {
         keyTextEl.textContent = "Login required";
         return;
     }
+
+    // Resellers should manage licenses in the Resell portal.
+    try {
+        const rs = await AuthApi.GetResellerStatus().catch(() => null);
+        if (rs?.verified === true) {
+            window.location.href = "/resell/";
+            return;
+        }
+    } catch { }
 
     const backendKey = await GenerateBackendKey(sessionInfo.id);
     const finalKey = backendKey || apiKey;

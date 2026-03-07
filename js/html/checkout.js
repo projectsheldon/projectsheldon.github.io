@@ -2,6 +2,7 @@ import { GetApiUrl, GetProducts } from "../global.js";
 import { createPayPalButtons } from "../managers/payment/paypal/paypal.js";
 import DiscordApi from "../managers/discord/api.js";
 import DiscordRender from "../managers/discord/render.js";
+import AuthApi from "../managers/auth/api.js";
 
 let cryptoStatusClearTimer = null;
 let cryptoStatusSequence = 0;
@@ -213,20 +214,82 @@ async function OnLoad() {
     } else {
         const priceElement = document.querySelector('.total-price');
         const nameElement = document.getElementById('product-name');
+        const resellerPanel = document.getElementById('reseller-bulk-panel');
+        const qtyInput = document.getElementById('reseller-qty');
+        const discountNote = document.getElementById('reseller-discount-note');
 
-        const product = serverProducts[type];
+        const product = serverProducts?.[type];
+        if (!product) return;
 
-        let priceDisplay;
+        const unitPrice = typeof product.price === "number" ? product.price : null;
 
-        if (typeof product.price === 'string') {
-            priceDisplay = product.price;
-        } else if (typeof product.price === 'number') {
-            priceDisplay = `€${product.price.toFixed(2)}`;
-        }
-
-        if (priceElement) priceElement.textContent = priceDisplay;
         if (nameElement) nameElement.textContent = product.name;
 
+        const isReseller = await (async () => {
+            if (!loginStatus) return false;
+            try {
+                const rs = await AuthApi.GetResellerStatus().catch(() => null);
+                return rs?.verified === true;
+            } catch {
+                return false;
+            }
+        })();
+
+const compute = () => {
+            const personalUseCheckbox = document.getElementById("reseller-personal-use");
+            const isPersonalUse = personalUseCheckbox?.checked === true;
+            
+            // If personal use is checked, quantity is always 1
+            const qty = isPersonalUse ? 1 : Math.max(1, Math.min(100, Number.parseInt(qtyInput?.value || "1", 10) || 1));
+            if (qtyInput && !isPersonalUse) qtyInput.value = String(qty);
+
+            const discountPct = isReseller && !isPersonalUse && qty > 3 ? 10 : 0;
+            const total = unitPrice !== null ? (unitPrice * qty * (1 - discountPct / 100)) : null;
+
+            if (priceElement) {
+                if (total !== null) priceElement.textContent = `€${total.toFixed(2)}`;
+                else priceElement.textContent = typeof product.price === "string" ? product.price : "-";
+            }
+
+            if (discountNote) {
+                if (!isReseller) {
+                    discountNote.textContent = "";
+                } else if (discountPct > 0) {
+                    discountNote.textContent = "10% off applied.";
+                    discountNote.className = "mt-2 text-xs text-hacker-blue";
+                } else {
+                    discountNote.textContent = "No discount yet. Buy 4+ for 10% off.";
+                    discountNote.className = "mt-2 text-xs text-gray-500";
+                }
+            }
+        };
+
+if (resellerPanel) resellerPanel.classList.toggle("hidden", !isReseller);
+        if (qtyInput) {
+            qtyInput.disabled = !isReseller;
+            qtyInput.addEventListener("input", compute);
+            qtyInput.addEventListener("change", compute);
+        }
+        
+        // Handle personal use checkbox
+        const personalUseCheckbox = document.getElementById("reseller-personal-use");
+        if (personalUseCheckbox) {
+            personalUseCheckbox.addEventListener("change", () => {
+                const isPersonalUse = personalUseCheckbox.checked;
+                if (qtyInput) {
+                    qtyInput.disabled = isPersonalUse || !isReseller;
+                    if (isPersonalUse) {
+                        qtyInput.value = "1";
+                    }
+                }
+                compute();
+            });
+        }
+
+        if (!isReseller && unitPrice !== null && priceElement) {
+            priceElement.textContent = `€${unitPrice.toFixed(2)}`;
+        }
+        compute();
     }
 }
 

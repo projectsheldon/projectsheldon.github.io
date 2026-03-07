@@ -41,7 +41,7 @@
             </a>
 
             <a href="https://www.youtube.com/@chealepix" target="_blank"
-                 class="text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
+                 class="hidden sm:inline-block text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
                  <span class="sr-only">YouTube</span>
                  <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                      <path fill-rule="evenodd"
@@ -50,7 +50,22 @@
                  </svg>
              </a>
         </div>
-        <div class="flex items-center">
+        <div
+            class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/40 border border-gray-800 rounded-sm p-1">
+            <a href="/"
+                class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm bg-hacker-blue text-black">
+                Home
+            </a>
+            <a href="/developer/"
+                class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                API
+            </a>
+            <a href="/resell/"
+                class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                Resell
+            </a>
+        </div>
+        <div class="flex items-center gap-3">
             <button id="auth-btn"
                 class="px-4 md:px-6 py-1.5 border border-hacker-blue text-hacker-blue text-sm font-bold tracking-wider hover:bg-hacker-blue hover:text-black transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.2)] hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">
                 LOGIN

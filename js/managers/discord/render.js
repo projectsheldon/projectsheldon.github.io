@@ -112,6 +112,7 @@ const DiscordRender = {
                     if (msg && msg.loggedIn) {
                         if (typeof msg.session === "string" && msg.session.length > 0) {
                             try { sessionStorage.setItem("session", msg.session); } catch (err) { }
+                            try { sessionStorage.setItem("session_logged_in_at", String(Date.now())); } catch (err) { }
                         }
                         window.removeEventListener('message', handleMessage);
                         this.RemoveLoginOverlay();
@@ -133,6 +134,7 @@ const DiscordRender = {
                     (async () => {
                         const user = await DiscordApi.GetSessionInfo(true).catch(() => null);
                         if (user?.id) {
+                            try { sessionStorage.setItem("session_logged_in_at", String(Date.now())); } catch (err) { }
                             resolve(true);
                             window.location.reload();
                             return;

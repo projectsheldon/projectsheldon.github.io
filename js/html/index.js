@@ -46,8 +46,9 @@ async function RenderProducts() {
         `;
 
         const button = productCard.querySelector('button');
+        const productKey = product.name.toLowerCase();
         button.addEventListener('click', () => {
-            window.location.href = `/checkout?type=${encodeURIComponent(product.name)}`;
+            window.location.href = `/checkout?type=${encodeURIComponent(productKey)}`;
         });
 
         container.appendChild(productCard);

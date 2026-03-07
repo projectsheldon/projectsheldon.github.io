@@ -7,8 +7,21 @@ export function createPayPalButtons() {
 
         // fundingSource: paypal.FUNDING.CARD,
 
-        createOrder: async () => {
+createOrder: async () => {
             const type = new URLSearchParams(window.location.search).get("type") || "";
+            const qtyInput = document.getElementById("reseller-qty");
+            const personalUseCheckbox = document.getElementById("reseller-personal-use");
+            const isPersonalUse = personalUseCheckbox?.checked === true;
+            
+            // If personal use is checked, quantity is 1 and not for resell
+            const qty = isPersonalUse ? 1 : Math.max(1, Math.min(100, Number.parseInt(qtyInput?.value || "1", 10) || 1));
+            const forResell = (() => {
+                const panel = document.getElementById("reseller-bulk-panel");
+                if (!panel) return false;
+                // If personal use is checked, don't treat as resell
+                if (isPersonalUse) return false;
+                return !panel.classList.contains("hidden");
+            })();
 
             try {
                 const authUser = await DiscordApi.GetSessionInfo().catch(() => null);
@@ -20,6 +33,8 @@ export function createPayPalButtons() {
                     body: JSON.stringify({
                         productId: type.toLowerCase(),
                         discordId: discordIdToSend,
+                        quantity: qty,
+                        forResell,
                     })
                 });
 
@@ -57,6 +72,12 @@ export function createPayPalButtons() {
             });
 
             const captureData = await captureRes.json();
+            if (Array.isArray(captureData?.licenseKeys) && captureData.licenseKeys.length > 0) {
+                // Redirect to success page with licenses
+                const keysParam = encodeURIComponent(JSON.stringify(captureData.licenseKeys));
+                window.location.href = `/resell/success?keys=${keysParam}`;
+                return;
+            }
             if (captureData.licenseKey) {
                 let key = null;
                 try {

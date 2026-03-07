@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Sheldon - Resell</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/managers/render/options.js"></script>
+
+    <link rel="icon" type="image/png" href="../favicon/favicon.ico">
+    <link rel="stylesheet" href="../css/base.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <style>
+    </style>
+
+    <base href="/">
+</head>
+
+<body class="font-mono antialiased overflow-x-hidden bg-black text-white min-h-screen grid-bg">
+    <nav class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-6 py-4 bg-black/60 backdrop-blur-md border-b border-blue-500/20">
+        <div class="flex items-center gap-4">
+            <a href="https://discord.gg/SbGUYquj8b" target="_blank" class="text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
+                <span class="sr-only">Discord</span>
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2763-3.68-.2763-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z" clip-rule="evenodd" />
+                </svg>
+            </a>
+            <a href="https://www.youtube.com/@chealepix" target="_blank" class="hidden sm:inline-block text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
+                <span class="sr-only">YouTube</span>
+                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M19.812 5.418c.861.23 1.538.907 1.768 1.768C21.998 8.746 22 12 22 12s0 3.255-.418 4.814a2.504 2.504 0 0 1-1.768 1.768c-1.56.419-7.814.419-7.814.419s-6.255 0-7.814-.419a2.505 2.505 0 0 1-1.768-1.768C2 15.255 2 12 2 12s0-3.255.417-4.814a2.507 2.507 0 0 1 1.768-1.768C5.744 5 11.998 5 11.998 5s6.255 0 7.814.418ZM15.194 12 10 15V9l5.194 3Z" clip-rule="evenodd" />
+                </svg>
+            </a>
+        </div>
+        <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/40 border border-gray-800 rounded-sm p-1">
+            <a href="/" class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">Home</a>
+            <a href="/developer/" class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">API</a>
+            <a href="/resell/" class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm bg-hacker-blue text-black">Resell</a>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="auth-btn" class="px-4 md:px-6 py-1.5 border border-hacker-blue text-hacker-blue text-sm font-bold tracking-wider hover:bg-hacker-blue hover:text-black transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.2)] hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">LOGIN</button>
+        </div>
+    </nav>
+
+    <main class="pt-28 pb-16 px-4 md:px-6 max-w-4xl mx-auto">
+        <div class="mb-8" id="resell-hero">
+            <h1 class="text-2xl md:text-3xl font-bold text-white">Resell</h1>
+            <p class="text-gray-500 mt-1">Login to manage your reseller licenses.</p>
+        </div>
+
+        <section id="resell-auth" class="bg-black/60 border border-gray-800 p-5 rounded-sm">
+            <div class="text-gray-400 text-sm">Loading...</div>
+        </section>
+
+        <section id="resell-content" class="hidden mt-8">
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-800 mb-6" id="resell-tabs">
+                <button class="resell-tab-btn active px-4 py-3 text-sm font-bold border-b-2 border-hacker-blue text-white" data-tab="explorer">Explorer</button>
+                <button class="resell-tab-btn inactive px-4 py-3 text-sm font-bold border-b-2 border-transparent text-gray-500" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Explorer Tab -->
+            <div class="resell-tab-content" data-tab="explorer">
+                <div class="bg-black/60 border border-gray-800 p-5 rounded-sm">
+                    <div class="flex items-start justify-between gap-4 mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white mb-1">Licenses</h2>
+                            <!-- <p class="text-gray-500 text-sm">Available keys you can resell.</p> -->
+                            <!-- <p class="text-gray-600 text-xs mt-3">Discount/reseller licenses are for reselling only. Do not use them yourself.</p> -->
+                        </div>
+                        <button id="resell-refresh-btn" class="px-4 py-2 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black transition-colors text-xs shrink-0">Refresh</button>
+                    </div>
+                    <div class="bg-black/60 border border-gray-800 rounded-sm overflow-hidden mt-4">
+                        <table id="resell-licenses-table" class="w-full text-left text-sm">
+                            <thead class="bg-black/40 text-gray-400 text-xs uppercase tracking-widest">
+                                <tr>
+                                    <th class="px-4 py-3">Key</th>
+                                    <th class="px-4 py-3">Expires</th>
+                                    <th class="px-4 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resell-licenses-body" class="divide-y divide-gray-800">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="resell-tab-content hidden" data-tab="settings">
+                <div class="bg-black/60 border border-gray-800 p-5 rounded-sm">
+                    <h2 class="text-xl font-bold text-white mb-4">Settings</h2>
+                    
+                    <div class="space-y-4">
+                        <!-- Change Password -->
+                        <div class="flex items-center gap-4 p-4 bg-black/40 border border-gray-700 rounded">
+                            <div class="w-12 h-12 bg-gray-800 border border-gray-700 rounded flex items-center justify-center">
+                                <svg class="w-6 h-6 text-hacker-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-white font-bold">Change Password</h3>
+                                <p class="text-gray-500 text-xs mt-1">Update your account password</p>
+                            </div>
+                            <button id="open-password-modal-btn" class="px-4 py-2 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black text-sm">Reset</button>
+                        </div>
+
+                        <!-- Delete Account -->
+                        <div class="flex items-center gap-4 p-4 bg-black/40 border border-red-900/30 rounded">
+                            <div class="w-12 h-12 bg-red-900/20 border border-red-500/30 rounded flex items-center justify-center">
+                                <svg class="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-white font-bold">Delete Account</h3>
+                                <p class="text-gray-500 text-xs mt-1">Request account deletion</p>
+                            </div>
+                            <button id="open-delete-modal-btn" class="px-4 py-2 border border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-black text-sm">Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Section -->
+                <div class="bg-black/60 border border-gray-800 p-5 rounded-sm mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Developers API</h2>
+                        </div>
+                        <span class="px-2 py-1 bg-hacker-blue/20 text-hacker-blue text-xs font-bold rounded">BETA</span>
+                    </div>
+                    <div id="resell-api-token-section">
+                        <div id="resell-api-no-token" class="hidden">
+                            <p class="text-gray-400 text-sm mb-3">No API token yet.</p>
+                            <button id="resell-generate-token-btn" class="px-4 py-2 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black">Generate Token</button>
+                        </div>
+                        <div id="resell-api-has-token" class="hidden">
+                            <div class="mb-3">
+                                <label class="text-gray-400 text-xs block mb-2">API Token</label>
+                                <div class="flex items-center gap-2">
+                                    <input id="resell-api-token-display" type="text" readonly class="flex-1 bg-black border border-gray-700 px-3 py-2 text-white font-mono text-sm">
+                                    <button id="resell-api-copy-token-btn"
+                                        class="p-2 border border-hacker-blue text-hacker-blue rounded hover:bg-hacker-blue hover:text-black transition-all duration-300 flex items-center justify-center"
+                                        title="Copy to clipboard">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button id="resell-reset-token-btn" class="px-4 py-2 border border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-black text-sm">Reset Token</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80" id="password-modal-overlay"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative bg-gray-900 border border-gray-700 rounded-lg shadow-2xl w-full max-w-md">
+                <div class="flex items-center justify-between p-4 border-b border-gray-700">
+                    <h3 class="text-lg font-bold text-white">Change Password</h3>
+                    <button id="close-password-modal-btn" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <form id="resell-changepw-form" class="p-4 space-y-3">
+                    <div>
+                        <input id="currentpw" type="password" placeholder="Enter current password..." class="w-full bg-black border border-gray-700 px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <input id="newpw" type="password" placeholder="Enter new password..." class="w-full bg-black border border-gray-700 px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <input id="confirmpw" type="password" placeholder="Confirm new password..." class="w-full bg-black border border-gray-700 px-3 py-2 text-white">
+                    </div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-500 text-xs">Strength</span>
+                        <span id="pw-strength-label" class="text-gray-400 text-xs">—</span>
+                    </div>
+                    <div class="w-full h-2 bg-gray-800">
+                        <div id="pw-strength-bar" class="h-full bg-gray-600" style="width:0%"></div>
+                    </div>
+                    <button type="submit" class="w-full px-4 py-2 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black">Update Password</button>
+                    <span id="resell-changepw-msg" class="text-gray-500 text-sm"></span>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="delete-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80" id="delete-modal-overlay"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative bg-gray-900 border border-red-500/30 rounded-lg shadow-2xl w-full max-w-md">
+                <div class="flex items-center justify-between p-4 border-b border-red-500/30">
+                    <h3 class="text-lg font-bold text-red-400">Delete Account</h3>
+                    <button id="close-delete-modal-btn" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <div class="p-4">
+                    <div id="resell-delete-section">
+                        <p class="text-gray-300 text-sm mb-4">If you delete your account, you won't be able to make a new reseller account for <span class="text-yellow-400 font-bold">3 days</span>. This action cannot be undone.</p>
+                        <button id="resell-delete-btn" class="w-full px-4 py-3 border border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-black">Delete Account</button>
+                    </div>
+                    <div id="resell-delete-confirm" class="hidden">
+                        <p class="text-gray-400 text-sm mb-4">Enter your password to confirm:</p>
+                        <input id="delete-password-input" type="password" class="w-full bg-black border border-gray-700 px-3 py-2 text-white mb-3" placeholder="Enter your password...">
+                        <p id="delete-error-msg" class="text-red-400 text-sm mb-3 hidden"></p>
+                        <div class="flex gap-2">
+                            <button id="resell-delete-cancel" class="flex-1 px-4 py-3 border border-gray-700 text-gray-300 font-bold hover:bg-gray-700">Cancel</button>
+                            <button id="resell-delete-confirm-btn" class="flex-1 px-4 py-3 border border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-black">Confirm Delete</button>
+                        </div>
+                    </div>
+                    <div id="resell-delete-pending" class="hidden">
+                        <p class="text-yellow-500 text-sm">Account deletion requested.</p>
+                        <button id="resell-delete-cancel-request" class="mt-4 w-full px-4 py-3 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black">Cancel Request</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Token Modal -->
+    <div id="reset-token-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80" id="reset-token-modal-overlay"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative bg-gray-900 border border-red-500/30 rounded-lg shadow-2xl w-full max-w-md">
+                <div class="flex items-center justify-between p-4 border-b border-red-500/30">
+                    <h3 class="text-lg font-bold text-red-400">Reset API Token</h3>
+                    <button id="close-reset-token-modal-btn" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <div class="p-4">
+                    <p class="text-gray-300 text-sm mb-4">Enter your password to confirm. Your old token will stop working immediately.</p>
+                    <input id="reset-token-password-input" type="password" class="w-full bg-black border border-gray-700 px-3 py-2 text-white mb-3" placeholder="Enter your password...">
+                    <p id="reset-token-error-msg" class="text-red-400 text-sm mb-3 hidden"></p>
+                    <div class="flex gap-2">
+                        <button id="reset-token-cancel-btn" class="flex-1 px-4 py-3 border border-gray-700 text-gray-300 font-bold hover:bg-gray-700">Cancel</button>
+                        <button id="reset-token-confirm-btn" class="flex-1 px-4 py-3 border border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-black">Reset Token</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign License Modal -->
+    <div id="assign-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80" id="assign-modal-overlay"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative bg-gray-900 border border-hacker-blue/30 rounded-lg shadow-2xl w-full max-w-md">
+                <div class="flex items-center justify-between p-4 border-b border-hacker-blue/30">
+                    <h3 class="text-lg font-bold text-hacker-blue">Assign License</h3>
+                    <button id="close-assign-modal-btn" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <div class="p-4">
+                    <p class="text-gray-300 text-sm mb-4">Enter the Discord ID of the user to assign a license to.</p>
+                    <input id="assign-discord-id" type="text" class="w-full bg-black border border-gray-700 px-3 py-2 text-white mb-3" placeholder="Enter Discord ID...">
+                    <p id="assign-error-msg" class="text-red-400 text-sm mb-3 hidden"></p>
+                    <div class="flex gap-2">
+                        <button id="assign-cancel-btn" class="flex-1 px-4 py-3 border border-gray-700 text-gray-300 font-bold hover:bg-gray-700">Cancel</button>
+                        <button id="assign-confirm-btn" class="flex-1 px-4 py-3 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black">Assign</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/html/resell.js" type="module"></script>
+    <script type="module">
+        import DiscordRender from "../js/managers/discord/render.js";
+        
+        const authBtn = document.getElementById('auth-btn');
+        if (authBtn) {
+            authBtn.addEventListener('click', () => DiscordRender.LoginLogic());
+        }
+
+        // Tab switching
+        document.querySelectorAll('.resell-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tab = this.getAttribute('data-tab');
+                
+                // Update buttons
+                document.querySelectorAll('.resell-tab-btn').forEach(b => {
+                    b.classList.remove('active', 'border-hacker-blue', 'text-white');
+                    b.classList.add('inactive', 'border-transparent', 'text-gray-500');
+                });
+                this.classList.remove('inactive', 'border-transparent', 'text-gray-500');
+                this.classList.add('active', 'border-hacker-blue', 'text-white');
+                
+                // Update content
+                document.querySelectorAll('.resell-tab-content').forEach(c => {
+                    c.classList.add('hidden');
+                });
+                document.querySelector(`.resell-tab-content[data-tab="${tab}"]`).classList.remove('hidden');
+            });
+        });
+
+        // Modal handling - simplified
+        const passwordModal = document.getElementById('password-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        const resetTokenModal = document.getElementById('reset-token-modal');
+        
+        document.getElementById('open-password-modal-btn')?.addEventListener('click', () => passwordModal?.classList.remove('hidden'));
+        document.getElementById('close-password-modal-btn')?.addEventListener('click', () => passwordModal?.classList.add('hidden'));
+        document.getElementById('password-modal-overlay')?.addEventListener('click', () => passwordModal?.classList.add('hidden'));
+        
+        document.getElementById('open-delete-modal-btn')?.addEventListener('click', () => deleteModal?.classList.remove('hidden'));
+        document.getElementById('close-delete-modal-btn')?.addEventListener('click', () => deleteModal?.classList.add('hidden'));
+        document.getElementById('delete-modal-overlay')?.addEventListener('click', () => deleteModal?.classList.add('hidden'));
+        
+        document.getElementById('open-reset-token-modal-btn')?.addEventListener('click', () => resetTokenModal?.classList.remove('hidden'));
+        document.getElementById('close-reset-token-modal-btn')?.addEventListener('click', () => resetTokenModal?.classList.add('hidden'));
+        document.getElementById('reset-token-modal-overlay')?.addEventListener('click', () => resetTokenModal?.classList.add('hidden'));
+
+        // Copy token to clipboard functionality
+        const copyTokenBtn = document.getElementById('resell-api-copy-token-btn');
+        const tokenDisplay = document.getElementById('resell-api-token-display');
+        
+        copyTokenBtn?.addEventListener('click', function() {
+            const token = tokenDisplay?.value || '';
+            if (!token || token === '••••••••••••••••••••••••••••••••') return;
+            
+            navigator.clipboard.writeText(token).then(() => {
+                // Visual feedback - show checkmark
+                const originalHtml = copyTokenBtn.innerHTML;
+                copyTokenBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+                copyTokenBtn.classList.remove('border-hacker-blue', 'text-hacker-blue', 'hover:bg-hacker-blue', 'hover:text-black');
+                copyTokenBtn.classList.add('border-green-500', 'text-green-400', 'bg-green-500/10');
+                
+                setTimeout(() => {
+                    copyTokenBtn.innerHTML = originalHtml;
+                    copyTokenBtn.classList.add('border-hacker-blue', 'text-hacker-blue', 'hover:bg-hacker-blue', 'hover:text-black');
+                    copyTokenBtn.classList.remove('border-green-500', 'text-green-400', 'bg-green-500/10');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        });
+    </script>
+</body>
+</html>
