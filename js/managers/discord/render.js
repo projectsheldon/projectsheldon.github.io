@@ -165,8 +165,6 @@ async function ShowLicensesModal(user) {
         content.innerHTML = `
                 <div style="text-align: center; padding: 40px 20px;">
                 <div style="color: #6b7280; margin-bottom: 8px;">No licenses found</div>
-                <div style="color: #4b5563; font-size: 14px;">Purchase access to get a license key</div>
-                <a href="/#pricing" style="display: inline-block; margin-top: 16px; padding: 10px 20px; background: #3b82f6; color: black; text-decoration: none; border-radius: 4px; font-weight: bold;">Get Access</a>
             </div>
         `;
     } else {
