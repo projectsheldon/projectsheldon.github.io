@@ -67,12 +67,29 @@ async function InitLicensePage() {
         return;
     }
 
-    // Resellers should manage licenses in the Resell portal.
+    // Check if user is a verified reseller
+    // If they are, only redirect to resell page if this is unassigned inventory (not their personal license)
     try {
         const rs = await AuthApi.GetResellerStatus().catch(() => null);
         if (rs?.verified === true) {
-            window.location.href = "/resell/";
-            return;
+            // Check if this license is already assigned to the user's Discord ID
+            // If it is, it's a personal license - don't redirect
+            // If it's not assigned, it's reseller inventory - redirect to resell page
+            try {
+                const licenseCheckRes = await fetch(`${await GetApiUrl()}sheldon/license/get?key=${encodeURIComponent(apiKey)}`);
+                const licenseData = await licenseCheckRes.json().catch(() => null);
+                
+                // If license is not assigned to this user's Discord ID, redirect to resell
+                if (!licenseData?.license || licenseData.license.discord_id !== sessionInfo.id) {
+                    window.location.href = "/resell/";
+                    return;
+                }
+                // Otherwise, continue to show the personal license
+            } catch (err) {
+                // If we can't check the license, redirect to resell for safety
+                window.location.href = "/resell/";
+                return;
+            }
         }
     } catch { }
 

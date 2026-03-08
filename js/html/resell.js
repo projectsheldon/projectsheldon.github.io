@@ -456,7 +456,6 @@ function RenderNotVerified() {
             </div>
             <h2 class="text-white font-bold text-xl mb-2">Verification Pending</h2>
             <p class="text-gray-500 text-sm mb-4">Your reseller access is pending approval.</p>
-            <p class="text-gray-600 text-xs mb-6">If you just signed up, a staff ticket was created for review.</p>
             
             <div class="pt-6 border-t border-gray-800">
                 <h3 class="text-white font-bold mb-2">Delete Account</h3>
