@@ -276,13 +276,6 @@
                                 <label class="text-gray-400 text-xs block mb-2">API Token</label>
                                 <div class="flex items-center gap-2">
                                     <input type="text" readonly class="flex-1 bg-black border border-gray-700 px-3 py-2 text-white font-mono text-sm", placeholder="Generate an API key">
-                                    <button id="resell-api-copy-token-btn"
-                                        class="p-2 border border-hacker-blue text-hacker-blue rounded hover:bg-hacker-blue hover:text-black transition-all duration-300 flex items-center justify-center"
-                                        title="Copy to clipboard">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                        </svg>
-                                    </button>
                                 </div>
                             </div>
                             <button id="resell-generate-token-btn" class="px-4 py-2 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black">Generate Token</button>
@@ -292,13 +285,6 @@
                                 <label class="text-gray-400 text-xs block mb-2">API Token</label>
                                 <div class="flex items-center gap-2">
                                     <input id="resell-api-token-display" type="text" readonly class="flex-1 bg-black border border-gray-700 px-3 py-2 text-white font-mono text-sm">
-                                    <button id="resell-api-copy-token-btn"
-                                        class="p-2 border border-hacker-blue text-hacker-blue rounded hover:bg-hacker-blue hover:text-black transition-all duration-300 flex items-center justify-center"
-                                        title="Copy to clipboard">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                        </svg>
-                                    </button>
                                 </div>
                             </div>
                             <button id="resell-reset-token-btn" class="px-4 py-2 border border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-black text-sm">Reset Token</button>
@@ -487,31 +473,6 @@
         document.getElementById('open-reset-token-modal-btn')?.addEventListener('click', () => resetTokenModal?.classList.remove('hidden'));
         document.getElementById('close-reset-token-modal-btn')?.addEventListener('click', () => resetTokenModal?.classList.add('hidden'));
         document.getElementById('reset-token-modal-overlay')?.addEventListener('click', () => resetTokenModal?.classList.add('hidden'));
-
-        // Copy token to clipboard functionality
-        const copyTokenBtn = document.getElementById('resell-api-copy-token-btn');
-        const tokenDisplay = document.getElementById('resell-api-token-display');
-        
-        copyTokenBtn?.addEventListener('click', function() {
-            const token = tokenDisplay?.value || '';
-            if (!token || token === '••••••••••••••••••••••••••••••••') return;
-            
-            navigator.clipboard.writeText(token).then(() => {
-                // Visual feedback - show checkmark
-                const originalHtml = copyTokenBtn.innerHTML;
-                copyTokenBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
-                copyTokenBtn.classList.remove('border-hacker-blue', 'text-hacker-blue', 'hover:bg-hacker-blue', 'hover:text-black');
-                copyTokenBtn.classList.add('border-green-500', 'text-green-400', 'bg-green-500/10');
-                
-                setTimeout(() => {
-                    copyTokenBtn.innerHTML = originalHtml;
-                    copyTokenBtn.classList.add('border-hacker-blue', 'text-hacker-blue', 'hover:bg-hacker-blue', 'hover:text-black');
-                    copyTokenBtn.classList.remove('border-green-500', 'text-green-400', 'bg-green-500/10');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-            });
-        });
     </script>
 </body>
 </html>

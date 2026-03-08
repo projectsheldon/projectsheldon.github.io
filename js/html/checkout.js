@@ -321,21 +321,6 @@ async function OnLoad() {
             if (qtyContainer) {
                 qtyContainer.classList.toggle("hidden", isPersonalUse || !isReseller);
             }
-
-            // Handle the discount text in the panel header
-            const discountTextEl = document.getElementById("reseller-discount-text");
-            if (discountTextEl) {
-                if (!isReseller || isPersonalUse) {
-                    discountTextEl.classList.add("hidden");
-                } else {
-                    discountTextEl.innerHTML = 'Buy 4+ for <span class="text-hacker-blue font-bold">20% off</span>.';
-                    discountTextEl.classList.remove("hidden");
-                }
-            }
-
-            if (discountNote) {
-                discountNote.className = "hidden";
-            }
         };
 
 if (resellerPanel) resellerPanel.classList.toggle("hidden", !isReseller);

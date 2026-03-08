@@ -1,6 +1,10 @@
-import { GetApiUrl } from "../global.js";
+import { GetApiUrl, GetCookie } from "../global.js";
 import DiscordApi from "../managers/discord/api.js";
 import AuthApi from "../managers/auth/api.js";
+
+// Store token and discordId globally for API calls
+let sessionToken = null;
+let discordId = null;
 
 let apiKey;
 
@@ -12,19 +16,9 @@ async function GenerateBackendKey(discordId) {
     if (!discordId || !apiKey) return null;
 
     try {
-        const baseUrl = await GetApiUrl();
-        const response = await fetch(`${baseUrl}sheldon/license/create`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                apiKey,
-                discordId
-            })
-        });
-        if (!response.ok) return null;
-
-        const data = await response.json().catch(() => null);
-        return data?.key ?? null;
+        // Use the new unencrypted auth API endpoint
+        const data = await AuthApi.CreateLicense().catch(() => null);
+        return data?.license ?? null;
     } catch (err) {
         return null;
     }
@@ -34,17 +28,9 @@ async function AssignLicense(licenseKey, discordId) {
     if (!licenseKey || !discordId) return null;
 
     try {
-        const response = await fetch(`${await GetApiUrl()}sheldon/license/assign`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                apiKey: licenseKey,
-                discordId
-            })
-        });
-
-        const data = await response.json().catch(() => null);
-        return { ok: response.ok, data };
+        // Use the new unencrypted auth API endpoint
+        const data = await AuthApi.AssignLicenseByKey(licenseKey, discordId).catch(() => null);
+        return { ok: data?.ok, data };
     } catch (err) {
         return null;
     }
@@ -67,28 +53,53 @@ async function InitLicensePage() {
         return;
     }
 
+    // Store Discord ID and session token for server-side validation
+    discordId = sessionInfo.id;
+    // Get token from sessionStorage first, then fallback to cookie
+    sessionToken = DiscordApi.GetSessionToken() || GetCookie('session');
+
     // Check if user is a verified reseller
     // If they are, only redirect to resell page if this is unassigned inventory (not their personal license)
     try {
         const rs = await AuthApi.GetResellerStatus().catch(() => null);
         if (rs?.verified === true) {
-            // Check if this license is already assigned to the user's Discord ID
-            // If it is, it's a personal license - don't redirect
-            // If it's not assigned, it's reseller inventory - redirect to resell page
+            // Check if this license is reseller inventory (unassigned)
+            // If is_unassigned = 1, it's reseller inventory - redirect to resell page
+            // If is_unassigned = 0 or null, it's a personal license - don't redirect
             try {
-                const licenseCheckRes = await fetch(`${await GetApiUrl()}sheldon/license/get?key=${encodeURIComponent(apiKey)}`);
-                const licenseData = await licenseCheckRes.json().catch(() => null);
+                // Use the new unencrypted auth API endpoint with discordId and token for validation
+                const licenseData = await AuthApi.GetLicense(apiKey, { discordId, token: sessionToken }).catch(() => null);
                 
-                // If license is not assigned to this user's Discord ID, redirect to resell
-                if (!licenseData?.license || licenseData.license.discord_id !== sessionInfo.id) {
+                // Only redirect to resell if the license is actually unassigned reseller inventory
+                // Check is_unassigned flag - if it's 1, it's inventory that needs to be assigned
+                const license = licenseData?.license;
+                const isUnassignedInventory = license?.is_unassigned === 1 || license?.is_unassigned === true;
+                
+                if (isUnassignedInventory) {
                     window.location.href = "/resell/";
                     return;
                 }
-                // Otherwise, continue to show the personal license
+                // Otherwise, it's a personal license - continue to show it
             } catch (err) {
-                // If we can't check the license, redirect to resell for safety
-                window.location.href = "/resell/";
-                return;
+                // If we can't check the license details, check discord_id as fallback
+                // If license exists and has a discord_id assigned, it's a personal license
+                try {
+                    // Pass discordId and token for server-side validation
+                    const licenseData = await AuthApi.GetLicense(apiKey, { discordId, token: sessionToken }).catch(() => null);
+                    const license = licenseData?.license;
+                    
+                    // If license has no discord_id assigned, redirect to resell as safety
+                    // (it might be unassigned inventory that couldn't be detected)
+                    if (!license || !license.discord_id) {
+                        window.location.href = "/resell/";
+                        return;
+                    }
+                    // Otherwise, continue to show the personal license
+                } catch (fallbackErr) {
+                    // If we can't even check, redirect to resell for safety
+                    window.location.href = "/resell/";
+                    return;
+                }
             }
         }
     } catch { }
@@ -116,3 +127,4 @@ function CopyToClipboard() {
 }
 
 window.CopyToClipboard = CopyToClipboard;
+

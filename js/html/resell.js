@@ -455,7 +455,6 @@ function RenderNotVerified() {
                 </svg>
             </div>
             <h2 class="text-white font-bold text-xl mb-2">Verification Pending</h2>
-            <p class="text-gray-500 text-sm mb-4">Your reseller access is pending approval.</p>
             
             <div class="pt-6 border-t border-gray-800">
                 <h3 class="text-white font-bold mb-2">Delete Account</h3>
@@ -846,9 +845,10 @@ async function FetchResellLicenses() {
             const expiresAt = row?.expires_at;
             const expiryText = FormatExpiry(expiresAt);
             const isExpired = expiryText === 'Expired';
+            const rowClass = isExpired ? 'opacity-80' : '';
             const expiryClass = isExpired ? 'text-red-400' : 'text-gray-400';
             return `
-                <tr>
+                <tr class="${rowClass}">
                     <td class="px-4 py-3 font-mono text-xs text-gray-200 break-all">${safeKey}</td>
                     <td class="px-4 py-3 text-xs ${expiryClass}">${expiryText}</td>
                     <td class="px-4 py-3 text-right">

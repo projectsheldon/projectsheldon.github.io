@@ -176,10 +176,10 @@
             <div class="bg-black/60 border border-gray-800 rounded-sm overflow-hidden">
                 <div class="bg-gray-900/50 px-4 py-3 border-b border-gray-800 flex items-center gap-3">
                     <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded">POST</span>
-                    <code class="text-white">/resell/generate</code>
+<code class="text-white">/sheldon/resell/generate</code>
                 </div>
                 <div class="p-4">
-                    <p class="text-gray-400 text-sm mb-4">Generate a new license key from your reseller pool. The license will be removed from the unassigned pool.</p>
+                    <p class="text-gray-400 text-sm mb-4">Get a random license key from your reseller pool.</p>
                     
                     <div class="mb-4">
                         <h4 class="text-gray-300 text-sm font-bold mb-2">Request Body</h4>
@@ -210,7 +210,7 @@
                             </button>
 <pre class="python-code language-python bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-x-auto"><code id="python-generate-url" class="language-python">import requests
 
-url = "BASE_URL/resell/generate"
+url = "BASE_URL/sheldon/resell/generate"
 data = {"token": "api_key"}
 
 response = requests.post(url, json=data)
@@ -221,7 +221,7 @@ if result.get("ok"):
     print(f"Expires: {result['expiresAt']}")
 else:
     print(f"Error: {result.get('error')}")</code></pre>
-<pre class="javascript-code language-javascript bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-x-auto hidden"><code id="js-generate-url" class="language-javascript">const url = "BASE_URL/resell/generate";
+<pre class="javascript-code language-javascript bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-x-auto hidden"><code id="js-generate-url" class="language-javascript">const url = "BASE_URL/sheldon/resell/generate";
 
 fetch(url, {
     method: "POST",
@@ -247,7 +247,7 @@ fetch(url, {
             <div class="bg-black/60 border border-gray-800 rounded-sm overflow-hidden">
                 <div class="bg-gray-900/50 px-4 py-3 border-b border-gray-800 flex items-center gap-3">
                     <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded">POST</span>
-                    <code class="text-white">/resell/assign</code>
+<code class="text-white">/sheldon/resell/assign</code>
                 </div>
                 <div class="p-4">
                     <p class="text-gray-400 text-sm mb-4">Generate and assign a license to a specific Discord user. The license will be linked to their Discord ID.</p>
@@ -256,7 +256,8 @@ fetch(url, {
                         <h4 class="text-gray-300 text-sm font-bold mb-2">Request Body</h4>
                         <pre class="bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-x-auto"><code>{
   <span class="json-key">"token"</span>: <span class="json-string">"api_key"</span>,
-  <span class="json-key">"discordId"</span>: <span class="json-string">"0"</span>
+  <span class="json-key">"discordId"</span>: <span class="json-string">"123456789"</span>,
+  <span class="json-key">"license"</span>: <span class="json-string">"XXXXXX-XXXXXXX-XX"</span>
 }</code></pre>
                     </div>
                     
@@ -282,10 +283,10 @@ fetch(url, {
                             </button>
                             <pre class="python-code language-python bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-x-auto"><code id="python-assign-url" class="language-python">import requests
 
-url = "BASE_URL/resell/assign"
+url = "BASE_URL/sheldon/resell/assign"
 data = {
     "token": "api_key",
-    "discordId": "0"
+    "discordId": "123456789",
 }
 
 response = requests.post(url, json=data)
@@ -296,14 +297,14 @@ if result.get("ok"):
     print(f"Expires: {result['expiresAt']}")
 else:
     print(f"Error: {result.get('error')}")</code></pre>
-                            <pre class="javascript-code language-javascript bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-x-auto hidden"><code id="js-assign-url" class="language-javascript">const url = "BASE_URL/resell/assign";
+                            <pre class="javascript-code language-javascript bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-x-auto hidden"><code id="js-assign-url" class="language-javascript">const url = "BASE_URL/sheldon/resell/assign";
 
 fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
         token: "api_key",
-        discordId: "0"
+        discordId: "123456789",
     })
 })
 .then(res => res.json())
