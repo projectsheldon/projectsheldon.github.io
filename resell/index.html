@@ -13,13 +13,135 @@
     <link rel="stylesheet" href="../css/base.css">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 
-    <style>
+<style>
+/* Animated gradient backgrounds - Dark theme */
+        .animated-bg {
+            background: linear-gradient(-45deg, #030308, #0a0a14, #0d0d1a, #05050c, #080812);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+/* Floating orbs for extra visual effect - darker theme */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: #3b82f6;
+            top: -100px;
+            left: -100px;
+            animation: float1 20s ease-in-out infinite;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #8b5cf6;
+            bottom: -50px;
+            right: -50px;
+            animation: float2 25s ease-in-out infinite;
+        }
+
+        .orb-3 {
+            width: 250px;
+            height: 250px;
+            background: #06b6d4;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: float3 18s ease-in-out infinite;
+        }
+
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(50px, 100px); }
+            66% { transform: translate(-30px, 50px); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(-60px, -40px); }
+            66% { transform: translate(40px, -80px); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .table-resizable th {
+            position: relative;
+        }
+
+        .col-resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 8px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+            z-index: 2;
+        }
+
+        .col-resizer::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            right: 3px;
+            width: 2px;
+            height: 60%;
+            background: rgba(106, 166, 255, 0.35);
+            border-radius: 2px;
+        }
+
+        .col-resizer.active::after {
+            background: rgba(106, 166, 255, 0.75);
+        }
+
+        .text-hacker-blue {
+            color: #3b82f6;
+        }
+
+        .bg-hacker-blue {
+            background-color: #3b82f6;
+        }
+
+        .border-hacker-blue {
+            border-color: #3b82f6;
+        }
+
+        .bg-hacker-dark {
+            background-color: #0f1012;
+        }
+
+        .bg-hacker-blue-dim {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
     </style>
 
     <base href="/">
 </head>
 
-<body class="font-mono antialiased overflow-x-hidden bg-black text-white min-h-screen grid-bg">
+<body class="font-mono antialiased overflow-x-hidden bg-black text-white min-h-screen grid-bg" id="resell-body">
+    <!-- Floating orbs for animated background effect -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    
     <nav class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-6 py-4 bg-black/60 backdrop-blur-md border-b border-blue-500/20">
         <div class="flex items-center gap-4">
             <a href="https://discord.gg/SbGUYquj8b" target="_blank" class="text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
@@ -45,15 +167,20 @@
         </div>
     </nav>
 
-    <main class="pt-28 pb-16 px-4 md:px-6 max-w-4xl mx-auto">
-        <div class="mb-8" id="resell-hero">
+    <main class="pt-28 pb-16 px-4 md:px-6 min-h-screen flex flex-col">
+        <!-- Login Card - Modern Vertical Rectangle -->
+        <div id="resell-auth-card" class="w-full max-w-md mx-auto mt-auto mb-auto">
+            <section id="resell-auth" class="bg-hacker-dark/80 backdrop-blur-md border border-gray-800/50 rounded-lg shadow-2xl overflow-hidden">
+                <div class="p-6 md:p-8 text-center">
+                    <div class="text-gray-400 text-sm">Loading...</div>
+                </div>
+            </section>
+        </div>
+
+        <div id="resell-hero" class="hidden mb-8 max-w-4xl mx-auto mt-auto">
             <h1 class="text-2xl md:text-3xl font-bold text-white">Resell</h1>
             <p class="text-gray-500 mt-1">Login to manage your reseller licenses.</p>
         </div>
-
-        <section id="resell-auth" class="bg-black/60 border border-gray-800 p-5 rounded-sm">
-            <div class="text-gray-400 text-sm">Loading...</div>
-        </section>
 
         <section id="resell-content" class="hidden mt-8">
             <!-- Tab Navigation -->
@@ -64,7 +191,7 @@
 
             <!-- Explorer Tab -->
             <div class="resell-tab-content" data-tab="explorer">
-                <div class="bg-black/60 border border-gray-800 p-5 rounded-sm">
+                <div class="bg-black/60 backdrop-blur-md border border-gray-800/50 p-5 rounded-sm max-w-4xl mx-auto">
                     <div class="flex items-start justify-between gap-4 mb-4">
                         <div>
                             <h2 class="text-xl font-bold text-white mb-1">Licenses</h2>
@@ -74,27 +201,34 @@
                         <button id="resell-refresh-btn" class="px-4 py-2 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black transition-colors text-xs shrink-0">Refresh</button>
                     </div>
                     <div class="bg-black/60 border border-gray-800 rounded-sm overflow-hidden mt-4">
-                        <table id="resell-licenses-table" class="w-full text-left text-sm">
-                            <thead class="bg-black/40 text-gray-400 text-xs uppercase tracking-widest">
-                                <tr>
-                                    <th class="px-4 py-3">Key</th>
-                                    <th class="px-4 py-3">Expires</th>
-                                    <th class="px-4 py-3 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resell-licenses-body" class="divide-y divide-gray-800">
-                                <tr>
-                                    <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table id="resell-licenses-table" class="w-full text-left text-sm table-fixed table-resizable">
+                                <colgroup id="resell-licenses-colgroup">
+                                    <col style="width: 45%;">
+                                    <col style="width: 25%;">
+                                    <col style="width: 30%;">
+                                </colgroup>
+                                <thead class="bg-black/40 text-gray-400 text-xs uppercase tracking-widest">
+                                    <tr>
+                                        <th class="px-4 py-3">Key</th>
+                                        <th class="px-4 py-3">Expires</th>
+                                        <th class="px-4 py-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resell-licenses-body" class="divide-y divide-gray-800">
+                                    <tr>
+                                        <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Settings Tab -->
+<!-- Settings Tab -->
             <div class="resell-tab-content hidden" data-tab="settings">
-                <div class="bg-black/60 border border-gray-800 p-5 rounded-sm">
+                <div class="bg-black/60 backdrop-blur-md border border-gray-800/50 p-5 rounded-sm max-w-4xl mx-auto">
                     <h2 class="text-xl font-bold text-white mb-4">Settings</h2>
                     
                     <div class="space-y-4">
@@ -129,7 +263,7 @@
                 </div>
 
                 <!-- API Section -->
-                <div class="bg-black/60 border border-gray-800 p-5 rounded-sm mt-6">
+                <div class="bg-black/60 backdrop-blur-md border border-gray-800/50 p-5 rounded-sm mt-6 max-w-4xl mx-auto">
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h2 class="text-xl font-bold text-white">Developers API</h2>
@@ -138,7 +272,19 @@
                     </div>
                     <div id="resell-api-token-section">
                         <div id="resell-api-no-token" class="hidden">
-                            <p class="text-gray-400 text-sm mb-3">No API token yet.</p>
+                             <div class="mb-3">
+                                <label class="text-gray-400 text-xs block mb-2">API Token</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" readonly class="flex-1 bg-black border border-gray-700 px-3 py-2 text-white font-mono text-sm", placeholder="Generate an API key">
+                                    <button id="resell-api-copy-token-btn"
+                                        class="p-2 border border-hacker-blue text-hacker-blue rounded hover:bg-hacker-blue hover:text-black transition-all duration-300 flex items-center justify-center"
+                                        title="Copy to clipboard">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                             <button id="resell-generate-token-btn" class="px-4 py-2 border border-hacker-blue text-hacker-blue font-bold hover:bg-hacker-blue hover:text-black">Generate Token</button>
                         </div>
                         <div id="resell-api-has-token" class="hidden">
@@ -280,6 +426,29 @@
         if (authBtn) {
             authBtn.addEventListener('click', () => DiscordRender.LoginLogic());
         }
+
+        // Function to switch to animated gradient when logged in
+        window.switchToLoggedInBackground = function() {
+            const body = document.getElementById('resell-body');
+            if (body) {
+                body.classList.remove('grid-bg');
+                // Show the floating orbs
+                document.querySelectorAll('.orb').forEach(orb => orb.style.display = 'block');
+                body.classList.add('animated-bg');
+            }
+        };
+
+        // Function to switch back to grid when logged out
+        window.switchToLoggedOutBackground = function() {
+            const body = document.getElementById('resell-body');
+            if (body) {
+                body.style.background = '';
+                // Hide the floating orbs
+                document.querySelectorAll('.orb').forEach(orb => orb.style.display = 'none');
+                body.classList.remove('animated-bg');
+                body.classList.add('grid-bg');
+            }
+        };
 
         // Tab switching
         document.querySelectorAll('.resell-tab-btn').forEach(btn => {

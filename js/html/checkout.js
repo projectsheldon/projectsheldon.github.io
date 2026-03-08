@@ -166,9 +166,27 @@ async function CreateCryptoTicket() {
             SetCryptoTicketStatus("Invalid product.", true);
             return;
         }
+
+        // Get quantity and reseller status for the payload
+        const personalUseCheckbox = document.getElementById("reseller-personal-use");
+        const isPersonalUse = personalUseCheckbox?.checked === true;
+        const qtyInput = document.getElementById("reseller-qty");
+        const qty = isPersonalUse ? 1 : Math.max(1, Math.min(100, Number.parseInt(qtyInput?.value || "1", 10) || 1));
+        
+        // Check if user is a reseller (need to fetch this info)
+        let isReseller = false;
+        try {
+            const rs = await AuthApi.GetResellerStatus().catch(() => null);
+            isReseller = rs?.verified === true;
+        } catch {
+            isReseller = false;
+        }
+
         const payload = {
             discordId: authUser.id,
-            productId: productId
+            productId: productId,
+            quantity: qty,
+            isReseller: isReseller && !isPersonalUse
         };
 
         const res = await fetch(`${baseUrl}sheldon/crypto/create_ticket`, {
@@ -235,7 +253,7 @@ async function OnLoad() {
             }
         })();
 
-const compute = () => {
+        const compute = () => {
             const personalUseCheckbox = document.getElementById("reseller-personal-use");
             const isPersonalUse = personalUseCheckbox?.checked === true;
             
@@ -243,24 +261,80 @@ const compute = () => {
             const qty = isPersonalUse ? 1 : Math.max(1, Math.min(100, Number.parseInt(qtyInput?.value || "1", 10) || 1));
             if (qtyInput && !isPersonalUse) qtyInput.value = String(qty);
 
-            const discountPct = isReseller && !isPersonalUse && qty > 3 ? 10 : 0;
-            const total = unitPrice !== null ? (unitPrice * qty * (1 - discountPct / 100)) : null;
+            const discountPct = isReseller && !isPersonalUse && qty > 3 ? 20 : 0;
+            const subtotal = unitPrice !== null ? (unitPrice * qty) : null;
+            const discountAmount = subtotal !== null ? (subtotal * discountPct / 100) : null;
+            const total = subtotal !== null ? (subtotal - discountAmount) : null;
 
+            // Update price display
             if (priceElement) {
-                if (total !== null) priceElement.textContent = `€${total.toFixed(2)}`;
-                else priceElement.textContent = typeof product.price === "string" ? product.price : "-";
+                if (total !== null) {
+                    priceElement.textContent = `€${total.toFixed(2)}`;
+                } else {
+                    priceElement.textContent = typeof product.price === "string" ? product.price : "-";
+                }
+            }
+
+            // Update stacked price breakdown
+            const priceBreakdown = document.getElementById("price-breakdown");
+            const discountRow = document.getElementById("discount-row");
+            const qtyDisplay = document.getElementById("qty-display");
+            
+            if (priceBreakdown) {
+                if (isReseller && !isPersonalUse && qty > 1) {
+                    priceBreakdown.classList.remove("hidden");
+                    const subtotalEl = priceBreakdown.querySelector(".price-subtotal");
+                    if (subtotalEl && subtotal !== null) {
+                        subtotalEl.textContent = `€${subtotal.toFixed(2)}`;
+                    }
+                } else {
+                    priceBreakdown.classList.add("hidden");
+                }
+            }
+            
+            if (discountRow) {
+                if (isReseller && !isPersonalUse && discountPct > 0) {
+                    discountRow.classList.remove("hidden");
+                    const discountEl = discountRow.querySelector(".price-discount");
+                    if (discountEl && discountAmount !== null) {
+                        discountEl.textContent = `-€${discountAmount.toFixed(2)}`;
+                    }
+                } else {
+                    discountRow.classList.add("hidden");
+                }
+            }
+            
+            if (qtyDisplay) {
+                if (isReseller && !isPersonalUse && qty > 1) {
+                    qtyDisplay.classList.remove("hidden");
+                    const qtyEl = qtyDisplay.querySelector(".qty-value");
+                    if (qtyEl) {
+                        qtyEl.textContent = `x${qty}`;
+                    }
+                } else {
+                    qtyDisplay.classList.add("hidden");
+                }
+            }
+
+            // Hide/show quantity container based on Personal Use
+            const qtyContainer = document.getElementById("reseller-qty-container");
+            if (qtyContainer) {
+                qtyContainer.classList.toggle("hidden", isPersonalUse || !isReseller);
+            }
+
+            // Handle the discount text in the panel header
+            const discountTextEl = document.getElementById("reseller-discount-text");
+            if (discountTextEl) {
+                if (!isReseller || isPersonalUse) {
+                    discountTextEl.classList.add("hidden");
+                } else {
+                    discountTextEl.innerHTML = 'Buy 4+ for <span class="text-hacker-blue font-bold">20% off</span>.';
+                    discountTextEl.classList.remove("hidden");
+                }
             }
 
             if (discountNote) {
-                if (!isReseller) {
-                    discountNote.textContent = "";
-                } else if (discountPct > 0) {
-                    discountNote.textContent = "10% off applied.";
-                    discountNote.className = "mt-2 text-xs text-hacker-blue";
-                } else {
-                    discountNote.textContent = "No discount yet. Buy 4+ for 10% off.";
-                    discountNote.className = "mt-2 text-xs text-gray-500";
-                }
+                discountNote.className = "hidden";
             }
         };
 

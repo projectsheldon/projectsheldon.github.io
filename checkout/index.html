@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -56,6 +56,53 @@
 
         .tab-inactive:hover {
             color: #3b82f6;
+        }
+
+        /* Custom Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            transition: 0.3s;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #9ca3af;
+            transition: 0.3s;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: rgba(59, 130, 246, 0.4);
+            border-color: #3b82f6;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+            background-color: #3b82f6;
         }
     </style>
 </head>
@@ -149,6 +196,22 @@
                 </div>
             </div>
             <div class="mt-auto space-y-3 pt-6 border-t border-gray-800/50">
+                <!-- Quantity display -->
+                <div id="qty-display" class="flex justify-between text-gray-500 text-xs hidden">
+                    <span>Quantity</span>
+                    <span class="qty-value">x1</span>
+                </div>
+                <!-- Price Breakdown -->
+                <div id="price-breakdown" class="space-y-1 hidden">
+                    <div class="flex justify-between text-gray-500 text-xs">
+                        <span>Subtotal</span>
+                        <span class="price-subtotal">-</span>
+                    </div>
+                    <div id="discount-row" class="flex justify-between text-gray-500 text-xs hidden">
+                        <span>Discount</span>
+                        <span class="price-discount">-</span>
+                    </div>
+                </div>
                 <div class="flex justify-between text-white font-bold text-xl pt-2">
                     <span>Total</span>
                     <span class="total-price">{total-price}</span>
@@ -172,11 +235,61 @@
             </div>
 
             <div class="space-y-6">
+                <!-- Reseller Bulk Panel - Outside tabs so it shows for both PayPal and Crypto -->
+                <div id="reseller-bulk-panel"
+                    class="hidden mt-0 mb-4 p-5 border border-hacker-blue/30 bg-black/50">
+                    <div class="flex items-start gap-3 mb-5">
+                        <div
+                            class="w-10 h-10 bg-hacker-blue/10 border border-hacker-blue/30 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-hacker-blue" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v-2m9-4a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-white text-sm font-bold tracking-wider uppercase">Reseller Bulk Buy</h3>
+                            <p id="reseller-discount-text" class="text-xs text-gray-500 leading-relaxed">
+                                No discount yet. Buy 4+ for <span class="text-hacker-blue font-bold">20% off</span>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Personal Use Toggle -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-400">Personal Use</span>
+                            <label class="toggle-switch">
+                                <input id="reseller-personal-use" type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Quantity Stepper - Appears below Personal Use -->
+                        <div id="reseller-qty-container" class="flex items-center justify-between">
+                            <span class="text-xs text-gray-400">Quantity</span>
+                            <div class="flex items-center bg-gray-900/80 lg border border-gray-600/50">
+                                <button type="button" onclick="var i=document.getElementById('reseller-qty');i.value=Math.max(1,i.value-1);i.dispatchEvent(new Event('input',{bubbles:true}))" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-hacker-blue hover:bg-gray-800 l-lg transition-all">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                                </button>
+                                <input id="reseller-qty" type="number" inputmode="numeric" min="1" max="100" value="1"
+                                    class="w-14 h-9 bg-transparent text-center text-white font-bold text-sm border-x border-gray-700/50 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                <button type="button" onclick="var i=document.getElementById('reseller-qty');i.value=Math.min(100,parseInt(i.value)+1);i.dispatchEvent(new Event('input',{bubbles:true}))" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-hacker-blue hover:bg-gray-800 r-lg transition-all">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Discount Note (hidden by default) -->
+                        <div id="reseller-discount-note" class="hidden"></div>
+                    </div>
+                </div>
+
                 <div class="tab-content block" data-content="paypal">
-                    <div class="bg-black/40 border border-gray-800 rounded p-6">
-                        <div class="flex items-start gap-3 p-4 rounded border border-gray-800 bg-black/30">
+                    <div class="bg-black/40 border border-gray-800 p-6">
+                        <div class="flex items-start gap-3 p-4 border border-gray-800 bg-black/30">
                             <div
-                                class="w-10 h-10 bg-hacker-blue-dim border border-hacker-blue/30 rounded flex items-center justify-center flex-shrink-0">
+                                class="w-10 h-10 bg-hacker-blue-dim border border-hacker-blue/30 flex items-center justify-center flex-shrink-0">
                                 <svg class="w-5 h-5 text-hacker-blue" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -189,53 +302,17 @@
                             </div>
                         </div>
 
-                        <div id="reseller-bulk-panel"
-                            class="hidden mt-5 mb-4 p-4 rounded border border-hacker-blue/30 bg-black/30">
-                            <div class="flex items-start gap-3">
-                                <div
-                                    class="w-10 h-10 bg-hacker-blue-dim border border-hacker-blue/30 rounded flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-5 h-5 text-hacker-blue" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v-2m9-4a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div class="space-y-1">
-                                    <h3 class="text-white text-sm font-bold tracking-wider uppercase">Reseller Bulk Buy</h3>
-                                    <p class="text-xs text-gray-500 leading-relaxed">
-                                        Buy multiple licenses at once. 10% off when you buy 4+.
-                                    </p>
-                                </div>
-                            </div>
-
-<div class="mt-4 flex items-center justify-between gap-4">
-                                <label for="reseller-qty" class="text-xs text-gray-400 uppercase tracking-widest font-bold">
-                                    Quantity
-                                </label>
-                                <input id="reseller-qty" type="number" inputmode="numeric" min="1" max="100" value="1"
-                                    class="w-28 bg-black border border-gray-700 px-3 py-2 text-white outline-none focus:border-hacker-blue text-sm text-right">
-                            </div>
-                            <div class="mt-3 flex items-center gap-2">
-                                <input id="reseller-personal-use" type="checkbox" checked
-                                    class="w-4 h-4 accent-hacker-blue">
-                                <label for="reseller-personal-use" class="text-xs text-gray-400">
-                                    Personal Use (quantity will be 1)
-                                </label>
-                            </div>
-                            <div id="reseller-discount-note" class="mt-2 text-xs text-gray-500"></div>
-                        </div>
-
-                        <div id="paypal-button-container"></div>
+<div id="paypal-button-container"></div>
                         <!-- <h1>because of technical issues with paypal, i cant support paypal as i am restricted.</h1> -->
                     </div>
                 </div>
 
                 <div class="tab-content hidden" data-content="crypto">
-                    <div class="bg-black/40 border border-gray-800 rounded p-6">
+                    <div class="bg-black/40 border border-gray-800 p-6">
                         <div class="space-y-4">
-                            <div class="flex items-start gap-3 p-4 rounded border border-gray-800 bg-black/30">
+                            <div class="flex items-start gap-3 p-4 border border-gray-800 bg-black/30">
                                 <div
-                                    class="w-10 h-10 bg-hacker-blue-dim border border-hacker-blue/30 rounded flex items-center justify-center flex-shrink-0">
+                                    class="w-10 h-10 bg-hacker-blue-dim border border-hacker-blue/30 flex items-center justify-center flex-shrink-0">
                                     <svg class="w-5 h-5 text-hacker-blue" fill="none" viewBox="0 0 24 24"
                                         stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
