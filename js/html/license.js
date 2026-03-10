@@ -114,7 +114,14 @@ async function InitLicensePage() {
 
     keyTextEl.textContent = finalKey;
 
-    await AssignLicense(finalKey, sessionInfo.id);
+    // try to assign key to current user and report any problems
+    const assignRes = await AssignLicense(finalKey, sessionInfo.id);
+    if (!assignRes || !assignRes.ok) {
+        const errMsg = assignRes?.data?.error || assignRes?.reason || "assignment_failed";
+        // display a warning next to the key so the user knows something went wrong
+        keyTextEl.textContent = `${finalKey} (assignment error: ${errMsg})`;
+        console.warn("License assignment failed:", errMsg, assignRes);
+    }
 }
 
 document.addEventListener("DOMContentLoaded", InitLicensePage);
