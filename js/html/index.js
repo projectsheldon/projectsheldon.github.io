@@ -26,7 +26,6 @@ async function RenderProducts() {
             priceDisplay = '-';
         }
 
-        // Generate comment HTML if comment exists and is not empty
         const commentHtml = product.comment && product.comment.trim() !== '' 
             ? `<div class="absolute top-0 right-0 bg-blue-500 text-black text-xs font-bold px-3 py-1 rounded-none shadow-[0_0_10px_rgba(59,130,246,0.5)]">${product.comment}</div>` 
             : '';
@@ -55,46 +54,38 @@ async function RenderProducts() {
     });
 }
 
-async function HandleDownload() {
-    const downloadButton = document.getElementById('download-btn');
-    if (!downloadButton) return;
-
-    const originalText = downloadButton.textContent;
-    downloadButton.disabled = true;
-    downloadButton.textContent = 'LOADING...';
-
-    try {
-        const response = await fetch(MANIFEST_URL, { cache: 'no-store' });
-
-        if (!response.ok) {
-            throw new Error(`Manifest request failed with status ${response.status}`);
-        }
-
-        const manifest = await response.json();
-        const loaderUrl = manifest?.loader_url;
-
-        if (typeof loaderUrl !== 'string' || loaderUrl.length === 0) {
-            throw new Error('Manifest is missing a valid download_url');
-        }
-
-        window.location.assign(loaderUrl);
-    } catch (err) {
-        console.error('Failed to download latest binary:', err);
-        alert('Failed to get the latest download. Please try again.');
-    } finally {
-        downloadButton.disabled = false;
-        downloadButton.textContent = originalText;
-    }
-}
-
-function SetupDownloadButton() {
-    const downloadButton = document.getElementById('download-btn');
-    if (!downloadButton) return;
-
-    downloadButton.addEventListener('click', HandleDownload);
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     RenderProducts();
-    SetupDownloadButton();
+    const downloadButton = document.getElementById('download-btn');
+    if (!downloadButton) return;
+
+    downloadButton.addEventListener('click', async () => {
+        const originalText = downloadButton.textContent;
+        downloadButton.disabled = true;
+        downloadButton.textContent = 'LOADING...';
+
+        try {
+            const response = await fetch(MANIFEST_URL, { cache: 'no-store' });
+
+            if (!response.ok) {
+                throw new Error(`Manifest request failed with status ${response.status}`);
+            }
+
+            const manifest = await response.json();
+            const loaderUrl = manifest?.loader_url;
+
+            if (typeof loaderUrl !== 'string' || loaderUrl.length === 0) {
+                throw new Error('Manifest is missing a valid download_url');
+            }
+
+            window.location.assign(loaderUrl);
+        } catch (err) {
+            console.error('Failed to download latest binary:', err);
+            alert('Failed to get the latest download. Please try again.');
+        } finally {
+            downloadButton.disabled = false;
+            downloadButton.textContent = originalText;
+        }
+    });
 });
+

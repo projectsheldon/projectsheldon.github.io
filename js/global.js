@@ -1,50 +1,37 @@
-// Cache for the API URL fetched from backend
 let cachedApiUrl = null;
 
-// Check if we're in local development
-function isLocalDevelopment() {
-    if (typeof window === 'undefined') return false;
-    const host = window.location.host;
-    return host === 'localhost' || host === '127.0.0.1' || host.startsWith('localhost:');
-}
+export async function GetApiUrl() {
+    if (cachedApiUrl) {
+        return cachedApiUrl;
+    }
 
-async function fetchApiUrlFromBackend() {
+    const isLocal = (() => {
+        if (typeof window === 'undefined') return false;
+        const host = window.location.host;
+        return host === 'localhost' || host === '127.0.0.1' || host.startsWith('localhost:');
+    })();
+
+    if (isLocal) {
+        cachedApiUrl = 'http://localhost:3350/';
+        return cachedApiUrl;
+    }
+
     try {
-        // Use relative URL to fetch from current origin
         const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
         const host = typeof window !== 'undefined' ? window.location.host : 'projectsheldon.xyz';
         const baseUrl = `${protocol}//${host}/`;
         
         const res = await fetch(`${baseUrl}sheldon/getApiUrl`);
-        if (!res.ok) throw new Error('Failed to fetch API URL');
-        const data = await res.json();
-        return data.url;
+        if (res.ok) {
+            const data = await res.json();
+            if (data.url) {
+                cachedApiUrl = data.url;
+                return cachedApiUrl;
+            }
+        }
     } catch (err) {
-        console.error('Failed to fetch API URL from backend:', err);
-        return null;
-    }
-}
-
-export async function GetApiUrl() {
-    // Return cached URL if already fetched
-    if (cachedApiUrl) {
-        return cachedApiUrl;
     }
 
-    // For local development, directly use localhost:3350
-    if (isLocalDevelopment()) {
-        cachedApiUrl = 'http://localhost:3350/';
-        return cachedApiUrl;
-    }
-
-    // Try to fetch URL from backend
-    const backendUrl = await fetchApiUrlFromBackend();
-    if (backendUrl) {
-        cachedApiUrl = backendUrl;
-        return cachedApiUrl;
-    }
-
-    // Fallback to hardcoded URLs if fetch fails
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     cachedApiUrl = isHttps ? 'https://projectsheldon.xyz/' : 'http://localhost:3350/';
     return cachedApiUrl;
