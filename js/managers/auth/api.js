@@ -138,12 +138,13 @@ const AuthApi = {
     },
 
     // Create license - returns plain JSON without encryption
+    // Use forceNew: true to bypass existing license check (e.g., for WorkInk redemptions)
     async CreateLicense(duration = null, options = {}) {
         const res = await fetch(`${await GetApiUrl()}sheldon/auth/create-license`, {
             method: "POST",
             credentials: options?.allowCookie !== false ? "include" : "omit",
             headers: BuildAuthHeaders(options),
-            body: JSON.stringify({ duration })
+            body: JSON.stringify({ duration, forceNew: options?.forceNew === true })
         });
         const json = await res.json().catch(() => null);
         if (!res.ok) throw json || { error: "request_failed" };

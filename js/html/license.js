@@ -17,7 +17,8 @@ async function GenerateBackendKey(discordId) {
 
     try {
         // Use the new unencrypted auth API endpoint
-        const data = await AuthApi.CreateLicense().catch(() => null);
+        // Pass forceNew: true to bypass existing license check - needed for WorkInk redemptions
+        const data = await AuthApi.CreateLicense(null, { forceNew: true }).catch(() => null);
         return data?.license ?? null;
     } catch (err) {
         return null;
