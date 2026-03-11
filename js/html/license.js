@@ -13,8 +13,25 @@ function IsLikelyWorkInkToken(value) {
 }
 
 async function GenerateBackendKey(discordId) {
-    if (!discordId || !apiKey) return null;
-
+    // Get the current apiKey from URL
+    const currentApiKey = new URLSearchParams(window.location.search).get('key');
+    
+    // If there's NO apiKey in the URL, we need to create one (for WorkInk token redemption)
+    // If there IS an apiKey in the URL, don't create a duplicate (for PayPal flow)
+    if (!discordId) {
+        return null;
+    }
+    
+    // If apiKey exists in URL and it's NOT a WorkInk token, skip creating a new license
+    // This prevents duplicate license creation when coming from payment flows
+    if (currentApiKey && !IsLikelyWorkInkToken(currentApiKey)) {
+        console.log('GenerateBackendKey: skipping - valid license key exists in URL');
+        return null;
+    }
+    
+    // If we get here, either:
+    // 1. There's no apiKey in URL (direct access to /license)
+    // 2. The apiKey is a WorkInk token that needs to be exchanged
     try {
         // Use the new unencrypted auth API endpoint
         // Pass forceNew: true to bypass existing license check - needed for WorkInk redemptions
@@ -64,40 +81,23 @@ async function InitLicensePage() {
     try {
         const rs = await AuthApi.GetResellerStatus().catch(() => null);
         if (rs?.verified === true) {
-            // Check if this license is reseller inventory (unassigned)
-            // If is_unassigned = 1, it's reseller inventory - redirect to resell page
-            // If is_unassigned = 0 or null, it's a personal license - don't redirect
             try {
-                // Use the new unencrypted auth API endpoint with discordId and token for validation
                 const licenseData = await AuthApi.GetLicense(apiKey, { discordId, token: sessionToken }).catch(() => null);
-                
-                // Only redirect to resell if the license is actually unassigned reseller inventory
-                // Check is_unassigned flag - if it's 1, it's inventory that needs to be assigned
                 const license = licenseData?.license;
                 const isUnassignedInventory = license?.is_unassigned === 1 || license?.is_unassigned === true;
-                
                 if (isUnassignedInventory) {
                     window.location.href = "/resell/";
                     return;
                 }
-                // Otherwise, it's a personal license - continue to show it
             } catch (err) {
-                // If we can't check the license details, check discord_id as fallback
-                // If license exists and has a discord_id assigned, it's a personal license
                 try {
-                    // Pass discordId and token for server-side validation
                     const licenseData = await AuthApi.GetLicense(apiKey, { discordId, token: sessionToken }).catch(() => null);
                     const license = licenseData?.license;
-                    
-                    // If license has no discord_id assigned, redirect to resell as safety
-                    // (it might be unassigned inventory that couldn't be detected)
                     if (!license || !license.discord_id) {
                         window.location.href = "/resell/";
                         return;
                     }
-                    // Otherwise, continue to show the personal license
                 } catch (fallbackErr) {
-                    // If we can't even check, redirect to resell for safety
                     window.location.href = "/resell/";
                     return;
                 }
@@ -105,10 +105,23 @@ async function InitLicensePage() {
         }
     } catch { }
 
-    const backendKey = await GenerateBackendKey(sessionInfo.id);
-    const finalKey = backendKey || apiKey;
+    // Decide whether we actually need to touch the backend at all.  The only
+    // times we use GenerateBackendKey are when the query parameter is missing
+    // (e.g. landing directly on /license with no key) or when the parameter is
+    // a *WorkInk token* that needs to be exchanged.  We no longer override a
+    // valid licence key returned by PayPal or any other source.
+    let finalKey = apiKey;
+    let backendKey = null;
 
-    if (!backendKey && IsLikelyWorkInkToken(apiKey)) {
+    if (!finalKey || IsLikelyWorkInkToken(finalKey)) {
+        backendKey = await GenerateBackendKey(sessionInfo.id);
+        if (backendKey) finalKey = backendKey;
+    }
+
+    // if the original parameter looked like a WorkInk token but we ended up
+    // still displaying that same value then the exchange failed (token
+    // invalidated).
+    if (IsLikelyWorkInkToken(apiKey) && finalKey === apiKey) {
         keyTextEl.textContent = "Token is invalidated";
         return;
     }
