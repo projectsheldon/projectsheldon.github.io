@@ -6,398 +6,304 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Project Sheldon</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/png" href="./favicon/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="./css/index.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@300;400;500;600;700;800&display=swap"rel="stylesheet">
+    <link rel="icon" href="./favicon/favicon.ico" type="image/x-icon">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+<link href="./css/root.css" rel="stylesheet">
+    <meta http-equiv="Permissions-Policy" content="compute-pressure=()">
+    <script>
+    (function() {
+      const originalError = console.error.bind(console);
+      console.error = function(...args) {
+        if (typeof args[0] === 'string' && (args[0].includes('youtube.com') || args[0].includes('ERR_BLOCKED_BY_CLIENT') || args[0].includes('net::'))) return;
+        return originalError(...args);
+      };
+      const originalWarn = console.warn.bind(console);
+      console.warn = function(...args) {
+        if (typeof args[0] === 'string' && (args[0].includes('youtube.com') || args[0].includes('Violation') || args[0].includes('Permissions policy'))) return;
+        return originalWarn(...args);
+      };
+      window.addEventListener('error', function(e) {
+        if (e.message && (e.message.includes('youtube.com') || e.message.includes('ERR_BLOCKED_BY_CLIENT') || e.filename.includes('youtube.com'))) {
+          e.preventDefault();
+          return false;
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e.reason && typeof e.reason === 'string' && e.reason.includes('youtube.com')) {
+          e.preventDefault();
+        }
+      });
+    })();
+    </script>
 </head>
 
 <body class="antialiased">
-    <!-- Mouse Glow Follower -->
-    <div id="mouse-glow" class="mouse-glow"></div>
+    <div class="bg-mesh"></div>
+    <div class="orb w-[30rem] h-[30rem] bg-[#c7b18f]" style="top: -10%; left: -15%;"></div>
+    <div class="orb w-[35rem] h-[35rem] bg-[#1a1a1a]" style="bottom: -20%; right: -10%; animation-delay: -7s;"></div>
 
-    <!-- Header / Nav -->
-    <nav class="fixed top-0 w-full z-[100] px-4 py-4 flex justify-center">
+    <nav class="fixed top-0 w-full z-[100] p-4 md:p-5 flex justify-center">
         <div
-            class="w-[95%] lg:w-[98%] flex justify-between items-center bg-black/40 backdrop-blur-xl border border-white/10 px-6 md:px-10 py-3 rounded-full shadow-2xl">
-
-            <div class="text-base md:text-lg font-bold tracking-tighter text-white flex items-center gap-2">
-                <img src="https://cdn.discordapp.com/attachments/1480162358667120743/1480162988492066887/sheldon_logo.png?ex=69b2a134&is=69b14fb4&hm=3b977ccc05f355fbb3e5d08d602a8c96afaf39ae2b3f63979a0058f0be20863e&"
-                    alt="Logo" class="w-5 h-5 md:w-6 md:h-6 object-contain">
-                SHELDON
-            </div>
-
-            <div class="hidden md:flex">
-                <div class="nav-tabs-container">
-                    <a href="#" class="nav-tab active">Home</a>
-                    <a href="#features" class="nav-tab">API</a>
-                    <a href="#pricing" class="nav-tab">Resell</a>
+            class="w-full max-w-[1100px] glass-nav h-14 md:h-16 px-6 md:px-8 rounded-full flex items-center justify-between relative">
+            <div class="flex items-center gap-3 z-10 shrink-0">
+                <div class="logo-box w-8 h-8 rounded-lg flex items-center justify-center shadow-md">
+                    <img src="./favicon/favicon.ico" alt="Logo" class="w-8 h-8 rounded-lg">
                 </div>
+                <span class="text-xl font-black tracking-tighter text-white hidden sm:block">SHELDON</span>
             </div>
 
-            <div id="user-context" class="flex items-center gap-2 md:gap-4">
-                <button
-                    class="btn-discord flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider">
-                    <svg class="w-3 md:w-3.5 h-3 md:h-3.5 fill-white" viewBox="0 0 24 24">
+            <div class="absolute left-1/2 -translate-x-1/2 flex items-center h-full">
+                <a href="#" class="nav-tab active">Home</a>
+                <a href="#api" class="nav-tab">API</a>
+                <a href="#resell" class="nav-tab">Resell</a>
+            </div>
+
+            <div class="flex items-center gap-5 z-10 shrink-0">
+                <div id="user-profile-trigger" class="hidden lg:flex items-center gap-2 cursor-pointer group">
+                    <div class="text-right">
+                        <div class="text-[0.7rem] font-bold text-neutral-400 group-hover:text-white transition-colors">
+                            Penguu</div>
+                    </div>
+                    <div
+                        class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1.5 group-hover:bg-white/10 transition-all">
+                        <svg class="w-full h-full text-neutral-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <button id="discord-login-btn"
+                    class="btn-discord px-5 py-2 rounded-xl text-[0.65rem] font-black uppercase tracking-wider transition-all">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 127.14 96.36" fill="currentColor">
                         <path
-                            d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01a10.147 10.147 0 0 0 .372.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.946 2.419-2.157 2.419z" />
+                            d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a.41.41,0,0,0-.43.2,72.48,72.48,0,0,0-3.17,6.52,97.26,97.26,0,0,0-29,0,72.84,72.84,0,0,0-3.19-6.52.4.4,0,0,0-.43-.2A105.09,105.09,0,0,0,19.44,8.07a.44.44,0,0,0-.2.07C2.12,34,1.15,59.39,3.46,84.41a.48.48,0,0,0,.19.34A105.77,105.77,0,0,0,35.77,96.36a.42.42,0,0,0,.46-.22,74.22,74.22,0,0,0,6.42-10.38.4.4,0,0,0-.22-.56,68.7,68.7,0,0,1-10-4.76.41.41,0,0,1,0-.69c.83-.62,1.67-1.28,2.46-1.95a.39.39,0,0,1,.41-.05,73.4,73.4,0,0,0,57.48,0,.39.39,0,0,1,.41.05c.79.67,1.63,1.33,2.46,1.95a.41.41,0,0,1,0,.69,68.61,68.61,0,0,1-10,4.76.41.41,0,0,0-.22.56,74.8,74.8,0,0,0,6.43,10.38.42.42,0,0,0,.46.22,105.48,105.48,0,0,0,32.11-11.61.45.45,0,0,0,.19-.34c2.72-28.53-4.67-53.59-20-76.27A.39.39,0,0,0,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.07,65.69,84.69,65.69Z" />
                     </svg>
-                    LOGIN
+                    <span id="discord-login-txt" class="hidden sm:inline">Login</span>
                 </button>
             </div>
         </div>
     </nav>
 
-    <section class="fullscreen-takeover relative hero-gradient overflow-hidden">
+    <section class="relative min-h-screen flex flex-col items-center justify-center pt-32 px-4 overflow-hidden">
         <canvas id="particle-canvas"></canvas>
-        <div class="grid-overlay"></div>
-
-        <div class="content-layer flex flex-col items-center w-full px-4">
-            <h1 class="hacker-text text-6xl sm:text-7xl md:text-8xl lg:text-[11rem] leading-none mb-4 md:mb-6 opacity-90 transition-opacity duration-1000 hover:opacity-100"
-                style="animation: shine 6s linear infinite, pulse 4s ease-in-out infinite;">
-                SHELDON
-            </h1>
-            <p class="max-w-2xl text-neutral-500 text-base md:text-xl mb-8 leading-relaxed font-medium">
-                Project Sheldon a Roblox external by Penguu.
+        <div class="relative z-10 flex flex-col items-center text-center">
+            <h1 class="hacker-text text-6xl md:text-8xl lg:text-[10rem] font-black leading-none mb-6">SHELDON</h1>
+            <p class="max-w-2xl text-neutral-400 text-base md:text-xl mb-12 font-medium leading-relaxed">
+                Unlock the ultimate external experience. Premium security features, high-performance execution, and
+                active support.
             </p>
-
-            <a href="https://discord.gg/Caxrnqx2By" target="_blank" class="discord-status-badge">
-                <div class="flex items-center gap-3">
-                    <svg class="w-4 h-4 fill-[#5865F2]" viewBox="0 0 24 24">
-                        <path
-                            d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01a10.147 10.147 0 0 0 .372.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.946 2.419-2.157 2.419z" />
-                    </svg>
-                    <span class="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">
-                        <span id="discord-count" class="text-white">1,248</span> Members
-                    </span>
-                </div>
-                <div class="status-dot"></div>
-            </a>
-
-            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <div class="flex flex-col sm:flex-row gap-5 w-full sm:w-auto">
                 <button
-                    class="btn-primary w-full sm:w-auto px-10 py-4 rounded-xl text-[12px] md:text-[13px] uppercase tracking-widest min-h-[56px]">Download
+                    class="bg-white text-black font-black px-12 py-4 rounded-2xl text-[0.75rem] uppercase tracking-[0.2em] hover:bg-[#c7b18f] transition-all transform hover:scale-[1.02] leading-none">Download
                     Now</button>
-                <a href="#features"
-                    class="btn-secondary w-full sm:w-auto px-10 py-4 rounded-xl text-[12px] md:text-[13px] uppercase tracking-widest flex items-center justify-center min-h-[56px]">Features</a>
+                <a href="#pricing"
+                    class="flex items-center justify-center px-12 py-4 rounded-2xl text-[0.75rem] border border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] transition-all leading-none">View
+                    Plans</a>
             </div>
+            <a href="javascript:void(0)" onclick="RedirectToPlatform('discord')" class="discord-status-badge">
+                <span class="text-[0.6rem] font-bold uppercase tracking-widest text-neutral-400">
+                    <span id="discord-count" class="text-white">1,248</span> Members Online
+                </span>
+            </a>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="py-24 md:py-40 px-6 bg-black border-t border-white/5 relative">
-        <div class="max-w-7xl mx-auto flex flex-col items-center content-layer">
-            <div class="text-center mb-16 md:mb-24">
-                <h2 class="text-3xl md:text-5xl font-bold mb-4 tracking-tight uppercase">Overview</h2>
-                <p class="text-neutral-500 text-base md:text-lg">Honest info regarding Project Sheldon.</p>
+    <section id="pricing" class="py-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-20">
+                <h2 class="text-5xl md:text-6xl font-black mb-6 tracking-tighter uppercase">Access Sheldon</h2>
+                <p class="text-neutral-500 text-lg">Choose the tier that fits your needs.</p>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 w-full">
-                <div class="glass-card p-8 md:p-10 items-start text-left">
-                    <div class="mb-4 p-2 bg-white/5 rounded-lg">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Pricing Cards (Restored from your snippet) -->
+                <div class="glass-card p-10 rounded-3xl flex flex-col justify-between">
+                    <div>
+                        <div class="price-container mb-3"><span class="price-main">Free</span></div>
+                        <p class="text-neutral-500 text-[0.85rem] leading-relaxed mb-10">Access Sheldon with a single
+                            checkpoint with ads.</p>
                     </div>
-                    <h3 class="text-sm font-bold uppercase tracking-widest mb-4">Aesthetic Visuals</h3>
-                    <p class="text-neutral-500 text-[13px] leading-relaxed">Deep customization for all visual elements.
-                        Designed to look clean, appealing, and aesthetic while providing the info you need.</p>
+                    <button
+                        class="w-full py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-[0.65rem] font-black uppercase tracking-widest transition-all">Get
+                        Key</button>
                 </div>
-
-                <div class="glass-card p-8 md:p-10 items-start text-left">
-                    <div class="mb-4 p-2 bg-white/5 rounded-lg">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                <div class="glass-card p-10 rounded-3xl flex flex-col justify-between">
+                    <div>
+                        <div class="price-container mb-3"><span class="price-main">$1.99</span><span
+                                class="price-sub">/2 days</span></div>
+                        <p class="text-neutral-500 text-[0.85rem] leading-relaxed mb-10">Perfect for a weekend of elite
+                            performance.</p>
                     </div>
-                    <h3 class="text-sm font-bold uppercase tracking-widest mb-4">Versatile Utility</h3>
-                    <p class="text-neutral-500 text-[13px] leading-relaxed">Packed with useful features designed for fun
-                        across multiple games, regardless of the genre.</p>
+                    <button
+                        class="w-full py-4 rounded-2xl border border-white/10 hover:border-white/20 text-[0.65rem] font-black uppercase tracking-widest transition-all">Purchase</button>
                 </div>
-
-                <div class="glass-card p-8 md:p-10 items-start text-left">
-                    <div class="mb-4 p-2 bg-white/5 rounded-lg">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
+                <div class="glass-card p-10 rounded-3xl flex flex-col justify-between border-white/20 bg-white/[0.03]">
+                    <div>
+                        <div class="price-container mb-3"><span class="price-main">$4.99</span><span
+                                class="price-sub">/7 days</span></div>
+                        <p class="text-neutral-400 text-[0.85rem] leading-relaxed mb-10">The most popular choice for
+                            dedicated users.</p>
                     </div>
-                    <h3 class="text-sm font-bold uppercase tracking-widest mb-4">Community Driven</h3>
-                    <p class="text-neutral-500 text-[13px] leading-relaxed">Built with ease of use in mind. I actively
-                        listen to community suggestions and prioritize fixing bugs reported by users.</p>
+                    <button
+                        class="w-full py-4 rounded-2xl bg-white text-black text-[0.65rem] font-black uppercase tracking-widest transition-all">Purchase</button>
                 </div>
-            </div>
-        </div>
-    </section>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="py-24 md:py-40 px-6 relative bg-black border-t border-white/5">
-        <div class="max-w-7xl mx-auto flex flex-col items-center content-layer">
-            <div class="text-center mb-16 md:mb-24">
-                <h2 class="text-3xl md:text-5xl font-bold mb-4 tracking-tight uppercase">Access Sheldon</h2>
-                <p class="text-neutral-500 text-base md:text-lg">All of options have the same features, but pls support me 😁</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full items-stretch">
-                <!-- Free Plan -->
-                <div class="pricing-card p-8 md:p-10 flex flex-col">
-                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Trial</h3>
-                    <div
-                        class="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tighter uppercase leading-tight">
-                        1 CHECKPOINT</div>
-                    <div class="flex-grow"></div>
-
-                    <div class="mt-8 space-y-4">
-                        <div class="badge-pill">
-                            <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">3 Hours
-                                Access</span>
-                        </div>
-                        <button
-                            class="w-full py-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 transition min-h-[48px]">Get
-                            Key</button>
+                <div class="glass-card p-10 rounded-3xl flex flex-col justify-between">
+                    <div>
+                        <div class="price-container mb-3"><span class="price-main">$7.99</span><span
+                                class="price-sub">/lifetime</span></div>
+                        <p class="text-neutral-500 text-[0.85rem] leading-relaxed mb-10">One-time payment for permanent
+                            access.</p>
                     </div>
-                </div>
-
-                <!-- Daily Plan -->
-                <div class="pricing-card p-8 md:p-10 flex flex-col">
-                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Daily</h3>
-                    <div class="text-4xl font-bold text-white mb-8 tracking-tighter">$1.99</div>
-                    <div class="flex-grow"></div>
-
-                    <div class="mt-8 space-y-4">
-                        <div class="badge-pill">
-                            <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">2 Days
-                                Access</span>
-                        </div>
-                        <button
-                            class="w-full py-4 rounded-xl btn-primary text-xs uppercase tracking-widest min-h-[48px]">Buy
-                            Now</button>
-                    </div>
-                </div>
-
-                <div class="pricing-card p-8 md:p-10 flex flex-col">
-                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Weekly</h3>
-                    <div class="text-4xl font-bold text-white mb-8 tracking-tighter">$4.99</div>
-                    <div class="flex-grow"></div>
-
-                    <div class="mt-8 space-y-4">
-                        <div class="badge-pill">
-                            <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">7 Days
-                                Access</span>
-                        </div>
-                        <button
-                            class="w-full py-4 rounded-xl btn-primary text-xs uppercase tracking-widest min-h-[48px]">Buy
-                            Now</button>
-                    </div>
-                </div>
-
-                <!-- Lifetime Plan -->
-                <div class="pricing-card lifetime-card p-8 md:p-10 flex flex-col">
-                    <div
-                        class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-black uppercase px-4 py-1 rounded-full tracking-widest shadow-xl z-20">
-                        Best Value</div>
-
-                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Lifetime</h3>
-                    <div class="text-4xl font-bold text-white mb-8 tracking-tighter">$7.99</div>
-                    <div class="flex-grow"></div>
-
-                    <div class="mt-8 space-y-4">
-                        <div class="badge-pill border-white/10 bg-white/5">
-                            <span class="text-[10px] text-white font-black uppercase tracking-widest">Permanent
-                                Access</span>
-                        </div>
-                        <button
-                            class="w-full py-4 rounded-xl btn-primary text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(255,255,255,0.15)] min-h-[48px]">Buy
-                            Now</button>
-                    </div>
+                    <button
+                        class="w-full py-4 rounded-2xl border border-white/10 hover:border-white/20 text-[0.65rem] font-black uppercase tracking-widest transition-all">Purchase</button>
                 </div>
             </div>
         </div>
     </section>
 
-    <footer class="bg-black border-t border-white/5 pt-20 pb-10 px-6">
-        <div class="max-w-7xl mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                <div class="col-span-1 md:col-span-1">
-                    <div class="text-xl font-bold tracking-tighter text-white flex items-center gap-2 mb-4">
-                        <img src="https://cdn.discordapp.com/attachments/1480162358667120743/1480162988492066887/sheldon_logo.png?ex=69b2a134&is=69b14fb4&hm=3b977ccc05f355fbb3e5d08d602a8c96afaf39ae2b3f63979a0058f0be20863e&" alt="Logo" class="w-6 h-6 object-contain grayscale brightness-200">
-                        SHELDON
-                    </div>
-                    <p class="text-neutral-500 text-xs leading-relaxed max-w-[200px]">
-                        One of the best Roblox externals on the market, built with dedication and support by the community.
+    <section class="py-20 px-6">
+        <div class="max-w-6xl mx-auto space-y-12">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="glass-card p-8 md:p-12 rounded-[2rem]">
+                    <h3 class="text-3xl font-black mb-4 uppercase tracking-tight">UI & Features</h3>
+                    <p class="text-neutral-500 text-sm leading-relaxed mb-6">
+                        Project Sheldon has a straight-forward and user-friendly interface with the focus being on not
+                        being lost searching for something. Lastly the are alot of features so that everyone can have
+                        fun in any game genre.
                     </p>
+                    <!-- <div class="flex gap-4">
+                        <div class="bg-white/5 rounded-xl px-4 py-2 border border-white/5">
+                            <span class="block text-[0.6rem] text-neutral-500 uppercase font-bold">Latency</span>
+                            <span class="text-xs font-black">&lt; 1ms</span>
+                        </div>
+                        <div class="bg-white/5 rounded-xl px-4 py-2 border border-white/5">
+                            <span class="block text-[0.6rem] text-neutral-500 uppercase font-bold">CPU Usage</span>
+                            <span class="text-xs font-black">~0.2%</span>
+                        </div>
+                    </div> -->
                 </div>
 
-                <div>
-                    <h4 class="text-white text-[10px] font-black uppercase tracking-[0.2em] mb-6">Product</h4>
-                    <ul class="space-y-4">
-                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">Download</a></li>
-                        <li><a href="#features" class="text-neutral-500 hover:text-white text-xs transition-colors">Documentation</a></li>
-                        <li><a href="#pricing" class="text-neutral-500 hover:text-white text-xs transition-colors">Pricing</a></li>
-                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">Status</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-white text-[10px] font-black uppercase tracking-[0.2em] mb-6">Community</h4>
-                    <ul class="space-y-4">
-                        <li><a href="https://discord.gg/Caxrnqx2By" class="text-neutral-500 hover:text-white text-xs transition-colors">Discord Server</a></li>
-                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">YouTube</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-white text-[10px] font-black uppercase tracking-[0.2em] mb-6">Legal</h4>
-                    <ul class="space-y-4">
-                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">Terms of Service</a></li>
-                    </ul>
+                <div class="glass-card p-8 md:p-12 rounded-[2rem]">
+                    <h3 class="text-3xl font-black mb-4 uppercase tracking-tight">Community</h3>
+                    <p class="text-neutral-500 text-sm leading-relaxed">
+                        Project Sheldon is developed by the community's feedback & my personal ideas. Furthermore, I try
+                        my best to impliment any request and fix bugs that are found.
+                    </p>
+                    <!-- <ul class="mt-6 space-y-3">
+                        <li class="flex items-center gap-3 text-xs font-bold text-neutral-300">
+                            <div class="w-1.5 h-1.5 rounded-full bg-[#c7b18f]"></div> Kernel-Level Protection
+                        </li>
+                        <li class="flex items-center gap-3 text-xs font-bold text-neutral-300">
+                            <div class="w-1.5 h-1.5 rounded-full bg-[#c7b18f]"></div> Hardware Spoofer Included
+                        </li>
+                    </ul> -->
                 </div>
             </div>
 
-            <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="flex items-center gap-2"></div>
-                
-                <p class="text-neutral-700 text-[9px] font-bold tracking-[0.3em] uppercase">
-                    © 2024 SHELDON SOFTWARE • ALL RIGHTS RESERVED.
-                </p>
+            <div class="glass-card p-6 md:p-10 rounded-[3rem] overflow-hidden">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
+                    <div>
+                        <h4 class="text-3xl md:text-5xl font-black uppercase tracking-tighter">Showcase</h4>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="space-y-4">
+                        <div class="ui-preview-container aspect-video group cursor-pointer">
+                            <iframe class="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
+                                src="https://www.youtube.com/embed/FL1t5zneRps" title="Sheldon Update 1" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Video 2 -->
+                    <div class="space-y-4">
+                        <div class="ui-preview-container aspect-video group cursor-pointer">
+                            <iframe class="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
+                                src="https://www.youtube.com/embed/NUO5s9c8tq4" title="Sheldon Update 2" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Video 3 -->
+                    <div class="space-y-4">
+                        <div class="ui-preview-container aspect-video group cursor-pointer">
+                            <iframe class="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
+                                src="https://www.youtube.com/embed/Wy7VzO6VXzk" title="Sheldon Update 3" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer class="pt-32 pb-16 border-t border-white/5 relative bg-black/40">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
+                <div class="space-y-6 max-w-sm">
+                    <div class="text-3xl font-black tracking-tighter text-white flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm">
+                            <div class="logo-box w-8 h-8 rounded-lg flex items-center justify-center shadow-md">
+                                <img src="./favicon/favicon.ico" alt="Logo" class="w-8 h-8 rounded-lg">
+                            </div>
+                        </div>SHELDON
+                    </div>
+                    <p class="text-neutral-500 text-sm font-medium leading-relaxed">Have fun using Project Sheldon, and
+                        also if you can support me!</p>
+                </div>
+                <div class="grid grid-cols-2 gap-16 md:gap-24">
+                    <div class="space-y-6">
+                        <h4 class="text-[0.65rem] font-black text-white uppercase tracking-[0.2em]">Community</h4>
+                        <ul class="space-y-4 text-sm font-bold">
+                            <li>
+                                <a href="javascript:void(0)" onclick="RedirectToPlatform('youtube')"
+                                    class="text-neutral-400 hover:text-white transition-colors">YouTube</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)" onclick="RedirectToPlatform('discord')"
+                                    class="text-neutral-400 hover:text-white transition-colors">Discord Server</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="space-y-6">
+                        <h4 class="text-[0.65rem] font-black text-white uppercase tracking-[0.2em]">Legal</h4>
+                        <ul class="space-y-4 text-sm font-bold">
+                            <li><a href="#" class="text-neutral-400 hover:text-white transition-colors">Terms of
+                                    Service</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-white/5 flex justify-center md:justify-start">
+                <p class="text-neutral-600 text-[0.6rem] font-bold tracking-[0.1em] uppercase">&copy; 2024 SHELDON
+                    SOFTWARE • ALL RIGHTS RESERVED</p>
             </div>
         </div>
     </footer>
 
+    <script src="./js/html/render/canvas.js"></script>
+    <script src="./js/discord/topbar_buttons.js"></script>
+    <script type="module" src="./js/util/redirect.js"></script>
+
     <script>
-        const canvas = document.getElementById('particle-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        const isMobile = window.innerWidth < 768;
-        const particleCount = isMobile ? 40 : 75;
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        window.addEventListener('resize', resize);
-        resize();
-
-        class Particle {
-            constructor(isInitial = false) {
-                this.init(isInitial);
+        setInterval(() => {
+            const el = document.getElementById('discord-count');
+            if (el) {
+                const current = parseInt(el.innerText.replace(',', ''));
+                const next = current + (Math.random() > 0.6 ? 1 : (Math.random() > 0.8 ? -1 : 0));
+                el.innerText = next.toLocaleString();
             }
-            init(isInitial = false) {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.4;
-                this.vy = (Math.random() - 0.5) * 0.4;
-                this.maxSize = Math.random() * 2 + 0.5;
-                this.size = isInitial ? this.maxSize : 0;
-                this.growthSpeed = 0.02 + Math.random() * 0.03;
-                this.opacity = isInitial ? 0.3 : 0;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.size < this.maxSize) {
-                    this.size += this.growthSpeed;
-                    this.opacity = Math.min(0.3, this.opacity + 0.01);
-                }
-
-                if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
-                    this.init(false);
-                }
-            }
-            draw() {
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function initParticles() {
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle(true));
-            }
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const connectionDistance = isMobile ? 120 : 180;
-
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                p.update();
-                for (let j = i + 1; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dx = p.x - p2.x;
-                    const dy = p.y - p2.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < connectionDistance) {
-                        const alpha = (1 - dist / connectionDistance) * 0.12;
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * (p.size / p.maxSize)})`;
-                        ctx.lineWidth = 0.6;
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
-                }
-            }
-            particles.forEach(p => p.draw());
-            requestAnimationFrame(animateParticles);
-        }
-
-        // Discord Mock Fetch
-        function updateDiscordCount() {
-            const countElement = document.getElementById('discord-count');
-            const count = Math.floor(Math.random() * (1500 - 1200 + 1)) + 1200;
-            countElement.innerText = count.toLocaleString();
-        }
-
-        const mouseGlow = document.getElementById('mouse-glow');
-        if (!isMobile) {
-            window.addEventListener('mousemove', (e) => {
-                mouseGlow.style.left = e.clientX + 'px';
-                mouseGlow.style.top = e.clientY + 'px';
-            });
-        }
-
-        const navTabs = document.querySelectorAll('.nav-tab');
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                navTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initParticles();
-            animateParticles();
-            updateDiscordCount();
-
-            const observerOptions = { threshold: 0.05 };
-            const revealOnScroll = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, observerOptions);
-
-            document.querySelectorAll('.glass-card, .pricing-card, section h1, section h2, section p, .badge-pill, .discord-status-badge').forEach(el => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(15px)';
-                el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                revealOnScroll.observe(el);
-            });
-        });
+        }, 4000);
     </script>
 </body>
 
