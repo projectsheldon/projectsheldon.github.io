@@ -1,215 +1,403 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Project Sheldon</title>
-    <meta name="description" content="Project Sheldon is a Roblox External by Penguu. Download the latest version and view access plans.">
-    
-    <link rel="icon" type="image/png" href="./favicon/favicon.ico">
-
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="./js/managers/render/options.js"></script>
-
-    <link rel="stylesheet" href="css/base.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
-
-    <base href="/">
-
-    <style>
-        .h-screen-safe {
-            height: 100vh;
-            height: 100dvh;
-        }
-    </style>
+    <link rel="icon" type="image/png" href="./favicon/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="./css/index.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@300;400;500;600;700;800&display=swap"rel="stylesheet">
 </head>
 
-<body class="font-mono antialiased overflow-x-hidden bg-black text-white">
+<body class="antialiased">
+    <!-- Mouse Glow Follower -->
+    <div id="mouse-glow" class="mouse-glow"></div>
 
-    <nav
-        class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-6 py-4 bg-black/60 backdrop-blur-md border-b border-blue-500/20">
-        <div class="flex items-center gap-4">
-            <a href="https://discord.gg/SbGUYquj8b" target="_blank"
-                class="text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
-                <span class="sr-only">Discord</span>
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill-rule="evenodd"
-                        d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2763-3.68-.2763-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"
-                        clip-rule="evenodd" />
-                </svg>
-            </a>
-
-            <a href="https://www.youtube.com/@chealepix" target="_blank"
-                 class="hidden sm:inline-block text-gray-400 hover:text-hacker-blue transition-all duration-300 transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]">
-                 <span class="sr-only">YouTube</span>
-                 <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                     <path fill-rule="evenodd"
-                         d="M19.812 5.418c.861.23 1.538.907 1.768 1.768C21.998 8.746 22 12 22 12s0 3.255-.418 4.814a2.504 2.504 0 0 1-1.768 1.768c-1.56.419-7.814.419-7.814.419s-6.255 0-7.814-.419a2.505 2.505 0 0 1-1.768-1.768C2 15.255 2 12 2 12s0-3.255.417-4.814a2.507 2.507 0 0 1 1.768-1.768C5.744 5 11.998 5 11.998 5s6.255 0 7.814.418ZM15.194 12 10 15V9l5.194 3Z"
-                         clip-rule="evenodd" />
-                 </svg>
-             </a>
-        </div>
+    <!-- Header / Nav -->
+    <nav class="fixed top-0 w-full z-[100] px-4 py-4 flex justify-center">
         <div
-            class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/40 border border-gray-800 rounded-sm p-1">
-            <a href="/"
-                class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm bg-hacker-blue text-black">
-                Home
-            </a>
-            <a href="/developer/"
-                class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
-                API
-            </a>
-            <a href="/resell/"
-                class="px-3 py-1 text-xs sm:text-sm font-bold tracking-wider rounded-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
-                Resell
-            </a>
-        </div>
-        <div class="flex items-center gap-3">
-            <button id="auth-btn"
-                class="px-4 md:px-6 py-1.5 border border-hacker-blue text-hacker-blue text-sm font-bold tracking-wider hover:bg-hacker-blue hover:text-black transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.2)] hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                LOGIN
-            </button>
+            class="w-[95%] lg:w-[98%] flex justify-between items-center bg-black/40 backdrop-blur-xl border border-white/10 px-6 md:px-10 py-3 rounded-full shadow-2xl">
+
+            <div class="text-base md:text-lg font-bold tracking-tighter text-white flex items-center gap-2">
+                <img src="https://cdn.discordapp.com/attachments/1480162358667120743/1480162988492066887/sheldon_logo.png?ex=69b2a134&is=69b14fb4&hm=3b977ccc05f355fbb3e5d08d602a8c96afaf39ae2b3f63979a0058f0be20863e&"
+                    alt="Logo" class="w-5 h-5 md:w-6 md:h-6 object-contain">
+                SHELDON
+            </div>
+
+            <div class="hidden md:flex">
+                <div class="nav-tabs-container">
+                    <a href="#" class="nav-tab active">Home</a>
+                    <a href="#features" class="nav-tab">API</a>
+                    <a href="#pricing" class="nav-tab">Resell</a>
+                </div>
+            </div>
+
+            <div id="user-context" class="flex items-center gap-2 md:gap-4">
+                <button
+                    class="btn-discord flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider">
+                    <svg class="w-3 md:w-3.5 h-3 md:h-3.5 fill-white" viewBox="0 0 24 24">
+                        <path
+                            d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01a10.147 10.147 0 0 0 .372.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.946 2.419-2.157 2.419z" />
+                    </svg>
+                    LOGIN
+                </button>
+            </div>
         </div>
     </nav>
 
+    <section class="fullscreen-takeover relative hero-gradient overflow-hidden">
+        <canvas id="particle-canvas"></canvas>
+        <div class="grid-overlay"></div>
 
-    <section id="hero"
-        class="h-screen-safe w-full flex flex-col justify-center items-center relative grid-bg border-b border-hacker-blue/30 overflow-hidden min-h-[600px]">
-        <canvas id="bg-canvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
-
-        <div
-            class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-0">
-        </div>
-
-        <div class="z-10 text-center space-y-6 px-4 pt-8 md:pt-10">
-            <p class="text-hacker-blue tracking-widest text-xs md:text-sm uppercase animate-pulse">Roblox External / By Penguu</p>
-
-            <div class="relative">
-                <h1
-                    class="title-scanlines text-5xl sm:text-7xl md:text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-hacker-blue drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] leading-tight">
-                    SHELDON
-                </h1>
-            </div>
-
-            <p class="text-hacker-blue/80 text-[15px] md:text-xs uppercase tracking-widest relative -top-4">
-                Roblox • External • Project Sheldon • Penguu
+        <div class="content-layer flex flex-col items-center w-full px-4">
+            <h1 class="hacker-text text-6xl sm:text-7xl md:text-8xl lg:text-[11rem] leading-none mb-4 md:mb-6 opacity-90 transition-opacity duration-1000 hover:opacity-100"
+                style="animation: shine 6s linear infinite, pulse 4s ease-in-out infinite;">
+                SHELDON
+            </h1>
+            <p class="max-w-2xl text-neutral-500 text-base md:text-xl mb-8 leading-relaxed font-medium">
+                Project Sheldon a Roblox external by Penguu.
             </p>
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8 w-full max-w-md mx-auto sm:w-auto">
-                <button id="download-btn" type="button"
-                    class="w-full sm:w-auto text-center px-8 py-3 bg-hacker-blue text-black font-bold hover:bg-blue-400 transition-all duration-300 shadow-neon transform hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed">
-                    DOWNLOAD
-                </button>
-                <a href="#pricing"
-                    class="w-full sm:w-auto text-center px-8 py-3 border border-hacker-blue text-hacker-blue hover:bg-hacker-blue hover:text-black transition-all duration-300 transform hover:-translate-y-1">
-                    GET ACCESS
-                </a>
-            </div>
-        </div>
+            <a href="https://discord.gg/Caxrnqx2By" target="_blank" class="discord-status-badge">
+                <div class="flex items-center gap-3">
+                    <svg class="w-4 h-4 fill-[#5865F2]" viewBox="0 0 24 24">
+                        <path
+                            d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01a10.147 10.147 0 0 0 .372.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.086 2.157 2.419c0 1.334-.946 2.419-2.157 2.419z" />
+                    </svg>
+                    <span class="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">
+                        <span id="discord-count" class="text-white">1,248</span> Members
+                    </span>
+                </div>
+                <div class="status-dot"></div>
+            </a>
 
-        <div class="absolute bottom-5 animate-bounce text-hacker-blue text-center w-full z-10 hidden sm:block">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <button
+                    class="btn-primary w-full sm:w-auto px-10 py-4 rounded-xl text-[12px] md:text-[13px] uppercase tracking-widest min-h-[56px]">Download
+                    Now</button>
+                <a href="#features"
+                    class="btn-secondary w-full sm:w-auto px-10 py-4 rounded-xl text-[12px] md:text-[13px] uppercase tracking-widest flex items-center justify-center min-h-[56px]">Features</a>
+            </div>
         </div>
     </section>
 
-    <section class="py-16 md:py-24 bg-hacker-dark relative">
-        <div class="max-w-6xl mx-auto px-4 md:px-6">
-            <div class="text-center mb-12 md:mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-2"><span class="text-hacker-blue">/</span>
-                    RUNDOWN</h2>
-                <p class="text-gray-500">i try the best i can.</p>
+    <!-- Features Section -->
+    <section id="features" class="py-24 md:py-40 px-6 bg-black border-t border-white/5 relative">
+        <div class="max-w-7xl mx-auto flex flex-col items-center content-layer">
+            <div class="text-center mb-16 md:mb-24">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4 tracking-tight uppercase">Overview</h2>
+                <p class="text-neutral-500 text-base md:text-lg">Honest info regarding Project Sheldon.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                <div
-                    class="bg-black/50 border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group rounded-sm">
-                    <div
-                        class="w-12 h-12 bg-gray-900 flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all">
-                        <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 w-full">
+                <div class="glass-card p-8 md:p-10 items-start text-left">
+                    <div class="mb-4 p-2 bg-white/5 rounded-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 text-white group-hover:text-hacker-blue transition-colors">Visuals
-                    </h3>
-                    <p class="text-gray-400 text-sm">Customizable visuals. I really try to make them look aesthetic and appealing (It's really
-                        difficult)</p>
+                    <h3 class="text-sm font-bold uppercase tracking-widest mb-4">Aesthetic Visuals</h3>
+                    <p class="text-neutral-500 text-[13px] leading-relaxed">Deep customization for all visual elements.
+                        Designed to look clean, appealing, and aesthetic while providing the info you need.</p>
                 </div>
 
-                <div
-                    class="bg-black/50 border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group rounded-sm">
-                    <div
-                        class="w-12 h-12 bg-gray-900 flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all">
-                        <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="glass-card p-8 md:p-10 items-start text-left">
+                    <div class="mb-4 p-2 bg-white/5 rounded-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 text-white group-hover:text-hacker-blue transition-colors">
-                        Features
-                    </h3>
-                    <p class="text-gray-400 text-sm">Alot of cool and useful features to have fun in all games no matter their genre</p>
+                    <h3 class="text-sm font-bold uppercase tracking-widest mb-4">Versatile Utility</h3>
+                    <p class="text-neutral-500 text-[13px] leading-relaxed">Packed with useful features designed for fun
+                        across multiple games, regardless of the genre.</p>
                 </div>
 
-                <div
-                    class="bg-black/50 border border-gray-800 p-6 hover:border-hacker-blue transition-colors duration-300 group rounded-sm">
-                    <div
-                        class="w-12 h-12 bg-gray-900 flex items-center justify-center mb-4 rounded border border-hacker-blue/20 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all">
-                        <svg class="w-6 h-6 text-hacker-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="glass-card p-8 md:p-10 items-start text-left">
+                    <div class="mb-4 p-2 bg-white/5 rounded-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-2 text-white group-hover:text-hacker-blue transition-colors">
-                        Straightforward
-                    </h3>   
-                    <p class="text-gray-400 text-sm">Designed with ease of use in mind. I also listen to the community for suggestions or fixing bugs</p>
+                    <h3 class="text-sm font-bold uppercase tracking-widest mb-4">Community Driven</h3>
+                    <p class="text-neutral-500 text-[13px] leading-relaxed">Built with ease of use in mind. I actively
+                        listen to community suggestions and prioritize fixing bugs reported by users.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-24 md:py-40 px-6 relative bg-black border-t border-white/5">
+        <div class="max-w-7xl mx-auto flex flex-col items-center content-layer">
+            <div class="text-center mb-16 md:mb-24">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4 tracking-tight uppercase">Access Sheldon</h2>
+                <p class="text-neutral-500 text-base md:text-lg">All of options have the same features, but pls support me 😁</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full items-stretch">
+                <!-- Free Plan -->
+                <div class="pricing-card p-8 md:p-10 flex flex-col">
+                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Trial</h3>
+                    <div
+                        class="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tighter uppercase leading-tight">
+                        1 CHECKPOINT</div>
+                    <div class="flex-grow"></div>
+
+                    <div class="mt-8 space-y-4">
+                        <div class="badge-pill">
+                            <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">3 Hours
+                                Access</span>
+                        </div>
+                        <button
+                            class="w-full py-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 transition min-h-[48px]">Get
+                            Key</button>
+                    </div>
+                </div>
+
+                <!-- Daily Plan -->
+                <div class="pricing-card p-8 md:p-10 flex flex-col">
+                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Daily</h3>
+                    <div class="text-4xl font-bold text-white mb-8 tracking-tighter">$1.99</div>
+                    <div class="flex-grow"></div>
+
+                    <div class="mt-8 space-y-4">
+                        <div class="badge-pill">
+                            <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">2 Days
+                                Access</span>
+                        </div>
+                        <button
+                            class="w-full py-4 rounded-xl btn-primary text-xs uppercase tracking-widest min-h-[48px]">Buy
+                            Now</button>
+                    </div>
+                </div>
+
+                <div class="pricing-card p-8 md:p-10 flex flex-col">
+                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Weekly</h3>
+                    <div class="text-4xl font-bold text-white mb-8 tracking-tighter">$4.99</div>
+                    <div class="flex-grow"></div>
+
+                    <div class="mt-8 space-y-4">
+                        <div class="badge-pill">
+                            <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">7 Days
+                                Access</span>
+                        </div>
+                        <button
+                            class="w-full py-4 rounded-xl btn-primary text-xs uppercase tracking-widest min-h-[48px]">Buy
+                            Now</button>
+                    </div>
+                </div>
+
+                <!-- Lifetime Plan -->
+                <div class="pricing-card lifetime-card p-8 md:p-10 flex flex-col">
+                    <div
+                        class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-black uppercase px-4 py-1 rounded-full tracking-widest shadow-xl z-20">
+                        Best Value</div>
+
+                    <h3 class="text-2xl font-bold mb-6 uppercase tracking-tighter">Lifetime</h3>
+                    <div class="text-4xl font-bold text-white mb-8 tracking-tighter">$7.99</div>
+                    <div class="flex-grow"></div>
+
+                    <div class="mt-8 space-y-4">
+                        <div class="badge-pill border-white/10 bg-white/5">
+                            <span class="text-[10px] text-white font-black uppercase tracking-widest">Permanent
+                                Access</span>
+                        </div>
+                        <button
+                            class="w-full py-4 rounded-xl btn-primary text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(255,255,255,0.15)] min-h-[48px]">Buy
+                            Now</button>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="pricing" class="py-16 md:py-24 bg-black relative border-t border-gray-900">
-        <div class="max-w-7xl mx-auto px-4 md:px-6">
-            <div class="text-center mb-12 md:mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-2"><span class="text-hacker-blue">/</span>
-                    ACCESS PLANS</h2>
-                <p class="text-gray-500">same features, but pls support me :D</p>
+    <footer class="bg-black border-t border-white/5 pt-20 pb-10 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="text-xl font-bold tracking-tighter text-white flex items-center gap-2 mb-4">
+                        <img src="https://cdn.discordapp.com/attachments/1480162358667120743/1480162988492066887/sheldon_logo.png?ex=69b2a134&is=69b14fb4&hm=3b977ccc05f355fbb3e5d08d602a8c96afaf39ae2b3f63979a0058f0be20863e&" alt="Logo" class="w-6 h-6 object-contain grayscale brightness-200">
+                        SHELDON
+                    </div>
+                    <p class="text-neutral-500 text-xs leading-relaxed max-w-[200px]">
+                        One of the best Roblox externals on the market, built with dedication and support by the community.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="text-white text-[10px] font-black uppercase tracking-[0.2em] mb-6">Product</h4>
+                    <ul class="space-y-4">
+                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">Download</a></li>
+                        <li><a href="#features" class="text-neutral-500 hover:text-white text-xs transition-colors">Documentation</a></li>
+                        <li><a href="#pricing" class="text-neutral-500 hover:text-white text-xs transition-colors">Pricing</a></li>
+                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">Status</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white text-[10px] font-black uppercase tracking-[0.2em] mb-6">Community</h4>
+                    <ul class="space-y-4">
+                        <li><a href="https://discord.gg/Caxrnqx2By" class="text-neutral-500 hover:text-white text-xs transition-colors">Discord Server</a></li>
+                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">YouTube</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white text-[10px] font-black uppercase tracking-[0.2em] mb-6">Legal</h4>
+                    <ul class="space-y-4">
+                        <li><a href="#" class="text-neutral-500 hover:text-white text-xs transition-colors">Terms of Service</a></li>
+                    </ul>
+                </div>
             </div>
 
-            <div id="pricing-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
+            <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-2"></div>
+                
+                <p class="text-neutral-700 text-[9px] font-bold tracking-[0.3em] uppercase">
+                    © 2024 SHELDON SOFTWARE • ALL RIGHTS RESERVED.
+                </p>
             </div>
-        </div>
-    </section>
-
-    <footer class="bg-black py-6 border-t border-gray-900">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-4 text-sm">
-                <a href="./termsofservice.html" class="text-gray-500 hover:text-hacker-blue transition-colors">Terms of Service</a>
-                <span class="text-gray-700">|</span>
-                <a href="https://discord.gg/SbGUYquj8b" target="_blank" class="text-gray-500 hover:text-hacker-blue transition-colors">Discord</a>
-            </div>
-            <p class="text-gray-600 text-xs">
-                Project Sheldon &copy; 2026 &mdash; All rights reserved
-            </p>
         </div>
     </footer>
 
-    <script src="./js/html/index.js" type="module"></script>
-    <script type="module">
-        import DiscordRender from "./js/managers/discord/render.js";
+    <script>
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 40 : 75;
 
-        const authBtn = document.getElementById('auth-btn');
-        if (authBtn) {
-            authBtn.addEventListener('click', () => DiscordRender.LoginLogic());
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(isInitial = false) {
+                this.init(isInitial);
+            }
+            init(isInitial = false) {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.4;
+                this.vy = (Math.random() - 0.5) * 0.4;
+                this.maxSize = Math.random() * 2 + 0.5;
+                this.size = isInitial ? this.maxSize : 0;
+                this.growthSpeed = 0.02 + Math.random() * 0.03;
+                this.opacity = isInitial ? 0.3 : 0;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.size < this.maxSize) {
+                    this.size += this.growthSpeed;
+                    this.opacity = Math.min(0.3, this.opacity + 0.01);
+                }
+
+                if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+                    this.init(false);
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle(true));
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const connectionDistance = isMobile ? 120 : 180;
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.update();
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < connectionDistance) {
+                        const alpha = (1 - dist / connectionDistance) * 0.12;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * (p.size / p.maxSize)})`;
+                        ctx.lineWidth = 0.6;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            particles.forEach(p => p.draw());
+            requestAnimationFrame(animateParticles);
+        }
+
+        // Discord Mock Fetch
+        function updateDiscordCount() {
+            const countElement = document.getElementById('discord-count');
+            const count = Math.floor(Math.random() * (1500 - 1200 + 1)) + 1200;
+            countElement.innerText = count.toLocaleString();
+        }
+
+        const mouseGlow = document.getElementById('mouse-glow');
+        if (!isMobile) {
+            window.addEventListener('mousemove', (e) => {
+                mouseGlow.style.left = e.clientX + 'px';
+                mouseGlow.style.top = e.clientY + 'px';
+            });
+        }
+
+        const navTabs = document.querySelectorAll('.nav-tab');
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                navTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initParticles();
+            animateParticles();
+            updateDiscordCount();
+
+            const observerOptions = { threshold: 0.05 };
+            const revealOnScroll = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.glass-card, .pricing-card, section h1, section h2, section p, .badge-pill, .discord-status-badge').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(15px)';
+                el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                revealOnScroll.observe(el);
+            });
+        });
     </script>
 </body>
 
