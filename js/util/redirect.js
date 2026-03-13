@@ -2,7 +2,8 @@ import Api from "./backend.js";
 
 window.RedirectToPlatform = async function(platform)
 {
-    const endpoint = `${Api.GetApiUrl()}/links/${platform}`;
+    const apiUrl = await Api.GetApiUrl();
+    const endpoint = `${apiUrl}/links/${platform}`;
     console.log(`Redirecting to ${platform} using endpoint: ${endpoint}`);
 
     const response = await fetch(endpoint);

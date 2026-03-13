@@ -3,7 +3,8 @@ import Api from "../util/backend.js";
 const DiscordAuth = {
     async login() {
         try {
-            const response = await fetch(`${Api.GetApiUrl()}/discord/login`);
+            const apiUrl = await Api.GetApiUrl();
+            const response = await fetch(`${apiUrl}/discord/login`);
             const data = await response.json();
             
             if (data.url) {
@@ -18,7 +19,8 @@ const DiscordAuth = {
 
     async logout() {
         try {
-            await fetch(`${Api.GetApiUrl()}/discord/logout`, { method: "POST" });
+            const apiUrl = await Api.GetApiUrl();
+            await fetch(`${apiUrl}/discord/logout`, { method: "POST" });
         } catch (error) {
             console.error("Discord logout error:", error);
         }
@@ -26,7 +28,8 @@ const DiscordAuth = {
 
     async getUser() {
         try {
-            const response = await fetch(`${Api.GetApiUrl()}/discord/me`);
+            const apiUrl = await Api.GetApiUrl();
+            const response = await fetch(`${apiUrl}/discord/me`);
             const data = await response.json();
             return data;
         } catch (error) {
