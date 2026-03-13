@@ -32,7 +32,7 @@ async function checkAuthStatus() {
         return;
     }
     
-    const apiUrl = Api.GetApiUrl();
+    const apiUrl = await Api.GetApiUrl();
     
     try {
         const response = await fetch(`${apiUrl}/discord/me?token=${encodeURIComponent(token)}`, {
@@ -94,14 +94,16 @@ function updateUIForLoggedOut() {
     }
 }
 
-function login() {
+async function login() {
     const width = 600;
     const height = 700;
     const left = (screen.width - width) / 2;
     const top = (screen.height - height) / 2;
     
+    const apiUrl = await Api.GetApiUrl();
+    
     const clientId = "1429915624653459657";
-    const redirectUri = encodeURIComponent("http://localhost:3350/discord/callback");
+    const redirectUri = encodeURIComponent(`${apiUrl}/discord/callback`);
     const scope = "identify";
     
     const oauthUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
@@ -144,7 +146,7 @@ async function showLicensePopup() {
     const token = getSessionToken();
     if (!token) return;
     
-    const apiUrl = Api.GetApiUrl();
+    const apiUrl = await Api.GetApiUrl();
     
     try {
         const response = await fetch(`${apiUrl}/license/my?token=${encodeURIComponent(token)}`, {
