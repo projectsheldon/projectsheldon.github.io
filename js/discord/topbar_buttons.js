@@ -56,6 +56,24 @@ async function checkAuthStatus() {
 }
 
 function updateUIForLoggedIn(user) {
+    if (userProfileTrigger) {
+        userProfileTrigger.classList.remove('hidden');
+        
+        const nameEl = userProfileTrigger.querySelector('.user-name');
+        if (nameEl) {
+            nameEl.textContent = user.globalName || user.username;
+        }
+        
+        const avatarEl = userProfileTrigger.querySelector('.user-avatar');
+        const defaultAvatarEl = userProfileTrigger.querySelector('.default-avatar');
+        
+        if (avatarEl && user.avatar) {
+            avatarEl.src = user.avatar;
+            avatarEl.classList.remove('hidden');
+            if (defaultAvatarEl) defaultAvatarEl.classList.add('hidden');
+        }
+    }
+    
     if (discordBtn) {
         discordBtn.classList.remove('hidden');
         discordBtn.className = 'bg-white text-black font-black px-5 py-2 rounded-xl text-[0.65rem] uppercase tracking-wider transition-all hover:bg-[#c7b18f] flex items-center justify-center';
@@ -72,10 +90,6 @@ function updateUIForLoggedIn(user) {
         if (discordIcon) {
             discordIcon.remove();
         }
-    }
-    
-    if (userProfileTrigger) {
-        userProfileTrigger.classList.add('hidden');
     }
 }
 
