@@ -1,12 +1,12 @@
 const Api = {
     GetApiUrl()
     {
-        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if(isLocalHost)
-        {
-            return 'http://localhost:3350';
-        }
-        return 'http://localhost:3350';
+        const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+        const hostname = window.location.hostname;
+        
+        // If same origin, use current origin
+        // Otherwise use the API server
+        return `http://localhost:3350`;
     }
 };
 export default Api;

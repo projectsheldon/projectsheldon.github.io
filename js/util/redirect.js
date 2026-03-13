@@ -10,6 +10,6 @@ window.RedirectToPlatform = async function(platform)
 
     if(data.link)
     {
-        window.location.href = data.link;
+        window.open(data.link, '_blank');
     }
 };
