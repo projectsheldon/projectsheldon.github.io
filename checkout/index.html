@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Sheldon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(20, 20, 20, 1) 0%, rgba(5, 5, 5, 1) 100%);
+            z-index: -2;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.12;
+            z-index: -1;
+            animation: float 20s infinite alternate;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(40px, 40px); }
+        }
+
+        .checkout-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 2rem;
+            width: 95%; 
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr;
+            margin: 20px auto;
+            overflow: hidden;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .checkout-card {
+                grid-template-columns: 380px 1fr;
+                width: 90%;
+                margin: 0;
+            }
+            .sidebar {
+                border-right: 1px solid rgba(255, 255, 255, 0.05);
+                border-bottom: none;
+            }
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 48px;
+        }
+
+        @media (min-width: 768px) {
+            .sidebar {
+                padding: 50px;
+            }
+        }
+
+        .main-content {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                padding: 70px;
+            }
+        }
+
+        .hacker-text {
+            background: linear-gradient(to bottom, #fff 40%, #666 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .payment-method-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .method-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (min-width: 768px) {
+            .method-btn {
+                padding: 32px 12px;
+                gap: 14px;
+            }
+        }
+
+        .method-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .method-btn.active {
+            border-color: #c7b18f;
+            background: rgba(199, 177, 147, 0.05);
+        }
+
+        .crypto-option {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 12px;
+            border-radius: 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        @media (min-width: 768px) {
+            .crypto-option {
+                padding: 28px 14px;
+                border-radius: 18px;
+                gap: 14px;
+            }
+        }
+
+        .crypto-option.selected {
+            border-color: #c7b18f;
+            background: rgba(199, 177, 147, 0.08);
+        }
+
+        .btn-action {
+            background: #c7b18f;
+            color: black;
+            font-weight: 800;
+            width: 100%;
+            padding: 20px;
+            border-radius: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .btn-action:hover {
+            background: white;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px -5px rgba(199, 177, 147, 0.3);
+        }
+
+        .price-display {
+            font-size: 2rem;
+            font-weight: 400;
+            color: white;
+            letter-spacing: -0.02em;
+        }
+
+        @media (min-width: 768px) {
+            .price-display {
+                font-size: 2.25rem;
+            }
+        }
+
+        .payment-content {
+            display: none;
+        }
+
+        .payment-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+
+        @media (min-width: 768px) {
+            .icon-box {
+                width: 52px;
+                height: 52px;
+            }
+        }
+
+        .icon-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="orb w-[25rem] h-[25rem] md:w-[35rem] md:h-[35rem] bg-[#c7b18f]" style="top: -10%; left: -10%;"></div>
+    <div class="orb w-[20rem] h-[20rem] md:w-[25rem] md:h-[25rem] bg-[#c7b18f]" style="bottom: -5%; right: -5%; opacity: 0.08;"></div>
+
+    <div class="checkout-card">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="flex flex-col">
+                <button class="flex items-center gap-2 text-neutral-600 text-[0.7rem] font-bold mb-8 md:mb-12 hover:text-neutral-300 tracking-tight transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 19l-7-7 7-7"/></svg>
+                    <a href="/">BACK TO HOME-PAGE</a>
+                </button>
+                <h2 class="text-2xl md:text-4xl font-black tracking-tighter uppercase hacker-text mb-6" id="product-name">Lifetime</h2>
+                
+                <div class="space-y-6">
+                    <div class="space-y-2">
+                        <span class="block text-[0.65rem] font-bold text-neutral-600 uppercase tracking-normal">Notes</span>
+                        <p class="text-[0.75rem] text-neutral-400 font-medium leading-relaxed">
+                            Includes all future updates and community support. 
+                            <br></br>
+                            After buying you can view your license by clicking your discord avatar in the topbar
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6 md:space-y-8">
+                <!-- Final Price -->
+                <div>
+                    <span class="block text-[0.65rem] font-bold text-neutral-600 uppercase tracking-normal mb-2">Total Price</span>
+                    <div class="h-px bg-white/5 w-full mb-6"></div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="price-display" id="final-price">7.99</span>
+                        <span class="text-lg font-medium text-neutral-500">€</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Payment Method Selection -->
+            <div class="mb-10 md:mb-16">
+                <label class="text-[0.7rem] md:text-[0.75rem] font-bold text-neutral-500 uppercase tracking-normal mb-6 block">Select Method</label>
+                <div class="payment-method-grid">
+                    <div id="btn-paypal" class="method-btn active" onclick="switchTab('paypal')">
+                        <div class="icon-box">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/PayPal_Logo_Icon_2014.svg" alt="PayPal">
+                        </div>
+                        <span class="text-[0.8rem] md:text-[0.9rem] font-bold uppercase tracking-tight">PayPal</span>
+                    </div>
+                    <div id="btn-crypto" class="method-btn" onclick="switchTab('crypto')">
+                        <div class="icon-box">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" alt="Crypto" class="opacity-30 grayscale active-color">
+                        </div>
+                        <span class="text-[0.8rem] md:text-[0.9rem] font-bold uppercase tracking-tight text-neutral-500">Crypto</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Sections -->
+            <div class="space-y-8 md:space-y-10 flex-grow">
+                <!-- PayPal Tab -->
+                <div id="tab-paypal" class="payment-content active">
+                    <div class="min-h-[220px] md:min-h-[260px] bg-white/[0.02] border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-6 md:gap-8 p-8 md:p-10">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/PayPal_Logo_Icon_2014.svg" class="w-16 h-16 md:w-20 md:h-20" alt="PayPal">
+                        <div class="text-center">
+                            <span class="block text-[0.85rem] md:text-[0.95rem] text-neutral-300 font-bold uppercase tracking-tight mb-3">Checkout with PayPal</span>
+                            <p class="text-[0.75rem] md:text-[0.8rem] text-neutral-500 max-w-[280px] mx-auto leading-relaxed font-medium">Use the custom payment container below to complete your transaction.</p>
+                        </div>
+                    </div>
+                    <!-- PayPal SDK placeholder -->
+                    <div id="paypal-button-container" class="mt-8 md:mt-10"></div>
+                </div>
+
+                <!-- Crypto Tab -->
+                <div id="tab-crypto" class="payment-content">
+                    <div class="mb-8 md:mb-10">
+                        <label class="text-[0.7rem] md:text-[0.75rem] font-bold text-neutral-500 uppercase tracking-normal block mb-6">Choose Asset</label>
+                        <div class="crypto-select-grid flex gap-3 md:gap-4">
+                            <div class="crypto-option selected" onclick="selectCoin(this, 'BTC')">
+                                <div class="icon-box">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" alt="BTC">
+                                </div>
+                                <span class="block text-[0.7rem] md:text-[0.8rem] font-bold uppercase tracking-tight mt-2">BTC</span>
+                            </div>
+                            <div class="crypto-option" onclick="selectCoin(this, 'LTC')">
+                                <div class="icon-box">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Litecoin.svg" alt="LTC">
+                                </div>
+                                <span class="block text-[0.7rem] md:text-[0.8rem] font-bold uppercase tracking-tight mt-2">LTC</span>
+                            </div>
+                            <div class="crypto-option" onclick="selectCoin(this, 'USDC')">
+                                <div class="icon-box">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Circle_USDC_Logo.svg" alt="USDC">
+                                </div>
+                                <span class="block text-[0.7rem] md:text-[0.8rem] font-bold uppercase tracking-tight mt-2">USDC</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-2">
+                        <button class="btn-action">Connect Wallet</button>
+                        <p class="text-[0.75rem] text-neutral-600 font-normal">
+                            Powered by <span class="text-neutral-400">NowPayments</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedCurrency = 'BTC';
+
+        function selectCoin(element, coin) {
+            document.querySelectorAll('.crypto-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedCurrency = coin;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.classList.remove('active');
+                const img = btn.querySelector('.icon-box img');
+                const txt = btn.querySelector('span');
+                img.classList.add('opacity-30', 'grayscale');
+                txt.classList.add('text-neutral-500');
+            });
+
+            const activeBtn = document.getElementById('btn-' + tab);
+            activeBtn.classList.add('active');
+            const activeImg = activeBtn.querySelector('.icon-box img');
+            const activeTxt = activeBtn.querySelector('span');
+            activeImg.classList.remove('opacity-30', 'grayscale');
+            activeTxt.classList.remove('text-neutral-500');
+
+            document.querySelectorAll('.payment-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+    </script>
+</body>
+</html>
