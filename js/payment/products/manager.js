@@ -1,4 +1,4 @@
-import Api from "../util/backend.js";
+import Api from "../../util/backend.js";
 
 class Product
 {

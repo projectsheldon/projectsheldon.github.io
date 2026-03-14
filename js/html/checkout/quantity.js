@@ -10,8 +10,8 @@ window.switchPaymentTab = function(tab)
     document.querySelectorAll('.payment-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.payment-content').forEach(c => c.classList.remove('active'));
     
-    document.querySelector(`.payment-tab[onclick="switchPaymentTab('${tab}')"]`).classList.add('active');
-    document.getElementById(`payment-${tab}`).classList.add('active');
+    document.querySelector(`.payment-tab[onclick="switchPaymentTab('${tab}')"]`)?.classList.add('active');
+    document.getElementById(`payment-${tab}`)?.classList.add('active');
 };
 
 document.getElementById('qty-minus').addEventListener('click', () =>

@@ -1,5 +1,5 @@
 import Api from "../../util/backend.js";
-import { Product, ProductsManager } from "../../products/manager.js";
+import { Product, ProductsManager } from "../../payment/products/manager.js";
 
 // tabs
 const navTabs = document.querySelectorAll('.nav-tab');
