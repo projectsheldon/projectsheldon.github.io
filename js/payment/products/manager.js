@@ -6,7 +6,8 @@ class Product
     {
         this.name = data.name || 'Unknown';
         this.price = data.price;
-        this.duration = data.duration || 0;
+        this.duration = data.duration;
+        this.duration_text = data["duration_text"];
         this.key = data.key || '';
     }
 
@@ -17,7 +18,7 @@ class Product
 
     get IsLifetime()
     {
-        return this.duration === 'Forever';
+        return this.duration === -1;
     }
 
     FormatPrice()
@@ -28,8 +29,8 @@ class Product
     FormatDuration()
     {
         if(this.IsLifetime) return 'LIFETIME';
-        if(this.duration === '3 hours') return 'FREE';
-        return String(this.duration).toUpperCase();
+        if(this.IsFree) return 'FREE';
+        return String(this.duration_text).toUpperCase();
     }
 }
 
@@ -40,20 +41,9 @@ const ProductsManager =
         const response = await fetch(`${await Api.GetApiUrl()}/products/getall`);
         const rawProducts = await response.json();
 
-        let products = [];
-        if(Array.isArray(rawProducts))
-        {
-            products = rawProducts.map(p => new Product(p));
-        } 
-        else
-        {
-            products = Object.entries(rawProducts).map(([ key, value ]) =>
-            {
-                const product = new Product(value);
-                product.key = key;
-                return product;
-            });
-        }
+        let products = rawProducts.map(p => new Product(p));
+        console.log(products);
+
         return products;
     }
 };
