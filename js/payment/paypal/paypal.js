@@ -17,9 +17,10 @@ export function CreatePaypalButtons()
             if(!user)
             {
                 window.NotifyError('Please login first');
+                return null;
             }
-            const discordId = user.id;
 
+            const discordId = user.id;
             const product = new URLSearchParams(window.location.search).get('product');
 
             const req = await fetch(`${await Api.GetApiUrl()}/paypal/create`, {
@@ -43,7 +44,29 @@ export function CreatePaypalButtons()
         },
         onApprove: async (data, actions) => 
         {
+            const orderId = data.orderID;
+            
+            try {
+                const req = await fetch(`${await Api.GetApiUrl()}/paypal/capture`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        orderId: orderId
+                    })
+                });
+                const response = await req.json();
 
+                if(response.ok)
+                {
+                    window.NotifySuccess('Payment successful! Your license has been generated.');
+                } else
+                {
+                    window.NotifyError('Payment failed: ' + response.message);
+                }
+            } catch(e)
+            {
+                window.NotifyError('Payment error: ' + e.message);
+            }
         }
     });
 }
