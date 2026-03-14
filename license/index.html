@@ -373,12 +373,7 @@
     <script src="../js/html/render/canvas.js"></script>
 
     <script>
-        const keys = [
-            { key: 'SHELDON-Z9Y8-X7W6-V5U4', tier: 'Weekly Pass' },
-            { key: 'SHELDON-K1L2-M3N4-P5Q6', tier: 'Daily Pass' },
-            { key: 'SHELDON-G7H8-J9K0-L1M2', tier: 'Trial Member' },
-            { key: 'SHELDON-B2B2-C4C4-D5D5', tier: 'Enterprise' }
-        ];
+        let keys = [];
 
         const copyIcon = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>`;
         const checkIcon = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
@@ -402,11 +397,15 @@
 
         function render() {
             const list = document.getElementById('license-list');
+            if (keys.length === 0) {
+                list.innerHTML = '<p class="text-neutral-500">No licenses found.</p>';
+                return;
+            }
             list.innerHTML = keys.map(item => `
                 <div class="license-item">
                     <div style="min-width: 0;">
                         <div class="key-text truncate">${item.key}</div>
-                        <span class="tier-label">${item.tier}</span>
+                        <span class="tier-label">${item.tier || item.product || 'License'}</span>
                     </div>
                     <div class="copy-btn" title="Copy Key" onclick="copyKey(this, '${item.key}')">
                         ${copyIcon}
@@ -415,9 +414,45 @@
             `).join('');
         }
 
+        async function loadLicenses() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const showKeys = urlParams.get('showKeys');
+            if (showKeys) {
+                const keyList = showKeys.split(',').map(k => k.trim()).filter(k => k);
+                keys = keyList.map(key => ({ key: key, tier: 'License' }));
+                render();
+                return;
+            }
+
+            const token = urlParams.get('token');
+            if (token) {
+                try {
+                    const response = await fetch('http://localhost:3350/workink/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: token })
+                    });
+                    const data = await response.json();
+                    if (data.ok && data.license) {
+                        keys = [{ key: data.license.key, tier: data.license.product }];
+                    } else {
+                        keys = [];
+                    }
+                } catch (e) {
+                    console.error('Failed to generate license:', e);
+                    keys = [];
+                }
+                render();
+                return;
+            }
+
+            render();
+        }
+
         window.onload = () => {
             initParticles();
-            render();
+            loadLicenses();
         };
     </script>
 
