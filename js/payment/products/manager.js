@@ -42,8 +42,6 @@ const ProductsManager =
         const rawProducts = await response.json();
 
         let products = rawProducts.map(p => new Product(p));
-        console.log(products);
-
         return products;
     }
 };
