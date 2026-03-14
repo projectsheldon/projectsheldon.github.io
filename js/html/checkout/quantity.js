@@ -1,9 +1,18 @@
-function selectCoin(element, coin)
+window.selectCoin = function(element, coin)
 {
     document.querySelectorAll('.crypto-option').forEach(opt => opt.classList.remove('selected'));
     element.classList.add('selected');
     window.selectedCurrency = coin;
-}
+};
+
+window.switchPaymentTab = function(tab)
+{
+    document.querySelectorAll('.payment-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.payment-content').forEach(c => c.classList.remove('active'));
+    
+    document.querySelector(`.payment-tab[onclick="switchPaymentTab('${tab}')"]`).classList.add('active');
+    document.getElementById(`payment-${tab}`).classList.add('active');
+};
 
 document.getElementById('qty-minus').addEventListener('click', () =>
 {

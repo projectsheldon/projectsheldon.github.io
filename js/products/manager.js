@@ -29,7 +29,7 @@ class Product
     {
         if(this.IsLifetime) return 'LIFETIME';
         if(this.duration === '3 hours') return 'FREE';
-        return this.duration.toUpperCase();
+        return String(this.duration).toUpperCase();
     }
 }
 
