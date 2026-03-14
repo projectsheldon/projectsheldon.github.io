@@ -105,6 +105,26 @@ function UpdateUI(loggedIn, user = null)
     }
 }
 
+class DiscordUser {
+    constructor(id, username, globalName, avatar) {
+        this.id = id;
+        this.username = username;
+        this.globalName = globalName;
+        this.avatar = avatar;
+    }
+
+    get Avatar() {
+        if (this.avatar) {
+            return `https://cdn.discordapp.com/avatars/${this.id}/${this.avatar}.png?size=256`;
+        }
+        return null;
+    }
+
+    get Displayname() {
+        return this.globalName || this.username;
+    }
+}
+
 const DiscordAuth = {
     currentUser: null,
     
@@ -125,10 +145,18 @@ const DiscordAuth = {
     async GetUser()
     {
         const apiUrl = await Api.GetApiUrl();
-        const response = await fetch(`${apiUrl}/discord/me`);
+        const token = this.GetSessionToken();
+        
+        const url = token ? `${apiUrl}/discord/me?token=${encodeURIComponent(token)}` : `${apiUrl}/discord/me`;
+        const response = await fetch(url);
         const data = await response.json();
 
-        return data;
+        if (!data.success || !data.user) {
+            return null;
+        }
+
+        const u = data.user;
+        return new DiscordUser(u.id, u.username, u.global_name, u.avatar);
     },
 
     // bot
@@ -186,4 +214,4 @@ const DiscordAuth = {
 
 window.DiscordAuth = DiscordAuth;
 
-export { DiscordAuth, UpdateUI };
+export { DiscordAuth, UpdateUI, DiscordUser };
