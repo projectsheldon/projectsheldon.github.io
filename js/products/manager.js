@@ -7,6 +7,7 @@ class Product
         this.name = data.name || 'Unknown';
         this.price = data.price;
         this.duration = data.duration || 0;
+        this.key = data.key || '';
     }
 
     get IsFree()
@@ -39,7 +40,20 @@ const ProductsManager =
         const response = await fetch(`${await Api.GetApiUrl()}/products/getall`);
         const rawProducts = await response.json();
 
-        const products = rawProducts.map(p => new Product(p));
+        let products = [];
+        if(Array.isArray(rawProducts))
+        {
+            products = rawProducts.map(p => new Product(p));
+        } 
+        else
+        {
+            products = Object.entries(rawProducts).map(([ key, value ]) =>
+            {
+                const product = new Product(value);
+                product.key = key;
+                return product;
+            });
+        }
         return products;
     }
 };
