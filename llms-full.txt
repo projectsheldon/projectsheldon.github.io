@@ -371,6 +371,20 @@ if hit then
 end
 ```
 
+### World To Screen
+
+| Function | Signature | Description |
+| --- | --- | --- |
+| **WorldToScreen(worldPos)** | `Vector3` | Project world position to screen. Returns `(Vector2 screenPos, bool isOnScreen)`. |
+
+#### Example
+
+```lua
+-- Project a player's position to screen
+local pos = cheat.WorldToScreen(player.Character.HumanoidRootPart.Position)
+draw.Text("Player", pos.X, pos.Y, Color3.new(1, 1, 1))
+```
+
 ### Servers & Teleport
 
 | Function | Signature | Description |
@@ -487,20 +501,19 @@ file.delete("config.txt")
 
 ## utility
 
-Various utility functions including world-to-screen projection and clipboard access.
+System clipboard access.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **utility.WorldToScreen(worldPos)** | `Vector3` | Project world position to screen. Returns `(Vector2 screenPos, bool isOnScreen)`. |
 | **utility.GetClipboard()** |  | Get clipboard text |
 | **utility.SetClipboard(text)** | `string` | Set clipboard text |
 
 ### Example
 
 ```lua
--- Project a player's position to screen
-local pos = utility.WorldToScreen(player.Character.HumanoidRootPart.Position)
-draw.Text("Player", pos.X, pos.Y, Color3.new(1, 1, 1))
+utility.SetClipboard("hello")
+local text = utility.GetClipboard()
+print(text)
 ```
 
 `GetClipboard` / `SetClipboard` require `Clipboard` library enabled.
