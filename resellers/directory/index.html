@@ -449,7 +449,53 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 340px));
             justify-content: center;
+            align-items: stretch;
             gap: 1.5rem;
+        }
+
+        /* Equal-height cards with the Open Website button pinned to the bottom. */
+        .reseller-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .reseller-card-foot {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reseller-card-foot .website-btn {
+            margin-top: auto !important;
+        }
+
+        /* YouTube-shorts style hashtag chips (display-only). */
+        .tags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .tag-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.22rem 0.65rem;
+            border-radius: 999px;
+            background: rgba(199, 177, 143, 0.1);
+            border: 1px solid rgba(199, 177, 143, 0.3);
+            color: #c7b18f;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            cursor: default;
+            user-select: none;
+        }
+
+        .tag-inline {
+            color: #c7b18f;
+            font-weight: 700;
         }
 
         .avatar-fallback {
@@ -580,6 +626,50 @@
 
         function domainOf(url) {
             try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return url; }
+        }
+
+        // Hashtag tags (YouTube-shorts style, display-only): combines the
+        // admin-set tags field with #words found in the description text.
+        function extractHashtags(text) {
+            const out = [];
+            const seen = new Set();
+            const re = /#([A-Za-z0-9_]{1,24})/g;
+            let m;
+            const s = String(text || '');
+            while ((m = re.exec(s))) {
+                const t = m[1].toLowerCase();
+                if (!seen.has(t)) { seen.add(t); out.push(t); }
+                if (out.length >= 10) break;
+            }
+            return out;
+        }
+
+        function resellerTags(r) {
+            const explicit = String(r.tags || '').split(/[\s,]+/)
+                .map(s => s.replace(/^#+/, '').trim().toLowerCase().replace(/[^a-z0-9_]/g, ''))
+                .filter(t => t && t.length <= 24);
+            const fromDesc = extractHashtags(r.description);
+            const seen = new Set();
+            const out = [];
+            for (const t of [...explicit, ...fromDesc]) {
+                if (!seen.has(t)) { seen.add(t); out.push(t); }
+                if (out.length >= 10) break;
+            }
+            return out;
+        }
+
+        function tagsHtml(r) {
+            const tags = resellerTags(r);
+            if (!tags.length) return '';
+            return `<div class="tags-row">${tags.map(t => `<span class="tag-chip">#${esc(t)}</span>`).join('')}</div>`;
+        }
+
+        // Description with YouTube-shorts style inline hashtags: #words render
+        // gold and bold (display-only spans, not links). Escaped first so no
+        // HTML from the stored text can break out.
+        function descHtml(text) {
+            const safe = esc(text);
+            return safe.replace(/#([A-Za-z0-9_]{1,24})/g, '<span class="tag-inline">#$1</span>');
         }
 
         // Embed area for a card with a website. The site itself is never loaded in
@@ -743,8 +833,9 @@
                 <div class="glass-card reseller-card rounded-[1.5rem] overflow-hidden animate-on-scroll${pinned ? ' pinned' : ''}" style="transition-delay: ${Math.min(index, 6) * 0.06}s;">
                     ${header}
                     ${embedHtml(r, url)}
-                    <div class="p-6 pt-5 space-y-4">
-                        ${r.description ? `<p class="text-neutral-400 text-sm leading-relaxed">${esc(r.description)}</p>` : ''}
+                    <div class="p-6 pt-5 space-y-4 reseller-card-foot">
+                        ${r.description ? `<p class="text-neutral-400 text-sm leading-relaxed">${descHtml(r.description)}</p>` : ''}
+                        ${tagsHtml(r)}
                         ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="website-btn">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                                 <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
