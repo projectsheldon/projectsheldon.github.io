@@ -1,7 +1,7 @@
 // License page script
 import Api from '../../util/backend.js';
 import { DiscordAuth } from '../../discord/auth.js';
-import { GetBrowserFingerprint } from '../../util/fingerprint.js';
+import { ensureChecksOrNotify } from '../../util/guard.js';
 
 let keys = [];
 
@@ -105,22 +105,6 @@ function renderRateLimited(list, message, until)
     }
 }
 
-function getFingerprint()
-{
-    try
-    {
-        let fp = localStorage.getItem('sheldon_fp');
-        if(!fp)
-        {
-            fp = (window.crypto && crypto.randomUUID)
-                ? crypto.randomUUID()
-                : (Date.now().toString(36) + Math.random().toString(36).slice(2));
-            localStorage.setItem('sheldon_fp', fp);
-        }
-        return fp;
-    } catch(e) { return null; }
-}
-
 async function loadLicenses()
 {
     const urlParams = new URLSearchParams(window.location.search);
@@ -156,14 +140,24 @@ async function loadLicenses()
 
             const apiUrl = await Api.GetApiUrl();
 
+            // Strict device checks: the grant REQUIRES a complete identity. If a
+            // blocker eats the checks the user is told to turn it off — and the
+            // ?token= stays in the URL so they can retry after whitelisting.
+            let gate = null;
+            try { gate = await ensureChecksOrNotify('the free-key claim'); } catch(e) { gate = null; }
+            if(!gate || !gate.ok)
+            {
+                list.innerHTML = '<p class="text-neutral-500">Turn off your ad blocker, then refresh this page to claim your reward.</p>';
+                return;
+            }
+
             // Simple request: avoids preflight so clearance cookie is sent.
             const genBody = new URLSearchParams();
             genBody.set('token', token);
             if(discordId) genBody.set('discordId', discordId);
             genBody.set('sessionToken', sessionToken);
-            const fp = getFingerprint();
-            if(fp) genBody.set('fingerprint', fp);
-            try { const bfp = await GetBrowserFingerprint(); if(bfp) genBody.set('browserFp', bfp); } catch(e) {}
+            if(gate.deviceId) genBody.set('fingerprint', gate.deviceId);
+            if(gate.browserFp) genBody.set('browserFp', gate.browserFp);
 
             const response = await fetch(`${apiUrl}/workink/generate`, {
                 method: 'POST',

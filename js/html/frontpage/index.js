@@ -1,6 +1,6 @@
 import Api from "../../util/backend.js";
 import { Product, ProductsManager } from "../../payment/products/manager.js";
-import { GetBrowserFingerprint } from "../../util/fingerprint.js";
+import { ensureChecksOrNotify } from "../../util/guard.js";
 
 // Only run tab logic on homepage
 const isHomepage = window.location.pathname === '/' || window.location.pathname.endsWith('/index.html');
@@ -193,19 +193,6 @@ if (window.SheldonBackend) {
 
 // WorkInk reward claim, handled inline on the homepage.
 
-function claimFingerprint() {
-    try {
-        let fp = localStorage.getItem('sheldon_fp');
-        if (!fp) {
-            fp = (window.crypto && crypto.randomUUID)
-                ? crypto.randomUUID()
-                : (Date.now().toString(36) + Math.random().toString(36).slice(2));
-            localStorage.setItem('sheldon_fp', fp);
-        }
-        return fp;
-    } catch (e) { return null; }
-}
-
 // Read localStorage directly: currentUser lags behind Cloudflare, the token is enough.
 function waitForLogin(timeoutMs) {
     const readToken = () => {
@@ -296,6 +283,13 @@ async function claimWorkinkToken() {
         if (!sessionToken) return;
     }
 
+    // Strict device checks: the grant REQUIRES a complete identity (no silent
+    // fallback). If a blocker eats the checks, the user is told to turn it off —
+    // and the stashed token is KEPT so they can retry after whitelisting.
+    let gate = null;
+    try { gate = await ensureChecksOrNotify('the free-key claim'); } catch (e) { gate = null; }
+    if (!gate || !gate.ok) return;
+
     // About to consume the token — clear the stash so it can't loop.
     try { sessionStorage.removeItem('pending_workink_token'); } catch (e) {}
 
@@ -327,9 +321,8 @@ async function claimWorkinkToken() {
         body.set('token', token);
         if (discordId) body.set('discordId', discordId);
         body.set('sessionToken', sessionToken);
-        const fp = claimFingerprint();
-        if (fp) body.set('fingerprint', fp);
-        try { const bfp = await GetBrowserFingerprint(); if (bfp) body.set('browserFp', bfp); } catch (e) {}
+        if (gate.deviceId) body.set('fingerprint', gate.deviceId);
+        if (gate.browserFp) body.set('browserFp', gate.browserFp);
 
         const res = await fetch(`${apiUrl}/workink/generate`, { method: 'POST', body });
         const data = await res.json().catch(() => null);

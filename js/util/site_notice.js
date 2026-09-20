@@ -4,7 +4,42 @@
 // records nothing and the prompt returns on the next visit. Also exposes window.SheldonCookies
 // so the "View Licenses" menu can re-open the prompt and read the consent status.
 import Api from './backend.js';
-import { GetIdentityPayload } from './fingerprint.js';
+import { ensureChecksOrNotify } from './guard.js';
+
+// Device identity is loaded LAZILY via dynamic import (never a static import):
+// adblockers block fingerprinting scripts, and a blocked static import would
+// abort this entire module — and every module that imports it (login button,
+// products, downloads). Dynamic import + fallback keeps the page fully working.
+async function loadIdentityPayload()
+{
+    try
+    {
+        const mod = await import('./device.js');
+        if(mod && typeof mod.GetIdentityPayload === 'function') return await mod.GetIdentityPayload();
+    }
+    catch(e) { /* blocked by content blocker — fall through to minimal payload */ }
+    // Minimal fallback: random device id only, no browser signals. The backend
+    // treats the enriched fields as optional.
+    try
+    {
+        const payload = new URLSearchParams();
+        let id = null;
+        try { id = localStorage.getItem('sheldon_fp'); } catch(_) {}
+        if(!id)
+        {
+            try
+            {
+                id = (window.crypto && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+                localStorage.setItem('sheldon_fp', id);
+            } catch(_) {}
+        }
+        if(id) payload.set('fingerprint', id);
+        return payload;
+    }
+    catch(_) { return new URLSearchParams(); }
+}
 
 let consentStatus = null; // null = undecided, 'accepted', 'declined'
 let bannerEl = null;
@@ -29,7 +64,7 @@ export async function FetchConsentStatus()
 {
     try
     {
-        const payload = await GetIdentityPayload();
+        const payload = await loadIdentityPayload();
         const data = await postForm('/workink/identity', payload);
         if(data && data.ok)
         {
@@ -48,9 +83,15 @@ export function GetConsentStatus()
 
 export async function RecordChoice(choice)
 {
+    // Strict device checks: the choice is recorded server-side against the device
+    // identity, so recording REQUIRES it. Blocked checks => adblock notice and the
+    // confirm modal stays open so the user can retry after whitelisting.
+    let gate = null;
+    try { gate = await ensureChecksOrNotify('saving your choice'); } catch(e) { gate = null; }
+    if(!gate || !gate.ok) return false;
     try
     {
-        const payload = await GetIdentityPayload();
+        const payload = gate.payload;
         payload.set('choice', choice);
         const data = await postForm('/workink/consent', payload);
         if(data && data.ok)

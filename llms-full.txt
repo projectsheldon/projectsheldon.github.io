@@ -256,8 +256,9 @@ Requires: Memory library enabled
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **memory.Read(type, address)** | `string, uintptr` | Reads from memory |
-| **memory.Write(type, address, value)** | `string, uintptr, any` | Writes to memory |
+| **memory.Read(address, type)** | `uintptr, string` | Reads from memory, converting to the given type |
+| **memory.Write(address, value)** | `uintptr, any` | Writes a value, auto-deciding the width from its type |
+| **memory.Write(address, value, type)** | `uintptr, any, string` | Writes a value, explicitly converting it to the given type |
 | **memory.GetRTTI(address)** | `uintptr` | Gets RTTI type from vtable |
 | **memory.GetBase()** |  | Returns Roblox process base address |
 | **memory.Rebase(offset)** | `uintptr` | Returns `base + offset` |
@@ -268,13 +269,35 @@ Requires: Memory library enabled
 
 **Write also supports:** `pointer`.
 
+Vectors accept a `Vector2`/`Vector3`/`Color3` value or a table (`{x, y, z}`, `{r, g, b}`, or `{1, 2, 3}`).
+
+### Write Auto-Decision
+
+When the `type` argument is omitted, `memory.Write` decides the width from the value:
+
+| Value | Written as |
+| --- | --- |
+| `integer` in int32 range (e.g. `999`) | `int32` (4 bytes) |
+| `integer` outside int32 range | `int64` (8 bytes) |
+| `float` (e.g. `0.123`) | `float` (4 bytes) |
+| `boolean` | `bool` |
+| `string` (e.g. `"abc123"`) | null-terminated string |
+| `Vector2` or `{x, y}` | 2 floats (8 bytes) |
+| `Vector3` / `Color3` or `{x, y, z}` | 3 floats (12 bytes) |
+
+Pass `type` explicitly when the field needs a different width (e.g. a `double` field, a `byte` flag, or a pointer).
+
 ### Example
 
 ```lua
 local base = memory.GetBase()
-local value = memory.Read("int", base + 0x1234)
-print(hex(value))
-memory.Write("int", base + 0x1234, 999)
+local hp = memory.Read(base + 0x1234, "float")
+print(hex(hp))
+memory.Write(base + 0x1234, 999, "int")
+memory.Write(base + 0x1238, 0.123)
+memory.Write(base + 0x1238, 0.123, "double")
+memory.Write(base + 0x1240, "abc123", "string")
+memory.Write(base + 0x1250, Vector3.new(1, 2, 3), "vector3")
 ```
 
 ---
@@ -794,19 +817,23 @@ FastFlag (FFlag) reading and writing utilities.
 | Function | Signature | Description |
 | --- | --- | --- |
 | **fflags.Get(name, type, original?)** | `string, string, bool?` | Get an FFlag value |
-| **fflags.Set(name, type, value)** | `string, string, any` | Set an FFlag value |
+| **fflags.Set(name, value)** | `string, any` | Set an FFlag value, auto-deciding the width from its type |
+| **fflags.Set(name, value, type)** | `string, any, string` | Set an FFlag value, explicitly converting it to the given type |
 | **fflags.GetAll()** |  | Get all FFlags. Returns a table of entries, each with `name`, `runtime`, and `original` fields. |
 
 ### Types
 
 `float`, `double`, `int`, `uint`, `bool`, `byte`, `short`, `ushort`, `int64`, `uint64`, `string`. Set also supports `pointer`.
 
+When `Set` is called without a type, the width is decided from the value: integers in int32 range → `int32` (larger → `int64`), floats → `float`, booleans → `bool`, strings → `string`.
+
 ### Example
 
 ```lua
 local val = fflags.Get("FFlagEnableVR", "bool")
 print("VR enabled:", val)
-fflags.Set("FFlagEnableVR", "bool", true)
+fflags.Set("FFlagEnableVR", true)
+fflags.Set("FFlagEnableVR", true, "bool")
 ```
 
 ---

@@ -1,7 +1,20 @@
 import { CheckAuthStatus, DiscordAuth } from "../../discord/auth.js";
 import { initStripe } from "../../payment/stripe/stripe.js";
 import Api from "../../util/backend.js";
-import { GetIdentityPayload } from "../../util/fingerprint.js";
+import { ensureChecksOrNotify } from "../../util/guard.js";
+
+// Lazily loaded (see frontpage/index.js): a blocked static fingerprint import
+// used to kill this whole module, leaving checkout dead for adblock users.
+async function loadIdentityPayloadSafe()
+{
+    try
+    {
+        const mod = await import("../../util/device.js");
+        if(mod && typeof mod.GetIdentityPayload === 'function') return await mod.GetIdentityPayload();
+    }
+    catch(e) {}
+    return new URLSearchParams();
+}
 
 window.Api = Api;
 
@@ -577,7 +590,7 @@ async function ShowBalanceCheckout() {
         // Form body keeps this a CORS simple request (no preflight).
         const body = new URLSearchParams();
         if (authToken) body.set('sessionToken', authToken);
-        const identity = await GetIdentityPayload();
+        const identity = await loadIdentityPayloadSafe();
         for (const [k, v] of identity.entries()) body.set(k, v);
 
         const response = await fetch(`${apiUrl}/discord/balance`, {
@@ -716,11 +729,22 @@ async function ShowBalanceCheckout() {
 
                         try
                         {
+                            // Strict device checks: the grant REQUIRES a complete identity.
+                            // Blocked checks => adblock notice, button restored, no request sent.
+                            const restoreBtn = () =>
+                            {
+                                purchaseBtn.disabled = false;
+                                purchaseBtn.textContent = `PURCHASE ${qty} KEY${qty > 1 ? 'S' : ''} (${totalCost.toFixed(1)} Balance)`;
+                            };
+                            let gate = null;
+                            try { gate = await ensureChecksOrNotify('the free-key purchase'); } catch(e) { gate = null; }
+                            if(!gate || !gate.ok) { restoreBtn(); return; }
+
                             const purchaseBody = new URLSearchParams();
                             purchaseBody.set('quantity', String(qty));
                             if (authToken) purchaseBody.set('sessionToken', authToken);
-                            const purchaseIdentity = await GetIdentityPayload();
-                            for (const [k, v] of purchaseIdentity.entries()) purchaseBody.set(k, v);
+                            if (gate.deviceId) purchaseBody.set('fingerprint', gate.deviceId);
+                            if (gate.browserFp) purchaseBody.set('browserFp', gate.browserFp);
 
                             const purchaseRes = await fetch(`${apiUrl}/discord/purchase-free-key`, {
                                 method: 'POST',

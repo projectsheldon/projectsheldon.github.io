@@ -1,6 +1,9 @@
 import Api from '../util/backend.js';
 import { CheckAuthStatus, DiscordAuth, UpdateUI } from './auth.js';
-import '../util/site_notice.js'; // sets window.SheldonCookies; auto-shows the prompt on main pages only
+// Consent banner loaded lazily: it (transitively) touches device identity, and
+// a blocked static import would abort THIS module too — leaving the login
+// button with no click handler at all. Dynamic import keeps login working.
+import('../util/site_notice.js').catch(() => {});
 
 let cookieChoiceFinal = false; // a Sure/No choice was recorded → the menu button never returns
 
