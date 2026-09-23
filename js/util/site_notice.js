@@ -4,7 +4,6 @@
 // records nothing and the prompt returns on the next visit. Also exposes window.SheldonCookies
 // so the "View Licenses" menu can re-open the prompt and read the consent status.
 import Api from './backend.js';
-import { ensureChecksOrNotify } from './guard.js';
 
 // Device identity is loaded LAZILY via dynamic import (never a static import):
 // adblockers block fingerprinting scripts, and a blocked static import would
@@ -81,17 +80,20 @@ export function GetConsentStatus()
     return consentStatus;
 }
 
+function notifyToast(msg, type, ms)
+{
+    try { if(typeof window.Notify === 'function') window.Notify(msg, type || 'info', ms || 6000); } catch(e) {}
+}
+
 export async function RecordChoice(choice)
 {
-    // Strict device checks: the choice is recorded server-side against the device
-    // identity, so recording REQUIRES it. Blocked checks => adblock notice and the
-    // confirm modal stays open so the user can retry after whitelisting.
-    let gate = null;
-    try { gate = await ensureChecksOrNotify('saving your choice'); } catch(e) { gate = null; }
-    if(!gate || !gate.ok) return false;
+    // One-time cookie choice: deliberately LENIENT — no adblock gate. The backend
+    // accepts a minimal identity (IP hash + local id) so users with a blocker can
+    // still save their Sure/No pick. Strict device checks only apply later, when
+    // actually claiming a free key.
     try
     {
-        const payload = gate.payload;
+        const payload = await loadIdentityPayload();
         payload.set('choice', choice);
         const data = await postForm('/workink/consent', payload);
         if(data && data.ok)
@@ -99,9 +101,11 @@ export async function RecordChoice(choice)
             consentStatus = data.consent || choice;
             hidePrompt();
             window.dispatchEvent(new CustomEvent('sheldon-consent', { detail: { consent: consentStatus } }));
+            notifyToast('Choice saved.', 'success', 3000);
             return true;
         }
     } catch(e) {}
+    notifyToast('Could not save your choice — check your connection and try again.', 'warning', 6000);
     return false;
 }
 

@@ -9,12 +9,12 @@
 // - This module has NO static imports, so importing it can never break a page
 //   even under the most aggressive blocker. The device module is loaded via a
 //   guarded dynamic import only when a gated feature is used.
-// - Browsing the site (login, products, downloads, navigation) always works.
-//   Only REWARD-GRANTING actions (WorkInk claim, free-key purchase, consent
-//   recording) go through `ensureChecksOrNotify()`, which reverts to the
-//   strict checks: a complete device identity is REQUIRED, and when it can't
-//   be produced the user gets a clear "turn off your adblocker" notice instead
-//   of a silent fallback.
+// - Browsing the site (login, products, downloads, navigation) always works, and
+//   the one-time cookie choice saves without any checks.
+//   Only REWARD-GRANTING actions (WorkInk claim, free-key purchase) go through
+//   `ensureChecksOrNotify()`, which reverts to the strict checks: a complete
+//   device identity is REQUIRED, and when it can't be produced the user gets a
+//   clear "turn off your adblocker" notice instead of a silent fallback.
 
 let cachedResult = null; // per-page-load cache; cleared by "Check again"
 let modalEl = null;
@@ -391,7 +391,7 @@ function maybePassiveNotice()
                 if(await detectAdblock())
                 {
                     try { sessionStorage.setItem('sheldon_adblock_noticed', '1'); } catch(e) {}
-                    notifyToast('Ad blocker detected — turn it off if you want free keys.', 'warning', 9000);
+                    notifyToast('Heads up: ad blocker is on — your cookie choice still saves, but free keys need ads, so whitelist us when you claim one.', 'warning', 9000);
                 }
             } catch(e) {}
         }, 3000);
