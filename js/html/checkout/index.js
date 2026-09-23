@@ -175,10 +175,15 @@ async function SubmitPlanB() {
     const coin = document.getElementById('planb-coin-select')?.value || '';
     const txHash = document.getElementById('planb-tx-hash')?.value?.trim() || '';
     const proofFile = document.getElementById('planb-proof')?.files?.[0];
+    const customerDiscord = document.getElementById('planb-customer')?.value?.trim() || '';
+    const saleProvider = document.getElementById('planb-sale-provider')?.value || 'manual';
+    const saleTx = document.getElementById('planb-sale-tx')?.value?.trim() || '';
 
     if (!coin) { showPlanBError('Select the coin you paid with.'); return; }
     if (!txHash) { showPlanBError('Enter the transaction hash or explorer URL.'); return; }
     if (!proofFile) { showPlanBError('Upload a screenshot as payment proof.'); return; }
+    // Buyer info is optional: shops using the sale webhook auto-link the sale.
+    // DM sellers: fill it in so your key traces back to the buyer.
 
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
@@ -196,7 +201,7 @@ async function SubmitPlanB() {
         const createRes = await fetch(`${apiUrl}/resellers/plan-b/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ product_key: productKey, quantity: qty, coin })
+            body: JSON.stringify({ product_key: productKey, quantity: qty, coin, customer_discord: customerDiscord, sale_provider: saleProvider, sale_tx: saleTx })
         });
         const createData = await createRes.json();
         if (!createData.ok) {

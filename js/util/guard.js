@@ -123,15 +123,26 @@ async function urlProbeBlocked()
     const probe = absUrl('fingerprint.js');
     const control = absUrl('device.js');
 
+    // A blocker/network middlebox may STALL a request instead of rejecting it —
+    // without our own timeout the gate would hang forever and the claim would
+    // die silently. Abort each probe fast; a timeout is "no evidence", and the
+    // local bait test (which needs no network) still gets its vote.
     async function loadable(url)
     {
+        let timer = null;
         try
         {
-            const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'cb=' + Date.now(), { cache: 'no-store' });
+            const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            if(ctrl) timer = setTimeout(() => { try { ctrl.abort(); } catch(e) {} }, 4000);
+            const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'cb=' + Date.now(), {
+                cache: 'no-store',
+                signal: ctrl ? ctrl.signal : undefined
+            });
             try { await res.text(); } catch(e) {}
             return res.ok;
         }
         catch(e) { return false; }
+        finally { if(timer) clearTimeout(timer); }
     }
 
     try
@@ -310,21 +321,49 @@ export function showAdblockModal(featureLabel, opts)
 
 export async function ensureChecksOrNotify(featureLabel)
 {
+    // Outer safety net: the gate must NEVER hang — a stuck gate looks exactly
+    // like "rewards silently don't work". If anything inside stalls past the
+    // budget, fail closed with a notice (never silence).
+    const GATE_BUDGET_MS = 10000;
+    let timedOut = false;
+    const gateWork = (async () =>
+    {
+        let adblocked = false;
+        let ident = { complete: false, payload: new URLSearchParams() };
+        try
+        {
+            const [ b, i ] = await Promise.all([
+                detectAdblock().catch(() => false),
+                getStrictIdentity().catch(() => ({ complete: false, payload: new URLSearchParams() }))
+            ]);
+            adblocked = !!b;
+            if(i) ident = i;
+        }
+        catch(e) {}
+        return { adblocked, ident };
+    })();
+
     let adblocked = false;
     let ident = { complete: false, payload: new URLSearchParams() };
     try
     {
-        const [ b, i ] = await Promise.all([
-            detectAdblock().catch(() => false),
-            getStrictIdentity().catch(() => ({ complete: false, payload: new URLSearchParams() }))
+        const res = await Promise.race([
+            gateWork,
+            new Promise((_, reject) => setTimeout(() => { timedOut = true; reject(new Error('guard-timeout')); }, GATE_BUDGET_MS))
         ]);
-        adblocked = !!b;
-        if(i) ident = i;
+        adblocked = !!res.adblocked;
+        if(res.ident) ident = res.ident;
     }
-    catch(e) {}
+    catch(e)
+    {
+        try { console.warn('[sheldon] device verification timed out — blocking the action instead of hanging.'); } catch(_) {}
+        notifyToast('Verification timed out — please check your connection and try again.', 'warning', 6000);
+        return { ok: false, adblocked: false, complete: false, timeout: true };
+    }
 
     if(adblocked || !ident.complete)
     {
+        try { console.warn('[sheldon] reward action gated: adblocked=' + adblocked + ' identityComplete=' + !!ident.complete); } catch(_) {}
         const msg = adblocked
             ? `Turn off your ad blocker to use ${featureLabel || 'this feature'}.`
             : `We couldn't verify this device — disable privacy extensions for this site to use ${featureLabel || 'this feature'}.`;

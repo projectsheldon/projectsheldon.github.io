@@ -1054,6 +1054,55 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Sale Webhook Section -->
+                            <div class="border-t border-white/5 pt-6">
+                                <h4 class="text-white font-bold text-sm mb-3">Sale Webhook <span class="text-[#c7b18f] text-xs font-medium">— automatic delivery</span></h4>
+                                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                                    <p class="text-neutral-500 text-xs mb-4">One-time setup, then zero typing. Paste the URL into your shop (Sellix / SellApp / Shopify webhooks) or your DM bot — every paid sale is reported automatically, and when your customer's payment <span class="text-neutral-300">and</span> your wholesale payment both verify, Plan B keys land <span class="text-green-400 font-bold">instantly</span>. No shop? Just type your buyer's Discord at checkout instead.</p>
+                                    <label class="text-neutral-500 text-xs block mb-1">Webhook URL</label>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <input type="text" id="webhook-url-display" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-neutral-300 font-mono" value="Loading…" readonly>
+                                        <button id="webhook-copy-url-btn" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap">
+                                            Copy
+                                        </button>
+                                    </div>
+                                    <label class="text-neutral-500 text-xs block mb-1">Secret <span class="text-neutral-600">(proves sales come from your shop — never share it)</span></label>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <input type="text" id="webhook-secret-display" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-neutral-400 font-mono" value="••••••••••••••••" readonly>
+                                        <button id="webhook-reveal-btn" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap">
+                                            Reveal
+                                        </button>
+                                        <button id="webhook-copy-secret-btn" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap">
+                                            Copy
+                                        </button>
+                                        <button id="webhook-rotate-btn" class="px-4 py-2 bg-red-600/60 hover:bg-red-600 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap" title="Old secret stops working immediately — update your shop at the same time">
+                                            Rotate
+                                        </button>
+                                    </div>
+                                    <p id="webhook-status" class="text-neutral-500 text-xs mb-3"></p>
+                                    <details class="mb-3">
+                                        <summary class="text-[#c7b18f] text-xs font-bold cursor-pointer">What my shop must send (payload + signature)</summary>
+                                        <pre class="bg-black/40 border border-white/10 rounded-lg p-3 mt-2 text-[11px] text-neutral-300 font-mono overflow-x-auto">POST {webhook_url}
+Content-Type: application/json
+
+{
+  "sale_id": "unique per sale, e.g. your order number",
+  "customer_discord": "buyer discord id",
+  "product_key": "exact product key from catalog",
+  "quantity": 1,
+  "provider": "sellix | stripe | paypal | crypto | manual",
+  "provider_tx_id": "payment id from your provider",
+  "amount": 19.99,
+  "currency": "EUR",
+  "timestamp": 1730000000000,
+  "signature": "HMAC_SHA256_hex(secret, sale_id.provider_tx_id.amount)"
+}</pre>
+                                        <p class="text-neutral-600 text-[11px] mt-2">Signature examples — Python: <code class="font-mono">hmac.new(secret.encode(), f"{sale_id}.{tx}.{amount}".encode(), hashlib.sha256).hexdigest()</code> · Node: <code class="font-mono">crypto.createHmac("sha256", secret).update(`${sale_id}.${tx}.${amount}`).digest("hex")</code></p>
+                                    </details>
+                                    <div id="webhook-sales-list" class="text-xs"></div>
+                                </div>
+                            </div>
                             
                             <div class="border-t border-white/5 pt-6">
                                 <h4 class="text-red-400 font-bold text-sm mb-3">Danger Zone</h4>
@@ -1353,6 +1402,7 @@
             } else if (tab === 'settings') {
                 loadApiKeyStatus();
                 loadPlanStatus();
+                loadSaleWebhook();
             } else if (tab === 'orders') {
                 loadPlanOrders();
             }
@@ -2127,6 +2177,130 @@
             }
         }
 
+        // Sale webhook (automatic delivery) functions
+        let cachedWebhookSecret = null;
+        let webhookSecretRevealed = false;
+
+        async function loadSaleWebhook() {
+            const apiUrl = await getApiUrl();
+            const token = DiscordAuth.GetSessionToken();
+            if (!token) return;
+
+            const urlEl = document.getElementById('webhook-url-display');
+            const secretEl = document.getElementById('webhook-secret-display');
+            const statusEl = document.getElementById('webhook-status');
+            const salesEl = document.getElementById('webhook-sales-list');
+
+            try {
+                const response = await fetch(`${apiUrl}/resellers/plan-b/webhook-info`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (!data.ok) {
+                    if (statusEl) statusEl.textContent = data.message || 'Webhook unavailable.';
+                    return;
+                }
+                if (urlEl) urlEl.value = `${apiUrl}${data.webhook_url}`;
+                cachedWebhookSecret = null;
+                webhookSecretRevealed = false;
+                if (secretEl) secretEl.value = data.secret_preview || '••••••••••••••••';
+                const revealBtn = document.getElementById('webhook-reveal-btn');
+                if (revealBtn) revealBtn.textContent = 'Reveal';
+                if (statusEl) statusEl.textContent = 'One sale_id per customer payment. Reused sales are rejected automatically.';
+                if (salesEl) {
+                    const proofs = data.recent_proofs || [];
+                    if (proofs.length === 0) {
+                        salesEl.innerHTML = '<p class="text-neutral-600">No reported sales yet — your shop reports will appear here.</p>';
+                    } else {
+                        const badge = (v) => v === 'valid'
+                            ? '<span class="text-green-400 font-bold">valid ✅</span>'
+                            : v === 'invalid'
+                            ? '<span class="text-red-400 font-bold">invalid ❌</span>'
+                            : '<span class="text-yellow-400 font-bold">manual check ⚠️</span>';
+                        salesEl.innerHTML = '<p class="text-neutral-500 mb-2 font-bold">Recent reported sales:</p>' + proofs.map(p =>
+                            `<div class="flex items-center justify-between py-1 border-t border-white/5">` +
+                            `<span class="text-neutral-300 font-mono">${esc(p.sale_id)} <span class="text-neutral-600">· ${esc(p.product_key || '')} ×${p.quantity || 1} · ${esc(p.provider || '')}</span></span>` +
+                            `<span>${badge(p.verification)}</span></div>`
+                        ).join('');
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load sale webhook:', e);
+                if (statusEl) statusEl.textContent = 'Failed to load webhook info.';
+            }
+        }
+
+        async function revealSaleSecret() {
+            const apiUrl = await getApiUrl();
+            const token = DiscordAuth.GetSessionToken();
+            if (!token) return;
+
+            const secretEl = document.getElementById('webhook-secret-display');
+            const revealBtn = document.getElementById('webhook-reveal-btn');
+            if (webhookSecretRevealed) {
+                webhookSecretRevealed = false;
+                if (secretEl) secretEl.value = '••••••••••••••••';
+                if (revealBtn) revealBtn.textContent = 'Reveal';
+                return;
+            }
+            try {
+                const response = await fetch(`${apiUrl}/resellers/plan-b/webhook-secret`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.ok && data.secret) {
+                    cachedWebhookSecret = data.secret;
+                    webhookSecretRevealed = true;
+                    if (secretEl) secretEl.value = data.secret;
+                    if (revealBtn) revealBtn.textContent = 'Hide';
+                }
+            } catch (e) {
+                console.error('Failed to reveal secret:', e);
+            }
+        }
+
+        async function rotateSaleSecret() {
+            const apiUrl = await getApiUrl();
+            const token = DiscordAuth.GetSessionToken();
+            if (!token) return;
+            if (!confirm('Rotate webhook secret? The old secret stops working immediately — update your shop at the same time.')) return;
+
+            const statusEl = document.getElementById('webhook-status');
+            try {
+                const response = await fetch(`${apiUrl}/resellers/plan-b/webhook-secret`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ rotate: true })
+                });
+                const data = await response.json();
+                if (data.ok && data.secret) {
+                    cachedWebhookSecret = data.secret;
+                    webhookSecretRevealed = true;
+                    const secretEl = document.getElementById('webhook-secret-display');
+                    if (secretEl) secretEl.value = data.secret;
+                    const revealBtn = document.getElementById('webhook-reveal-btn');
+                    if (revealBtn) revealBtn.textContent = 'Hide';
+                    if (statusEl) statusEl.textContent = 'New secret generated — update your shop now.';
+                } else if (statusEl) {
+                    statusEl.textContent = data.message || 'Rotate failed.';
+                }
+            } catch (e) {
+                console.error('Failed to rotate secret:', e);
+                if (statusEl) statusEl.textContent = 'Rotate failed. Try again.';
+            }
+        }
+
+        function copyWebhookField(elId) {
+            const el = document.getElementById(elId);
+            if (!el || !el.value || el.value.includes('•') || el.value === 'Loading…') return;
+            navigator.clipboard?.writeText(el.value).catch(() => {});
+            el.select?.();
+            try { document.execCommand('copy'); } catch (e) {}
+        }
+
         // Plan A/B toggle
         async function loadPlanStatus() {
             const apiUrl = await getApiUrl();
@@ -2412,6 +2586,12 @@
             if (e.target.id === 'revoke-api-key-modal') hideRevokeApiKeyModal();
         });
         document.getElementById('confirm-revoke-api-key-btn')?.addEventListener('click', revokeApiKey);
+
+        // Sale webhook event listeners
+        document.getElementById('webhook-copy-url-btn')?.addEventListener('click', () => copyWebhookField('webhook-url-display'));
+        document.getElementById('webhook-reveal-btn')?.addEventListener('click', revealSaleSecret);
+        document.getElementById('webhook-copy-secret-btn')?.addEventListener('click', () => copyWebhookField('webhook-secret-display'));
+        document.getElementById('webhook-rotate-btn')?.addEventListener('click', rotateSaleSecret);
         
         document.getElementById('show-api-key-modal')?.addEventListener('click', (e) => {
             if (e.target.id === 'show-api-key-modal') hideShowApiKeyModal();

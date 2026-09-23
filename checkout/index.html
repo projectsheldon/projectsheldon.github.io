@@ -1183,6 +1183,24 @@ if (window.couponCode && window.currentPricing) {
                             </div>
 
                             <div id="planb-step-submit" style="display: none;">
+                                <div style="background: rgba(199,177,143,0.07); border: 1px solid rgba(199,177,143,0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+                                    <p style="font-size: 12px; font-weight: 800; color: #c7b18f; margin-bottom: 8px;">Who bought this? <span style="font-weight: 400; color: rgba(255,255,255,0.5);">— skip if your shop auto-reports sales</span></p>
+                                    <label style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px;">Customer Discord (name or ID)</label>
+                                    <input type="text" id="planb-customer" placeholder="e.g. someuser or 123456789" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; color: white; font-size: 13px; outline: none; margin-bottom: 10px;">
+
+                                    <label style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px;">How did they pay you?</label>
+                                    <select id="planb-sale-provider" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; color: white; font-size: 13px; outline: none; margin-bottom: 10px;">
+                                        <option value="manual">Cash / DM / other</option>
+                                        <option value="crypto">Crypto</option>
+                                        <option value="paypal">PayPal</option>
+                                        <option value="stripe">Stripe</option>
+                                        <option value="sellix">Sellix / shop</option>
+                                    </select>
+
+                                    <label style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px;">Payment reference (optional)</label>
+                                    <input type="text" id="planb-sale-tx" placeholder="PayPal/Stripe ID or crypto hash — speeds up delivery" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; color: white; font-size: 13px; outline: none;">
+                                </div>
+
                                 <label style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px;">Coin Used</label>
                                 <select id="planb-coin-select" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; color: white; font-size: 13px; outline: none; margin-bottom: 14px;"></select>
 
