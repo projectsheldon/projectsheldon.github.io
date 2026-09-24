@@ -8,6 +8,58 @@ import('../util/site_notice.js').catch(() => {});
 let cookieChoiceFinal = false; // a Sure/No choice was recorded → the menu button never returns
 
 let userMenu = null;
+let acctMenuClosing = false;
+let acctMenuCloseTimer = 0;
+let acctLastFocus = null;
+
+function prefersReducedMotion()
+{
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch(e) { return false; }
+}
+
+// Lively glass styling + open/close animation for the account popup.
+// Kept here (not a global stylesheet) per storm isolation: only topbar files.
+function ensureAccountMenuStyles()
+{
+    if(document.getElementById('account-menu-styles')) return;
+    const st = document.createElement('style');
+    st.id = 'account-menu-styles';
+    st.textContent = `
+#user-dropdown-menu.sheldon-acct-menu{
+  position:fixed;width:300px;z-index:10000;display:none;
+  background:linear-gradient(160deg,rgba(38,34,28,0.96),rgba(20,20,22,0.97));
+  backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);
+  border:1px solid rgba(199,177,143,0.22);border-radius:18px;padding:14px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.07);
+  opacity:0;transform:scale(0.94) translateY(-6px);transform-origin:top right;
+}
+#user-dropdown-menu.sheldon-acct-menu.open{
+  opacity:1;transform:scale(1) translateY(0);
+  transition:opacity 180ms ease-out,transform 180ms ease-out;
+}
+#user-dropdown-menu.sheldon-acct-menu.closing{
+  opacity:0;transform:scale(0.96) translateY(-4px);
+  transition:opacity 140ms ease-in,transform 140ms ease-in;
+}
+#user-dropdown-menu .acct-head{display:flex;align-items:center;gap:12px;padding:6px 4px 13px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:10px;}
+#user-dropdown-menu .acct-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:none;border:2px solid rgba(199,177,143,0.55);box-shadow:0 0 0 3px rgba(199,177,143,0.12);}
+#user-dropdown-menu .acct-avatar-fallback{width:42px;height:42px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#e9dcc3;background:linear-gradient(135deg,#4a4136,#2a2620);border:2px solid rgba(199,177,143,0.45);}
+#user-dropdown-menu .acct-name{font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.01em;}
+#user-dropdown-menu .acct-sub{font-size:9.5px;color:#c7b18f;text-transform:uppercase;letter-spacing:0.16em;font-weight:800;margin-top:3px;display:flex;align-items:center;gap:6px;}
+#user-dropdown-menu .acct-sub::before{content:"";width:6px;height:6px;border-radius:50%;background:#7ee2a8;box-shadow:0 0 8px rgba(126,226,168,0.9);}
+#user-dropdown-menu .acct-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:rgba(255,255,255,0.85);text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease;font-family:'Inter',sans-serif;box-sizing:border-box;}
+#user-dropdown-menu .acct-item:hover,#user-dropdown-menu .acct-item:focus-visible{background:rgba(199,177,143,0.12);border-color:rgba(199,177,143,0.35);color:#fff;outline:none;transform:translateX(2px);}
+#user-dropdown-menu .acct-item.danger:hover,#user-dropdown-menu .acct-item.danger:focus-visible{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.35);color:#fca5a5;}
+#user-dropdown-menu .acct-item svg{flex:none;opacity:0.75;}
+#user-dropdown-menu .acct-cookie{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);}
+#user-dropdown-menu .acct-cookie-btn{width:100%;padding:9px 0;border-radius:10px;border:1px dashed rgba(199,177,143,0.4);background:rgba(199,177,143,0.07);color:#c7b18f;font-size:10.5px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:background .16s ease;}
+#user-dropdown-menu .acct-cookie-btn:hover{background:rgba(199,177,143,0.15);}
+@media (prefers-reduced-motion: reduce){
+  #user-dropdown-menu.sheldon-acct-menu.open,#user-dropdown-menu.sheldon-acct-menu.closing{transition:none;transform:none;}
+}`;
+    document.head.appendChild(st);
+}
 
 // Resolve elements lazily — topbar may be injected asynchronously via topbar.js
 function getDiscordBtn()
@@ -149,41 +201,88 @@ if(typeof MutationObserver !== 'undefined')
 
 function CreateAccountMenu()
 {
+    ensureAccountMenuStyles();
     if(userMenu) return userMenu;
 
     userMenu = document.createElement('div');
     userMenu.id = 'user-dropdown-menu';
-    userMenu.style.cssText = 'position:fixed;width:320px;background:rgba(30,30,30,0.98);' +
-        'backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.15);border-radius:16px;' +
-        'padding:16px;z-index:10000;display:none;box-shadow:0 10px 40px rgba(0,0,0,0.5);';
+    userMenu.className = 'sheldon-acct-menu';
+    userMenu.setAttribute('role', 'menu');
+    userMenu.setAttribute('aria-label', 'Account menu');
+    userMenu.tabIndex = -1;
+    userMenu.style.display = 'none';
     document.body.appendChild(userMenu);
     return userMenu;
 }
-function ToggleAccountMenu(show)
+function ToggleAccountMenu(show, opts)
 {
     const menu = CreateAccountMenu();
+    opts = opts || {};
 
     if(show)
     {
+        if(acctMenuCloseTimer) { clearTimeout(acctMenuCloseTimer); acctMenuCloseTimer = 0; }
+        acctMenuClosing = false;
+        try { acctLastFocus = document.activeElement || null; } catch(e) { acctLastFocus = null; }
         const trigger = document.getElementById('user-profile-trigger');
         if(trigger)
         {
             const rect = trigger.getBoundingClientRect();
-            menu.style.left = (rect.right - 280) + 'px';
+            const w = 300;
+            menu.style.left = Math.max(8, Math.min(rect.right - (w - 40), window.innerWidth - w - 8)) + 'px';
             menu.style.top = (rect.bottom + 10) + 'px';
             menu.style.right = 'auto';
         }
         menu.style.display = 'block';
-        RenderAccountMenu();
+        menu.classList.remove('closing');
+        // Force reflow so the open transition plays.
+        void menu.offsetWidth;
+        RenderAccountMenu().catch(() => {});
+        requestAnimationFrame(() =>
+        {
+            if(!prefersReducedMotion()) menu.classList.add('open');
+            else { menu.classList.add('open'); }
+            if(!opts.noFocus)
+            {
+                try
+                {
+                    const first = menu.querySelector('a, button');
+                    if(first) first.focus({ preventScroll: true });
+                } catch(e) {}
+            }
+        });
     } else
     {
-        menu.style.display = 'none';
+        if(!menu || menu.style.display !== 'block' || acctMenuClosing) return;
+        const done = () =>
+        {
+            menu.style.display = 'none';
+            menu.classList.remove('open', 'closing');
+            acctMenuClosing = false;
+            acctMenuCloseTimer = 0;
+            // Focus retention: return focus to the trigger / prior element.
+            try
+            {
+                const trg = document.getElementById('user-profile-trigger');
+                const back = (trg && trg.contains(acctLastFocus)) || !acctLastFocus || !document.contains(acctLastFocus) ? trg : acctLastFocus;
+                if(back && document.contains(back))
+                {
+                    if(!back.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT)$/i.test(back.tagName)) back.setAttribute('tabindex', '-1');
+                    back.focus({ preventScroll: true });
+                }
+            } catch(e) {}
+        };
+        if(prefersReducedMotion()) { done(); return; }
+        acctMenuClosing = true;
+        menu.classList.remove('open');
+        menu.classList.add('closing');
+        acctMenuCloseTimer = setTimeout(done, 140);
     }
 }
 
 function SignOut()
 {
-    const close = () => { if(userMenu) userMenu.style.display = 'none'; };
+    const close = () => { ToggleAccountMenu(false); };
     if(!window.DiscordAuth.currentUser) { close(); return; }
 
     DiscordAuth.Logout().catch(() => {})
@@ -209,12 +308,12 @@ function appendCookieSettingsButton(menu)
 
     const wrap = document.createElement('div');
     wrap.id = 'cookie-settings-btn';
-    wrap.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);';
+    wrap.className = 'acct-cookie';
 
     const btn = document.createElement('button');
     btn.textContent = status === 'declined' ? 'Cookie settings \u2014 declined' : 'Cookie settings';
     btn.title = 'Show the cookie / fingerprint consent prompt again';
-    btn.style.cssText = 'width:100%;padding:8px 0;border-radius:10px;border:1px solid rgba(199,177,143,0.35);background:rgba(199,177,143,0.08);color:#c7b18f;font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:background .2s;';
+    btn.className = 'acct-cookie-btn';
     btn.addEventListener('click', () =>
     {
         try { window.SheldonCookies?.ShowCookiePrompt?.(); } catch(e) {}
@@ -263,25 +362,26 @@ async function RenderAccountMenu()
     }
 
     const name = (user && (user.globalName || user.username)) || 'Account';
+    const initial = (name.charAt(0) || 'A').toUpperCase();
     const avatar = user && user.avatar
-        ? `<img src="${user.avatar}" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.12);flex:none;">`
-        : `<div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;flex:none;color:rgba(255,255,255,0.4);font-size:14px;font-weight:700;">${window.escapeHtml ? window.escapeHtml(name.charAt(0).toUpperCase()) : name.charAt(0).toUpperCase()}</div>`;
+        ? `<img class="acct-avatar" src="${user.avatar}" alt="">`
+        : `<div class="acct-avatar-fallback">${window.escapeHtml ? window.escapeHtml(initial) : initial}</div>`;
 
     menu.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;padding:4px 2px 14px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:12px;">
+        <div class="acct-head">
             ${avatar}
             <div style="min-width:0;">
-                <div style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.escapeHtml ? window.escapeHtml(name) : name}</div>
-                <div style="font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.12em;font-weight:700;margin-top:2px;">Account Menu</div>
+                <div class="acct-name">${window.escapeHtml ? window.escapeHtml(name) : name}</div>
+                <div class="acct-sub">Account Menu</div>
             </div>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:6px;">
-            <a href="/dashboard/" style="display:flex;align-items:center;justify-content:center;gap:10px;position:relative;padding:11px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);text-decoration:none;font-size:13px;font-weight:600;transition:all .2s;cursor:pointer;" onmouseover="this.style.background='rgba(199,177,143,0.1)';this.style.borderColor='rgba(199,177,143,0.3)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.85)'">
+            <a href="/dashboard/" class="acct-item" role="menuitem">
                 ${accountMenuIcon('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>')}
                 <span>Dashboard</span>
             </a>
-            <button id="account-menu-signout" style="display:flex;align-items:center;justify-content:center;gap:10px;position:relative;padding:11px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;" onmouseover="this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#fca5a5'" onmouseout="this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.85)'">
+            <button id="account-menu-signout" class="acct-item danger" role="menuitem">
                 ${accountMenuIcon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>')}
                 <span>Sign out</span>
             </button>
@@ -326,8 +426,14 @@ document.addEventListener('click', function (e)
     const curTrigger = getUserProfileTrigger();
     if(userMenu && !userMenu.contains(e.target) && !curTrigger?.contains(e.target))
     {
-        userMenu.style.display = 'none';
+        ToggleAccountMenu(false);
     }
+});
+// Escape closes the popup and returns focus to the trigger.
+document.addEventListener('keydown', function (e)
+{
+    if(e.key !== 'Escape' && e.key !== 'Esc') return;
+    if(userMenu && userMenu.style.display === 'block') ToggleAccountMenu(false);
 });
 // Ensure both button types are bound after topbar injection
 attachDiscordButtons();

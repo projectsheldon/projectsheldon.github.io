@@ -447,17 +447,119 @@
 
         .resellers-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 340px));
-            justify-content: center;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             align-items: stretch;
             gap: 1.5rem;
         }
 
-        /* Equal-height cards with the Open Website button pinned to the bottom. */
+        @media (max-width: 1024px) {
+            .resellers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 640px) {
+            .resellers-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        /* Single consistent .reseller-card component (image-1 lockup):
+           fixed banner, overlapping circular logo, padded body. */
         .reseller-card {
             display: flex;
             flex-direction: column;
             height: 100%;
+            min-width: 0;
+            border-radius: 1.5rem;
+            overflow: hidden;
+        }
+
+        .rc-banner {
+            position: relative;
+            height: 140px;
+            min-height: 140px;
+            max-height: 140px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1c1a16 0%, #2a251c 55%, #121212 100%);
+        }
+
+        .rc-banner img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .rc-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 0 1.25rem 1.25rem;
+            min-width: 0;
+        }
+
+        .rc-logo {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            min-height: 56px;
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-top: -28px;
+            position: relative;
+            z-index: 2;
+            background: #111;
+            border: 3px solid #0a0a0a;
+            outline: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.2rem;
+            color: #c7b18f;
+        }
+
+        .rc-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .rc-desc {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.82rem;
+            line-height: 1.55;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            padding-right: 0.1rem;
+        }
+
+        .rc-icon-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rc-icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.65);
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .rc-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
         }
 
         .reseller-card-foot {
@@ -468,6 +570,18 @@
 
         .reseller-card-foot .website-btn {
             margin-top: auto !important;
+        }
+
+        /* Full-width white Visit Store button inside consistent cards. */
+        .reseller-card .website-btn {
+            background: white;
+            border-color: white;
+            color: black;
+        }
+
+        .reseller-card .website-btn:hover {
+            background: #e7e7e7;
+            border-color: #e7e7e7;
         }
 
         /* YouTube-shorts style hashtag chips (display-only). */
@@ -672,18 +786,69 @@
             return safe.replace(/#([A-Za-z0-9_]{1,24})/g, '<span class="tag-inline">#$1</span>');
         }
 
-        // Embed area for a card with a website. The site itself is never loaded in
-        // the browser: the backend fetches it once, server-side, and returns its
-        // og:image/title/description, which we render as a Discord-style embed card.
+        // Frontend-only 7-day embed cache: { [domain]: { logo, banner, ts } }.
+        // Optional per-reseller overrides: r.logo / r.banner win over cache/fetch.
+        const EMBED_CACHE_KEY = 'sheldon_reseller_embeds_v1';
+        const EMBED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+        function readEmbedCache() {
+            try { return JSON.parse(localStorage.getItem(EMBED_CACHE_KEY) || '{}') || {}; }
+            catch (e) { return {}; }
+        }
+
+        function getCachedEmbed(domain) {
+            try {
+                const all = readEmbedCache();
+                const e = all[domain];
+                if (!e || !e.ts || (Date.now() - e.ts) > EMBED_TTL_MS) return null;
+                return e;
+            } catch (err) { return null; }
+        }
+
+        function setCachedEmbed(domain, patch) {
+            try {
+                const all = readEmbedCache();
+                all[domain] = { logo: patch.logo || null, banner: patch.banner || null, ts: Date.now() };
+                localStorage.setItem(EMBED_CACHE_KEY, JSON.stringify(all));
+            } catch (err) { /* storage full/blocked: never break render */ }
+        }
+
+        function logoCandidates(r, domain, cached) {
+            const out = [];
+            const push = (u) => { if (u && /^https?:\/\//i.test(u) && !out.includes(u)) out.push(u); };
+            push(r.logo);
+            if (cached && cached.logo) push(cached.logo);
+            if (domain) {
+                push(`https://${domain}/favicon.ico`);
+                push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`);
+                push(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`);
+            }
+            if (r.discord_id) push(getDiscordAvatar(r.discord_id, r.discord_avatar));
+            return out;
+        }
+
+        function bannerSrc(r, cached, backendImage) {
+            if (r.banner && /^https?:\/\//i.test(r.banner)) return r.banner;
+            if (cached && cached.banner && /^https?:\/\//i.test(cached.banner)) return cached.banner;
+            if (backendImage && /^https?:\/\//i.test(backendImage)) return backendImage;
+            return null;
+        }
+
+        // Fixed-height banner slot: reserves 140px so there is no layout shift
+        // whether the banner image loads, fails, or is still resolving.
+        function bannerHtml(r, url, domain) {
+            const cached = domain ? getCachedEmbed(domain) : null;
+            const src = bannerSrc(r, cached, null);
+            const img = src
+                ? `<img src="${esc(src)}" alt="" loading="lazy" data-banner-img onerror="this.remove()">`
+                : '';
+            return `<div class="rc-banner" data-banner data-banner-domain="${esc(domain || '')}">${img}</div>`;
+        }
+
+        // Backwards-compat alias: old markup called embedHtml(r, url).
         function embedHtml(r, url) {
             if (!url) return '';
-            return `
-                <div class="embed-box" data-embed-url="${esc(url)}" data-embed-domain="${esc(domainOf(url))}">
-                    <div class="embed-loading">
-                        <div class="embed-loading-spinner"></div>
-                        <p class="text-neutral-500 text-xs font-bold uppercase tracking-widest">Loading preview</p>
-                    </div>
-                </div>`;
+            return bannerHtml(r, url, domainOf(url));
         }
 
         function embedFallbackHtml(url, domain) {
@@ -693,156 +858,119 @@
                         <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
                     </svg>
                     <p class="text-neutral-400 text-xs font-bold uppercase tracking-widest">Preview unavailable</p>
-                    <a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="website-btn" style="max-width: 220px;">Visit ${esc(domain)}</a>
                 </div>`;
         }
 
         function embedCardHtml(d, url, domain) {
-            const hasText = !!(d.title || d.description);
-            const image = d.image && /^https?:\/\//i.test(d.image) ? esc(d.image) : null;
-
-            const textBlock = `
-                        <div class="embed-card-body">
-                            <p class="embed-card-domain">${esc(domain)}</p>
-                            ${d.title ? `<h4 class="embed-card-title">${esc(d.title)}</h4>` : ''}
-                            ${d.description ? `<p class="embed-card-desc">${esc(d.description)}</p>` : ''}
-                        </div>`;
-
-            // Both text and image: Discord summary-card style — image banner on
-            // top, domain/title/description underneath.
-            if (hasText && image) {
-                return `
-                    <a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="embed-card-link embed-card-link--stacked">
-                        <img class="embed-card-image" src="${image}" alt="" loading="lazy" onerror="this.remove()">
-                        ${textBlock}
-                    </a>`;
-            }
-
-            // Text only.
-            if (hasText) {
-                return `
-                    <a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="embed-card-link">
-                        ${textBlock}
-                    </a>`;
-            }
-
-            // No text but an image: show the image alone, full width.
-            if (image) {
-                return `
-                    <a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="embed-card-image-link">
-                        <img class="embed-card-image" src="${image}" alt="" loading="lazy" onerror="this.closest('.embed-card-image-link').remove()">
-                        <span class="embed-card-image-domain">${esc(domain)}</span>
-                    </a>`;
-            }
-
-            return embedFallbackHtml(url, domain);
+            const image = d.image && /^https?:\/\//i.test(d.image) ? d.image : null;
+            if (!image) return embedFallbackHtml(url, domain);
+            return `<img src="${esc(image)}" alt="" loading="lazy" data-banner-img onerror="this.remove()">`;
         }
 
-        // Fill the card header's site identity (favicon + site name) once the embed
-        // metadata arrives. The favicon slot keeps a globe placeholder underneath.
-        // Favicon resolution is a fallback chain: the favicon returned by the backend
-        // (scraped or admin-curated) first, then Google's and DuckDuckGo's favicon
-        // caches for the domain. The cache services pass Cloudflare/Selldone-challenged
-        // sites because their own crawlers already passed the challenge. If every
-        // candidate fails to load, the globe placeholder stays visible.
-        function setSiteIdentity(card, d, domain) {
-            const slot = card.querySelector('[data-favicon-slot]');
-            if (slot) {
-                slot.querySelectorAll('.site-favicon-img').forEach(el => el.remove());
-                const candidates = [];
-                if (d.favicon && /^https?:\/\//i.test(d.favicon)) candidates.push(d.favicon);
-                if (domain) {
-                    candidates.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`);
-                    candidates.push(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`);
-                }
-                const tryNext = (i) => {
-                    if (i >= candidates.length) return;
-                    const img = new Image();
-                    img.className = 'site-favicon-img';
+        // Resolve logo through an Image probe chain so a missing favicon.ico
+        // never breaks render: falls back to initials avatar.
+        function hydrateLogo(card, r, domain) {
+            const slot = card.querySelector('[data-logo-slot]');
+            if (!slot) return;
+            const cached = domain ? getCachedEmbed(domain) : null;
+            const cands = logoCandidates(r, domain, cached);
+            const fallbackInitial = slot.getAttribute('data-initial') || '?';
+            const tryNext = (i) => {
+                if (i >= cands.length) return;
+                const probe = new Image();
+                probe.onload = () => {
+                    slot.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = cands[i];
                     img.alt = '';
-                    img.onload = () => slot.append(img);
-                    img.onerror = () => tryNext(i + 1);
-                    img.src = candidates[i];
+                    img.loading = 'lazy';
+                    img.onerror = () => { slot.textContent = fallbackInitial; tryNext(i + 1); };
+                    slot.append(img);
+                    if (domain) setCachedEmbed(domain, { logo: cands[i], banner: (getCachedEmbed(domain) || {}).banner || r.banner || null });
                 };
-                tryNext(0);
-            }
-            const nameEl = card.querySelector('[data-site-name]');
-            if (nameEl && d.siteName) nameEl.textContent = d.siteName;
+                probe.onerror = () => tryNext(i + 1);
+                probe.src = cands[i];
+            };
+            tryNext(0);
         }
 
-        async function loadEmbed(box) {
-            const url = box.dataset.embedUrl;
-            const domain = box.dataset.embedDomain;
-            const card = box.closest('.reseller-card');
+        // Progressive banner enhancement: cached/override renders instantly;
+        // backend og:image upgrades it once, then caches for 7 days.
+        async function hydrateBanner(card, r, url, domain) {
+            const box = card.querySelector('[data-banner]');
+            if (!box || !url || !domain) return;
             try {
                 const apiUrl = await Api.GetApiUrl();
                 const response = await fetch(`${apiUrl}/resellers/embed?url=${encodeURIComponent(url)}`);
                 const data = await response.json();
-                if (data.ok && (data.title || data.description || data.image)) {
-                    box.innerHTML = embedCardHtml(data, url, domain);
-                } else {
-                    // Scrape failed or only a curated favicon exists: keep the fallback
-                    // box, but the favicon chain below still runs for the card header.
-                    box.innerHTML = embedFallbackHtml(url, domain);
+                const img = data.ok && data.image && /^https?:\/\//i.test(data.image) ? data.image : null;
+                if (img && !box.querySelector('img')) {
+                    const el = document.createElement('img');
+                    el.src = img;
+                    el.alt = '';
+                    el.loading = 'lazy';
+                    el.setAttribute('data-banner-img', '');
+                    el.onerror = () => el.remove();
+                    box.prepend(el);
                 }
-                if (card) setSiteIdentity(card, data.ok ? data : {}, domain);
-            } catch (err) {
-                box.innerHTML = embedFallbackHtml(url, domain);
-                if (card) setSiteIdentity(card, {}, domain);
-            }
+                const fav = data.ok && data.favicon && /^https?:\/\//i.test(data.favicon) ? data.favicon : null;
+                if (domain) setCachedEmbed(domain, {
+                    logo: fav || (getCachedEmbed(domain) || {}).logo || r.logo || null,
+                    banner: r.banner || img || (getCachedEmbed(domain) || {}).banner || null
+                });
+                if (fav) hydrateLogo(card, { ...r, logo: fav }, domain);
+            } catch (err) { /* offline/backend down: cached render stays */ }
+        }
+
+        // Backwards-compat shims for the old per-embed-box flow.
+        function setSiteIdentity(card, d, domain) { /* superseded by hydrateLogo */ }
+
+        async function loadEmbed(box) {
+            const card = box.closest('.reseller-card');
+            if (!card) return;
+            await hydrateBanner(card, {}, box.dataset.embedUrl, box.dataset.embedDomain);
         }
 
         function cardHtml(r, index) {
             const url = normalizeWebsite(r.website);
+            const domain = url ? domainOf(url) : '';
             const pinned = !!r.pinned;
             const verifiedDate = r.verified_at
                 ? new Date(r.verified_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
                 : null;
-            const initial = (r.discord_username || '?').trim().charAt(0).toUpperCase() || '?';
-            // With a website, the site is the main identity (favicon + site name),
-            // Discord stays as the secondary verification line. Without one, the
-            // Discord identity carries the card.
-            const header = url ? `
-                    <div class="p-6 flex items-center gap-4">
-                        <div class="site-favicon-slot w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden" data-favicon-slot>
-                            <svg class="site-favicon-globe" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
-                            </svg>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <p class="text-white font-black text-base truncate" data-site-name>${esc(domainOf(url))}</p>
-                                ${pinned ? '<span class="pinned-chip">Pinned</span>' : ''}
-                            </div>
-                            <p class="text-neutral-500 text-xs mt-1">${esc(r.discord_username || 'Unknown')}${verifiedDate ? ` &middot; ${esc(verifiedDate)}` : ''}</p>
-                        </div>
-                    </div>` : `
-                    <div class="p-6 flex items-center gap-4">
-                        <img src="${esc(getDiscordAvatar(r.discord_id, r.discord_avatar))}" alt="" data-initial="${esc(initial)}"
-                            class="w-14 h-14 rounded-full object-cover border border-white/10 shrink-0">
-                        <div class="min-w-0">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <p class="text-white font-black text-base truncate">${esc(r.discord_username || 'Unknown')}</p>
-                                ${pinned ? '<span class="pinned-chip">Pinned</span>' : ''}
-                            </div>
-                            <p class="text-neutral-500 text-xs mt-1">${verifiedDate ? esc(verifiedDate) : 'Verified Reseller'}</p>
-                        </div>
-                    </div>`;
+            const initial = (r.discord_username || domain || '?').trim().charAt(0).toUpperCase() || '?';
+            const displayName = domain || r.discord_username || 'Unknown';
+            const cached = domain ? getCachedEmbed(domain) : null;
+            const firstLogo = r.logo && /^https?:\/\//i.test(r.logo) ? esc(r.logo)
+                : cached && cached.logo ? esc(cached.logo) : null;
+            const logoInner = firstLogo
+                ? `<img src="${firstLogo}" alt="" loading="lazy" onerror="this.remove()">`
+                : esc(initial);
+            const discordHref = r.discord_invite || r.discord_url || null;
             return `
-                <div class="glass-card reseller-card rounded-[1.5rem] overflow-hidden animate-on-scroll${pinned ? ' pinned' : ''}" style="transition-delay: ${Math.min(index, 6) * 0.06}s;">
-                    ${header}
-                    ${embedHtml(r, url)}
-                    <div class="p-6 pt-5 space-y-4 reseller-card-foot">
-                        ${r.description ? `<p class="text-neutral-400 text-sm leading-relaxed">${descHtml(r.description)}</p>` : ''}
+                <div class="glass-card reseller-card rounded-[1.5rem] overflow-hidden animate-on-scroll${pinned ? ' pinned' : ''}" style="transition-delay: ${Math.min(index, 6) * 0.06}s;" data-domain="${esc(domain)}">
+                    ${bannerHtml(r, url, domain)}
+                    <div class="rc-body reseller-card-foot">
+                        <div class="rc-logo" data-logo-slot data-initial="${esc(initial)}">${logoInner}</div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-white font-black text-base truncate">${esc(displayName)}</p>
+                                <svg class="w-4 h-4 shrink-0 text-[#c7b18f]" fill="currentColor" viewBox="0 0 24 24" aria-label="Verified"><path d="M12 2l2.4 2.4 3.4-.5 1 3.3 3.2 1.2-1.2 3.2 1.2 3.2-3.2 1.2-1 3.3-3.4-.5L12 21.6l-2.4-2.4-3.4.5-1-3.3-3.2-1.2L3.2 12 2 8.8l3.2-1.2 1-3.3 3.4.5z"/><path d="M10.6 14.6l-2.1-2.1-1.4 1.4 3.5 3.5 7-7-1.4-1.4z" fill="#050505"/></svg>
+                                ${pinned ? '<span class="pinned-chip">Recommended</span>' : ''}
+                            </div>
+                            <p class="text-neutral-500 text-xs mt-1">${esc(r.discord_username || 'Verified reseller')}${verifiedDate ? ` &middot; ${esc(verifiedDate)}` : ''}</p>
+                        </div>
+                        <div class="rc-icon-row">
+                            ${discordHref ? `<a href="${esc(discordHref)}" target="_blank" rel="noopener noreferrer" class="rc-icon-btn" aria-label="Discord">
+                                <svg class="w-4 h-4" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a.41.41,0,0,0-.43.2,72.48,72.48,0,0,0-3.17,6.52,97.26,97.26,0,0,0-29,0,72.84,72.84,0,0,0-3.19-6.52.4.4,0,0,0-.43-.2A105.09,105.09,0,0,0,19.44,8.07a.44.44,0,0,0-.2.07C2.12,34,1.15,59.39,3.46,84.41a.48.48,0,0,0,.19.34A105.77,105.77,0,0,0,35.77,96.36a.42.42,0,0,0,.46-.22,74.22,74.22,0,0,0,6.42-10.38.4.4,0,0,0-.22-.56,68.7,68.7,0,0,1-10-4.76.41.41,0,0,1,0-.69c.83-.62,1.67-1.28,2.46-1.95a.39.39,0,0,1,.41-.05,73.4,73.4,0,0,0,57.48,0,.39.39,0,0,1,.41.05c.79.67,1.63,1.33,2.46,1.95a.41.41,0,0,1,0,.69,68.61,68.61,0,0,1-10,4.76.41.41,0,0,0-.22.56,74.8,74.8,0,0,0,6.43,10.38.42.42,0,0,0,.46.22,105.48,105.48,0,0,0,32.11-11.61.45.45,0,0,0,.19-.34c2.72-28.53-4.67-53.59-20-76.27A.39.39,0,0,0,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.07,65.69,84.69,65.69Z"/></svg>
+                            </a>` : ''}
+                            ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="rc-icon-btn" aria-label="Website">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                            </a>` : ''}
+                        </div>
+                        ${r.description ? `<p class="rc-desc">${descHtml(r.description)}</p>` : ''}
                         ${tagsHtml(r)}
-                        ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="website-btn">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-                            </svg>
-                            Open Website
-                        </a>` : ''}
+                        ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="website-btn">Visit Store</a>` : ''}
                     </div>
                 </div>`;
         }
@@ -892,22 +1020,19 @@
 
                 grid.classList.remove('hidden');
                 grid.innerHTML = data.resellers.map((r, i) => cardHtml(r, i)).join('');
-                // Broken/blocked avatar images swap to a gold monogram circle instead
-                // of showing the browser's broken-image glyph.
-                grid.querySelectorAll('img[data-initial]').forEach(img => {
-                    img.addEventListener('error', () => {
-                        const fb = document.createElement('div');
-                        fb.className = 'avatar-fallback';
-                        fb.textContent = img.dataset.initial || '?';
-                        img.replaceWith(fb);
-                    });
+                // Hydrate logos (favicon probe chain, cached 7d) + banners.
+                grid.querySelectorAll('.reseller-card').forEach((card, i) => {
+                    const r = data.resellers[i] || {};
+                    const url = normalizeWebsite(r.website);
+                    const domain = url ? domainOf(url) : '';
+                    if (!domain) return;
+                    hydrateLogo(card, r, domain);
+                    hydrateBanner(card, r, url, domain);
                 });
                 grid.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
                 setTimeout(gateCta, 300);
 
-                // Fetch each website's Open Graph metadata via the backend and render
-                // the Discord-style embed card (image/title/description) in its place.
-                grid.querySelectorAll('[data-embed-url]').forEach(box => loadEmbed(box));
+                // Cached/override renders instantly; backend og:image upgrades banner.
             } catch (err) {
                 loading.classList.add('hidden');
                 empty.classList.remove('hidden');

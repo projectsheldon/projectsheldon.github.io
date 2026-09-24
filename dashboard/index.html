@@ -1451,6 +1451,102 @@
                 padding-top: 10vh;
             }
         }
+
+        /* ── Item-4: Claude-like centered dashboard (scoped to dashboard only) ── */
+        .dash-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        .dash-sidebar {
+            position: sticky;
+            top: 104px;
+            left: auto;
+            bottom: auto;
+            flex: 0 0 230px;
+            width: 230px;
+            max-height: calc(100vh - 124px);
+        }
+        .dash-main-wrap {
+            flex: 1;
+            min-width: 0;
+            margin-left: 0;
+            padding: 104px 0 40px;
+        }
+        footer { margin-left: 0; }
+        body.sidebar-collapsed footer { margin-left: 0; }
+        @media (min-width: 901px) {
+            body.sidebar-collapsed .dash-main-wrap { margin-left: 0; }
+            body.sidebar-collapsed .dash-sidebar { width: 68px; flex-basis: 68px; }
+        }
+        .dash-profile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 20px 22px;
+        }
+        .dash-profile-avatar {
+            width: 52px; height: 52px; border-radius: 50%;
+            object-fit: cover; background: rgba(255,255,255,0.05);
+            font-size: 20px; font-weight: 800; color: rgba(255,255,255,0.5);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .dash-profile-name { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+        .dash-profile-sub { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); margin-top: 2px; }
+        .dash-profile-meta { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+        .dash-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 999px;
+            padding: 6px 12px; color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.03); white-space: nowrap;
+        }
+        .dash-pill.gold { color: #c7b18f; border-color: rgba(199,177,143,0.3); background: rgba(199,177,143,0.08); }
+        .dash-pill.green { color: #4ade80; border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.08); }
+        .dash-pill.red { color: #f87171; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+        .dash-stats { grid-template-columns: repeat(5, 1fr); }
+        .dash-heat-toggle {
+            display: inline-flex; background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; gap: 2px;
+        }
+        .dash-heat-btn {
+            border: 0; border-radius: 7px; padding: 6px 12px;
+            font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+            background: transparent; color: rgba(255,255,255,0.5); cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all 0.2s; white-space: nowrap;
+        }
+        .dash-heat-btn:hover { color: #fff; }
+        .dash-heat-btn.active { background: #c7b18f; color: #000; }
+        .dash-heatmap { display: flex; gap: 4px; overflow-x: auto; padding: 14px 2px 6px; }
+        .dash-heat-col { display: flex; flex-direction: column; gap: 4px; }
+        .dash-heat-cell {
+            width: 14px; height: 14px; border-radius: 4px;
+            background: rgba(255,255,255,0.06); flex-shrink: 0;
+        }
+        .dash-heat-cell.l1 { background: rgba(199,177,143,0.22); }
+        .dash-heat-cell.l2 { background: rgba(199,177,143,0.42); }
+        .dash-heat-cell.l3 { background: rgba(199,177,143,0.68); }
+        .dash-heat-cell.l4 { background: #c7b18f; box-shadow: 0 0 8px rgba(199,177,143,0.35); }
+        .dash-heat-legend { display: flex; align-items: center; gap: 6px; font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 600; }
+        @media (max-width: 1100px) { .dash-stats { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) {
+            .dash-shell { display: block; padding: 0; }
+            .dash-sidebar {
+                position: fixed; top: 72px; bottom: 0; left: 0;
+                width: 240px; flex: none; max-height: none;
+            }
+            .dash-main-wrap { padding: 88px 16px 40px; }
+            .dash-profile { flex-wrap: wrap; }
+            .dash-profile-meta { margin-left: 0; justify-content: flex-start; }
+        }
+        @media (max-width: 560px) { .dash-stats { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 
@@ -1544,6 +1640,22 @@
             <!-- Overview tab -->
             <div id="tab-overview" class="dash-tab">
 
+                <!-- Centered profile header -->
+                <section class="dash-profile" id="dash-profile" aria-label="Account summary">
+                    <div class="dash-avatar-wrap">
+                        <img id="dash-profile-avatar" class="dash-profile-avatar" src="" alt="Avatar" style="display:none;">
+                        <div id="dash-profile-avatar-fallback" class="dash-profile-avatar">?</div>
+                    </div>
+                    <div style="min-width:0;">
+                        <div id="dash-profile-name" class="dash-profile-name">Loading…</div>
+                        <div id="dash-profile-sub" class="dash-profile-sub">Loading…</div>
+                    </div>
+                    <div class="dash-profile-meta">
+                        <span id="dash-profile-status" class="dash-pill">…</span>
+                        <span id="dash-profile-balance" class="dash-pill gold">$0.00</span>
+                    </div>
+                </section>
+
                 <div class="dash-stats" id="dash-stats">
                     <div class="dash-stat">
                         <div class="skel" style="width:65%;height:11px;"></div>
@@ -1592,6 +1704,15 @@
                                 </div>
                             </div>
                             <p id="dash-activity-date-range" class="text-[10px] text-neutral-500 font-mono mb-3">No data yet.</p>
+                            <div class="flex items-center gap-3 mt-3 mb-1 flex-wrap justify-between">
+                                <div class="dash-heat-toggle" role="tablist" aria-label="Activity view">
+                                    <button class="dash-heat-btn active" data-mode="daily" role="tab" aria-selected="true">Daily</button>
+                                    <button class="dash-heat-btn" data-mode="weekly" role="tab" aria-selected="false">Weekly</button>
+                                    <button class="dash-heat-btn" data-mode="cumulative" role="tab" aria-selected="false">Cumulative</button>
+                                </div>
+                                <div class="dash-heat-legend" aria-hidden="true">Less <span class="dash-heat-cell" style="width:11px;height:11px;"></span><span class="dash-heat-cell l1" style="width:11px;height:11px;"></span><span class="dash-heat-cell l2" style="width:11px;height:11px;"></span><span class="dash-heat-cell l3" style="width:11px;height:11px;"></span><span class="dash-heat-cell l4" style="width:11px;height:11px;"></span> More</div>
+                            </div>
+                            <div id="dash-heatmap" class="dash-heatmap" aria-label="Activity heatmap"></div>
                             <div id="dash-activity-chart">
                                 <div class="stats-chart"><span class="chart-gridline" style="top:25%"></span><span class="chart-gridline" style="top:50%"></span><span class="chart-gridline" style="top:75%"></span><span class="chart-gridline chart-gridline-base"></span><div class="bar-col"><div class="bar skel-bar" style="height:38%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:62%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:45%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:78%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:54%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:68%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:40%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:64%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:50%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:72%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:34%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:58%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:70%"></div></div><div class="bar-col"><div class="bar skel-bar" style="height:46%"></div></div></div>
                             </div>

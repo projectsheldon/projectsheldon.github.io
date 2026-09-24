@@ -7,7 +7,8 @@ let state = {
     filter: 'all',
     range: 14,
     end: '',
-    expanded: null
+    expanded: null,
+    heatMode: 'daily'
 };
 
 function escapeHtml(s) {
@@ -135,15 +136,36 @@ function renderProfile() {
         dot.title = banned ? 'Banned' : 'Active';
     }
 
+    // Centered profile header (mirrors sidebar identity, same data source).
+    const pAvatar = document.getElementById('dash-profile-avatar');
+    const pFallback = document.getElementById('dash-profile-avatar-fallback');
+    if (pAvatar && pFallback) setAvatar(pAvatar, pFallback, user.avatar, name);
+    const pName = document.getElementById('dash-profile-name');
+    if (pName) pName.textContent = name;
+    const pSub = document.getElementById('dash-profile-sub');
+    if (pSub) pSub.textContent = '@' + (user.username || 'unknown') + ' · Member since ' + formatDate(memberSince);
+    const pStatus = document.getElementById('dash-profile-status');
+    if (pStatus) {
+        pStatus.textContent = banned ? 'Banned' : 'Active';
+        pStatus.className = 'dash-pill ' + (banned ? 'red' : 'green');
+    }
+    const pBal = document.getElementById('dash-profile-balance');
+    if (pBal) pBal.textContent = '$' + Number(user.balance || 0).toFixed(2) + ' balance';
+
     const daily = (state.data.activity && state.data.activity.daily) || [];
     const dailySeconds = daily.map(d => Number(d.seconds) || 0);
+
+    const activeCount = (licenses || []).filter(isActiveLicense).length;
+    const planLabel = banned ? 'Banned' : (activeCount > 0 ? 'Active plan' : 'No plan');
 
     const stats = document.getElementById('dash-stats');
     stats.innerHTML = '';
     const cards = [
-        { label: 'Member since', value: formatDate(memberSince) },
+        { label: 'Status', value: banned ? 'Banned' : 'Active', cls: banned ? '' : '' },
+        { label: 'Current plan', value: planLabel },
         { label: 'Total usage', value: formatDuration(usage.totalSeconds), cls: 'gold', spark: dailySeconds, delta: last7vsPrev7(daily) },
-        { label: 'Balance', value: Number(user.balance || 0).toFixed(2), sub: 'wallet credits', cls: 'gold' }
+        { label: 'Balance', value: '$' + Number(user.balance || 0).toFixed(2), sub: 'wallet credits', cls: 'gold' },
+        { label: 'Member since', value: formatDate(memberSince) }
     ];
     cards.forEach(card => {
         const el = document.createElement('div');
@@ -422,6 +444,7 @@ function collapseHourly() {
 }
 
 function renderChart(el) {
+    renderHeatmap();
     const daily = chartHours(state.data.activity.daily);
     if (daily.length === 0) {
         el.innerHTML = emptyStateHtml('No activity yet.');
@@ -439,6 +462,76 @@ function renderChart(el) {
     const totalSessions = daily.reduce((a, d) => a + (d.sessions || 0), 0);
     document.getElementById('dash-activity-date-range').textContent =
         rangeText === 'No data yet.' ? rangeText : `${rangeText} · ${totalSessions} session${totalSessions === 1 ? '' : 's'} · EU/Athens`;
+}
+
+// Activity heatmap (Daily / Weekly / Cumulative) — same daily payload, no new endpoint.
+function heatLevel(v, max) {
+    if (!(v > 0) || !(max > 0)) return '';
+    const r = v / max;
+    if (r <= 0.25) return 'l1';
+    if (r <= 0.5) return 'l2';
+    if (r <= 0.8) return 'l3';
+    return 'l4';
+}
+
+function heatmapValues() {
+    const daily = (state.data && state.data.activity && state.data.activity.daily) || [];
+    const secs = daily.map(d => Number(d.seconds) || 0);
+    if (state.heatMode === 'weekly') {
+        const weeks = [];
+        for (let i = 0; i < secs.length; i += 7) {
+            weeks.push({
+                seconds: secs.slice(i, i + 7).reduce((a, b) => a + b, 0),
+                label: (daily[i] && daily[i].label ? daily[i].label + ' week' : 'Week ' + (weeks.length + 1)),
+                sessions: daily.slice(i, i + 7).reduce((a, d) => a + (Number(d.sessions) || 0), 0)
+            });
+        }
+        return weeks;
+    }
+    if (state.heatMode === 'cumulative') {
+        let run = 0;
+        return secs.map((s, i) => {
+            run += s;
+            return { seconds: run, label: (daily[i] && daily[i].label) || ('Day ' + (i + 1)), sessions: Number((daily[i] && daily[i].sessions) || 0) };
+        });
+    }
+    return secs.map((s, i) => ({ seconds: s, label: (daily[i] && daily[i].label) || ('Day ' + (i + 1)), sessions: Number((daily[i] && daily[i].sessions) || 0) }));
+}
+
+function renderHeatmap() {
+    const el = document.getElementById('dash-heatmap');
+    if (!el || !state.data) return;
+    const vals = heatmapValues();
+    if (!vals.length || !vals.some(v => v.seconds > 0)) {
+        el.innerHTML = '';
+        const p = document.createElement('p');
+        p.className = 'text-neutral-500 text-xs py-2';
+        p.textContent = 'No activity yet — your heatmap will appear here.';
+        el.appendChild(p);
+        return;
+    }
+    const max = Math.max(...vals.map(v => v.seconds), 1);
+    el.innerHTML = '';
+    // 7-row GitHub-style columns; weekly/cumulative collapse to one row per bucket.
+    const perCol = state.heatMode === 'daily' ? 7 : 1;
+    for (let i = 0; i < vals.length; i += perCol) {
+        const col = document.createElement('div');
+        col.className = 'dash-heat-col';
+        vals.slice(i, i + perCol).forEach(v => {
+            const c = document.createElement('span');
+            c.className = 'dash-heat-cell ' + heatLevel(v.seconds, max);
+            const hrs = (v.seconds / 3600);
+            const hrsText = hrs < 1 ? Math.round(v.seconds / 60) + 'm' : hrs.toFixed(hrs < 10 ? 1 : 0) + 'h';
+            c.title = v.label + ' · ' + hrsText + (v.sessions ? ' · ' + v.sessions + ' sessions' : '');
+            col.appendChild(c);
+        });
+        el.appendChild(col);
+    }
+    document.querySelectorAll('.dash-heat-btn').forEach(b => {
+        const on = b.dataset.mode === state.heatMode;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
 }
 
 // Licenses
@@ -742,6 +835,13 @@ function closeSidebarDrawer() {
         backdrop.addEventListener('click', closeSidebarDrawer);
     }
 })();
+
+document.querySelectorAll('.dash-heat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        state.heatMode = btn.dataset.mode || 'daily';
+        renderHeatmap();
+    });
+});
 
 document.querySelectorAll('.dash-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
