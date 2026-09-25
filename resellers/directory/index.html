@@ -501,12 +501,16 @@
             height: 56px;
             min-width: 56px;
             min-height: 56px;
-            border-radius: 9999px;
+            max-width: 56px;
+            max-height: 56px;
+            aspect-ratio: 1 / 1;
+            flex-shrink: 0;
+            border-radius: 50%;
             overflow: hidden;
             margin-top: -28px;
             position: relative;
             z-index: 2;
-            background: #111;
+            background: #1a1a1a;
             border: 3px solid #0a0a0a;
             outline: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -520,8 +524,12 @@
         .rc-logo img {
             width: 100%;
             height: 100%;
+            min-width: 100%;
+            min-height: 100%;
             object-fit: cover;
+            object-position: center;
             display: block;
+            flex-shrink: 0;
         }
 
         .rc-desc {
@@ -537,39 +545,23 @@
             padding-right: 0.1rem;
         }
 
-        .rc-icon-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .rc-icon-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.65);
-            transition: all 0.2s ease;
-            text-decoration: none;
-        }
-
-        .rc-icon-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: white;
-        }
-
         .reseller-card-foot {
             flex: 1;
             display: flex;
             flex-direction: column;
         }
 
+        /* Tags + button pinned together to the card bottom: no mid-card gap. */
+        .rc-bottom {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            padding-top: 0.25rem;
+        }
+
         .reseller-card-foot .website-btn {
-            margin-top: auto !important;
+            margin-top: 0;
         }
 
         /* Full-width white Visit Store button inside consistent cards. */
@@ -946,7 +938,8 @@
             const logoInner = firstLogo
                 ? `<img src="${firstLogo}" alt="" loading="lazy" onerror="this.remove()">`
                 : esc(initial);
-            const discordHref = r.discord_invite || r.discord_url || null;
+            const tags = tagsHtml(r);
+            const visitBtn = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="website-btn">Visit Store</a>` : '';
             return `
                 <div class="glass-card reseller-card rounded-[1.5rem] overflow-hidden animate-on-scroll${pinned ? ' pinned' : ''}" style="transition-delay: ${Math.min(index, 6) * 0.06}s;" data-domain="${esc(domain)}">
                     ${bannerHtml(r, url, domain)}
@@ -960,17 +953,11 @@
                             </div>
                             <p class="text-neutral-500 text-xs mt-1">${esc(r.discord_username || 'Verified reseller')}${verifiedDate ? ` &middot; ${esc(verifiedDate)}` : ''}</p>
                         </div>
-                        <div class="rc-icon-row">
-                            ${discordHref ? `<a href="${esc(discordHref)}" target="_blank" rel="noopener noreferrer" class="rc-icon-btn" aria-label="Discord">
-                                <svg class="w-4 h-4" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a.41.41,0,0,0-.43.2,72.48,72.48,0,0,0-3.17,6.52,97.26,97.26,0,0,0-29,0,72.84,72.84,0,0,0-3.19-6.52.4.4,0,0,0-.43-.2A105.09,105.09,0,0,0,19.44,8.07a.44.44,0,0,0-.2.07C2.12,34,1.15,59.39,3.46,84.41a.48.48,0,0,0,.19.34A105.77,105.77,0,0,0,35.77,96.36a.42.42,0,0,0,.46-.22,74.22,74.22,0,0,0,6.42-10.38.4.4,0,0,0-.22-.56,68.7,68.7,0,0,1-10-4.76.41.41,0,0,1,0-.69c.83-.62,1.67-1.28,2.46-1.95a.39.39,0,0,1,.41-.05,73.4,73.4,0,0,0,57.48,0,.39.39,0,0,1,.41.05c.79.67,1.63,1.33,2.46,1.95a.41.41,0,0,1,0,.69,68.61,68.61,0,0,1-10,4.76.41.41,0,0,0-.22.56,74.8,74.8,0,0,0,6.43,10.38.42.42,0,0,0,.46.22,105.48,105.48,0,0,0,32.11-11.61.45.45,0,0,0,.19-.34c2.72-28.53-4.67-53.59-20-76.27A.39.39,0,0,0,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.07,65.69,84.69,65.69Z"/></svg>
-                            </a>` : ''}
-                            ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="rc-icon-btn" aria-label="Website">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                            </a>` : ''}
-                        </div>
                         ${r.description ? `<p class="rc-desc">${descHtml(r.description)}</p>` : ''}
-                        ${tagsHtml(r)}
-                        ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="website-btn">Visit Store</a>` : ''}
+                        <div class="rc-bottom">
+                            ${tags}
+                            ${visitBtn}
+                        </div>
                     </div>
                 </div>`;
         }
