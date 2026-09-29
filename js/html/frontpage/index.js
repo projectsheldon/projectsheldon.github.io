@@ -63,10 +63,36 @@ async function LoadProducts() {
     }
 
     products.forEach((product, index) => {
-        let cardClass = 'glass-card p-5 rounded-2xl flex flex-col justify-between h-full min-h-[200px]';
+        let cardClass = 'glass-card p-5 rounded-2xl flex flex-col justify-between h-full min-h-[280px]';
         if (product.IsLifetime) cardClass += ' border border-[#c7b18f]/40';
 
         const staggerClass = `stagger-${Math.min(index + 1, 4)}`;
+
+        const perks = product.IsFree ? `
+                    <li class="flex items-center gap-2 text-[11px] font-bold text-neutral-300">
+                        <svg class="w-3.5 h-3.5 shrink-0 text-[#22c55e]" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        All features included
+                    </li>
+                    <li class="flex items-center gap-2 text-[11px] font-bold text-amber-400/90">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                        Watermark shown in-app
+                    </li>
+                    <li class="flex items-center gap-2 text-[11px] font-bold text-neutral-600">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        No Discord role
+                    </li>` : `
+                    <li class="flex items-center gap-2 text-[11px] font-bold text-neutral-300">
+                        <svg class="w-3.5 h-3.5 shrink-0 text-[#22c55e]" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        All features included
+                    </li>
+                    <li class="flex items-center gap-2 text-[11px] font-bold text-[#c7b18f]">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        No watermark
+                    </li>
+                    <li class="flex items-center gap-2 text-[11px] font-bold text-[#c7b18f]">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                        Discord buyer role
+                    </li>`;
 
         const html = `
             <div class="${cardClass} animate-on-scroll ${staggerClass}" style="transition-delay: ${index * 0.1}s;">
@@ -79,6 +105,9 @@ async function LoadProducts() {
                 <div class="text-center py-4">
                     <span class="text-4xl font-black text-white">${product.FormatPrice()}</span>
                 </div>
+                <ul class="flex flex-col gap-1.5 mb-4 px-1">
+                    ${perks}
+                </ul>
                 <button class="product-btn w-full py-2.5 rounded-lg font-bold uppercase text-[10px] tracking-wider transition-all ${product.IsFree
                 ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
                 : 'bg-[#c7b18f] hover:bg-[#b59f7d] text-black'

@@ -301,7 +301,23 @@ function TogglePaymentForm(enabled) {
     if (paymentFormEl) paymentFormEl.style.display = enabled ? 'flex' : 'none';
 }
 
+function UpdateLicensePerksNote() {
+    const noteEl = document.getElementById('license-perks-note');
+    if (!noteEl) return;
+    const isFree = (window.productKey || productKey) === 'free';
+    if (isFree) {
+        noteEl.innerHTML = '<span style="color:#fbbf24;font-weight:800;">FREE LICENSE:</span> includes an in-app watermark and no Discord role.';
+        noteEl.style.borderColor = 'rgba(251,191,36,0.25)';
+        noteEl.style.background = 'rgba(251,191,36,0.06)';
+    } else {
+        noteEl.innerHTML = '<span style="color:#c7b18f;font-weight:800;">PAID LICENSE:</span> no watermark + Discord buyer role included.';
+        noteEl.style.borderColor = 'rgba(199,177,143,0.3)';
+        noteEl.style.background = 'rgba(199,177,143,0.07)';
+    }
+}
+
 async function LoadProductInfo() {
+    UpdateLicensePerksNote();
     if (productKey === "free") {
         const nameEl = document.getElementById('product-name');
         if (nameEl) nameEl.textContent = 'Free Key';
@@ -662,6 +678,10 @@ async function ShowBalanceCheckout() {
 
                     <div style="font-size: 14px; color: rgba(255,255,255,0.6); max-width: 80%; line-height: 1.2; margin-top: -20px;">
                         Redeem your balance for ${qty} x ${durationHours} hours key${qty > 1 ? 's' : ''}
+                    </div>
+
+                    <div style="font-size: 11px; color: rgba(251,191,36,0.9); background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.2); border-radius: 10px; padding: 8px 14px; max-width: 85%; line-height: 1.5; margin-top: -12px;">
+                        Free keys show an in-app watermark and don't include a Discord role. Paid licenses have no watermark + buyer role.
                     </div>
 
                     ${isOnCooldown
