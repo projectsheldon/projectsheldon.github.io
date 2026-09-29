@@ -621,6 +621,55 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Pricing perk list — circled white tick like the reference card. */
+        .perk-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+
+        .perk-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.4;
+        }
+
+        .perk-tick {
+            width: 18px;
+            height: 18px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.14);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .perk-tick svg {
+            width: 10px;
+            height: 10px;
+            color: #fff;
+        }
+
+        .perk-row.is-muted {
+            color: rgba(255, 255, 255, 0.38);
+        }
+
+        .perk-tick.is-muted {
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .perk-tick.is-muted svg {
+            color: rgba(255, 255, 255, 0.4);
+        }
     </style>
 </head>
 
