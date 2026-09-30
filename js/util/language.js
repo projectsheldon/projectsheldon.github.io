@@ -480,6 +480,8 @@
         try { setCookie(STORE_KEY, code); } catch (e) {}
         try { localStorage.setItem(STORE_KEY, code); } catch (e) {}
         applyStrings(code);
+        // Let pages with JS-rendered text (guides chips, dates) rebuild themselves.
+        try { window.dispatchEvent(new CustomEvent('sheldon:lang', { detail: code })); } catch (e) {}
     }
 
     function ensureStyles()

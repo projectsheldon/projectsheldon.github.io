@@ -28,10 +28,21 @@ function thumbFor(guide)
     return `${apiUrl}/guides/thumb?slug=${encodeURIComponent(guide.slug)}`;
 }
 
+function t(key)
+{
+    try { if(window.SheldonLang) return window.SheldonLang.t(key); } catch(e) {}
+    return key;
+}
+
+// Dates follow the picked site language, not the browser's.
 function fmtDate(ts)
 {
     if(!ts) return "";
-    try { return new Date(ts).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
+    try
+    {
+        const lang = (window.SheldonLang && window.SheldonLang.get()) || undefined;
+        return new Date(ts).toLocaleDateString(lang, { year: "numeric", month: "short", day: "numeric" });
+    }
     catch(e) { return ""; }
 }
 
@@ -49,7 +60,7 @@ function renderCats()
     wrap.innerHTML = "";
     const all = document.createElement("button");
     all.className = "chip" + (activeCat === "" ? " active" : "");
-    all.textContent = "All";
+    all.textContent = t("guides.all");
     all.addEventListener("click", () => { activeCat = ""; renderCats(); renderGrid(); });
     wrap.append(all);
     for(const c of cats)
