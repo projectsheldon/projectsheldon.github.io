@@ -189,6 +189,9 @@
             '.logo-box{transition:transform .3s ease}' +
             '.logo-box:hover{transform:rotate(10deg) scale(1.05)}' +
             '#discord-login-btn.btn-discord{background:#5865F2;color:#fff;display:inline-flex;align-items:center;gap:.5rem;transition:all .3s ease;border:0;cursor:pointer;font-family:inherit}' +
+            // The ID selector above outranks Tailwind's `.hidden`, so auth.js could
+            // never hide the button when signed in — both buttons showed at once.
+            '#discord-login-btn.hidden{display:none!important}' +
             '#discord-login-btn.btn-discord:hover{background:#4752c4;transform:translateY(-2px);box-shadow:0 10px 30px rgba(88,101,242,.3)}' +
             '#discord-login-btn.btn-discord.is-authed{background:#fff;color:#000}' +
             '#discord-login-btn.btn-discord.is-authed:hover{background:#c7b18f;box-shadow:0 10px 30px rgba(199,177,143,.3)}' +
