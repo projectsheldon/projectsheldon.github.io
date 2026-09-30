@@ -236,6 +236,14 @@ document.getElementById("guides-retry")?.addEventListener("click", () =>
 
 document.getElementById("guides-search")?.addEventListener("input", renderGrid);
 
+// The category chips and card dates are built in JS, so a language switch has to
+// ask us to rebuild rather than only re-run the data-i18n pass.
+window.addEventListener("sheldon:lang", () =>
+{
+    renderCats();
+    renderGrid();
+});
+
 if(window.SheldonBackend)
 {
     window.SheldonBackend.OnRecovered(() =>
