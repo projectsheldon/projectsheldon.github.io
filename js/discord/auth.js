@@ -58,13 +58,16 @@ function UpdateUI(loggedIn, user = null)
     const discordBtn = document.getElementById('discord-login-btn');
     const userProfileTrigger = document.getElementById('user-profile-trigger');
 
-    // Hero call-to-action: logged-in users see the "Download" button; logged-out users keep
-    // "Get Sheldon" so the button never promises a download that requires a login. The button's
-    // click behaviour reads login state at click time, so we only need to swap the label here.
+    // Hero call-to-action keeps the translated "Download" label in both states.
+    // The click behaviour reads login state at click time (prompts Discord login
+    // when logged out), so we only ensure the label is never clobbered here.
     const heroCta = document.getElementById('hero-cta');
     if(heroCta)
     {
-        heroCta.textContent = loggedIn ? "DOWNLOAD" : "GET SHELDON";
+        let want = 'Download for Windows';
+        try { if(window.SheldonLang) want = window.SheldonLang.t('hero.download'); } catch(e) {}
+        if(heroCta.textContent.trim() !== want)
+            heroCta.textContent = want;
     }
 
     if(loggedIn)
@@ -130,12 +133,12 @@ function UpdateUI(loggedIn, user = null)
         if(discordBtn)
         {
             discordBtn.classList.remove('hidden', 'is-authed', 'is-loading');
-            discordBtn.setAttribute('aria-label', 'Login with Discord');
+            discordBtn.setAttribute('aria-label', 'Sign in with Discord');
 
             const loginTxt = discordBtn.querySelector('#discord-login-txt');
             if(loginTxt)
             {
-                loginTxt.textContent = 'Login';
+                loginTxt.textContent = 'Sign in';
                 // Restore the mobile-hidden behaviour (icon-only on small screens).
                 loginTxt.classList.add('hidden');
             }

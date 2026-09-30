@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guides — Project Sheldon</title>
+    <meta name="description" content="Step-by-step guides and tutorials for Project Sheldon.">
+    <meta name="theme-color" content="#c7b18f">
+    <link rel="icon" href="../favicon/favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com?warn=false" onerror="var f=document.createElement('link');f.rel='stylesheet';f.href='../tailwind-fallback.css';document.head.appendChild(f)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script type="text/javascript" charset="UTF-8" src="https://unpkg.com/highlightjs-luau/dist/luau.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            background-color: #050505;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(20, 20, 20, 1) 0%, rgba(5, 5, 5, 1) 100%);
+            z-index: -2;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .guide-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(199, 177, 143, 0.35);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(199, 177, 143, 0.12);
+        }
+
+        .chip {
+            font-size: 0.6rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding: 0.3rem 0.7rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a3a3a3;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            white-space: nowrap;
+        }
+
+        .chip:hover { color: white; border-color: rgba(255, 255, 255, 0.25); }
+        .chip.active {
+            background: rgba(199, 177, 143, 0.12);
+            border-color: rgba(199, 177, 143, 0.4);
+            color: #c7b18f;
+        }
+
+        /* ---- reader typography ---- */
+        .guide-body { font-size: 0.95rem; line-height: 1.75; color: #d4d4d4; }
+        .guide-body h1, .guide-body h2, .guide-body h3, .guide-body h4 {
+            color: white; font-weight: 800; letter-spacing: -0.01em;
+            margin: 1.8em 0 0.6em; line-height: 1.3;
+        }
+        .guide-body h1 { font-size: 1.7rem; }
+        .guide-body h2 { font-size: 1.35rem; padding-bottom: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .guide-body h3 { font-size: 1.1rem; color: #c7b18f; }
+        .guide-body p { margin: 0.9em 0; }
+        .guide-body a { color: #c7b18f; text-decoration: underline; text-underline-offset: 3px; }
+        .guide-body a:hover { color: white; }
+        .guide-body ul, .guide-body ol { margin: 0.9em 0; padding-left: 1.5rem; }
+        .guide-body li { margin: 0.35em 0; }
+        .guide-body ul { list-style: disc; }
+        .guide-body ol { list-style: decimal; }
+        .guide-body hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 2em 0; }
+        .guide-body img {
+            max-width: 100%; border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 1.2em auto; display: block;
+        }
+        .guide-body code {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.82em;
+            background: rgba(199, 177, 143, 0.1); color: #c7b18f;
+            padding: 0.15em 0.45em; border-radius: 0.4rem;
+        }
+        .guide-body pre {
+            background: #0d0d0d; border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem; padding: 1.1rem 1.25rem;
+            overflow-x: auto; margin: 1.2em 0;
+        }
+        .guide-body pre code {
+            background: none; color: inherit; padding: 0; font-size: 0.82rem; line-height: 1.6;
+        }
+        .guide-body table {
+            width: 100%; border-collapse: collapse; margin: 1.2em 0; font-size: 0.85rem;
+        }
+        .guide-body th, .guide-body td {
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 0.6rem 0.9rem; text-align: left;
+        }
+        .guide-body th {
+            background: rgba(199, 177, 143, 0.08); color: #c7b18f;
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .guide-body blockquote {
+            border-left: 3px solid rgba(255, 255, 255, 0.15);
+            padding: 0.6rem 1.1rem; margin: 1.2em 0;
+            background: rgba(255, 255, 255, 0.02); border-radius: 0 0.75rem 0.75rem 0;
+            color: #a3a3a3;
+        }
+        .guide-body blockquote.callout { border-left-width: 3px; }
+        .guide-body blockquote.callout-note { border-color: #c7b18f; background: rgba(199,177,143,0.06); }
+        .guide-body blockquote.callout-tip { border-color: #22c55e; background: rgba(34,197,94,0.06); }
+        .guide-body blockquote.callout-warning { border-color: #f59e0b; background: rgba(245,158,11,0.06); }
+        .guide-body blockquote.callout-caution { border-color: #ef4444; background: rgba(239,68,68,0.06); }
+        .guide-body .callout-label {
+            display: block; font-size: 0.65rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 0.3rem;
+        }
+        .guide-body blockquote.callout-note .callout-label { color: #c7b18f; }
+        .guide-body blockquote.callout-tip .callout-label { color: #22c55e; }
+        .guide-body blockquote.callout-warning .callout-label { color: #f59e0b; }
+        .guide-body blockquote.callout-caution .callout-label { color: #ef4444; }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #c7b18f;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body class="antialiased">
+    <script src="../js/discord/auth_loading.js"></script>
+    <div class="bg-mesh"></div>
+
+    <div id="shared-topbar"></div>
+
+    <main class="max-w-6xl mx-auto px-6 pt-28 pb-20 min-h-screen">
+        <!-- list view -->
+        <div id="guides-list-view">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl sm:text-5xl md:text-6xl font-black mb-4 tracking-tighter uppercase">Guides</h1>
+                <p class="text-neutral-500 text-lg">Step-by-step tutorials for Project Sheldon.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                <input id="guides-search" type="text" placeholder="Search guides…"
+                    class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-600 outline-none focus:border-[#c7b18f]/40 transition-colors">
+            </div>
+            <div id="guides-cats" class="flex gap-2 flex-wrap mb-8"></div>
+            <div id="guides-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <div id="guides-empty" class="hidden text-center text-neutral-500 py-20">
+                <div class="text-lg font-bold mb-1">No guides found</div>
+                <div class="text-sm">Try a different search or category.</div>
+            </div>
+        </div>
+
+        <!-- reader view -->
+        <div id="guides-reader-view" class="hidden">
+            <a href="./" class="inline-flex items-center gap-2 text-neutral-500 hover:text-white text-sm font-semibold mb-6 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                All guides
+            </a>
+            <div id="guide-meta" class="mb-6"></div>
+            <article id="guide-body" class="guide-body glass-card rounded-[2rem] p-6 sm:p-10 md:p-12"></article>
+        </div>
+
+        <div id="guides-loading" class="flex justify-center py-20">
+            <div class="loading-spinner"></div>
+        </div>
+        <div id="guides-error" class="hidden text-center py-20">
+            <div class="text-lg font-bold mb-1 text-red-400">Couldn't load guides</div>
+            <div class="text-sm text-neutral-500 mb-4">The servers aren't reachable right now.</div>
+            <button id="guides-retry" class="bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-5 py-2.5 font-bold uppercase text-[10px] tracking-wider transition-all">Retry</button>
+        </div>
+    </main>
+
+    <footer class="pt-16 pb-10 border-t border-white/5 bg-black/40">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-neutral-600 text-[0.6rem] font-bold tracking-[0.1em] uppercase">&copy; 2026 PROJECT SHELDON • ALL RIGHTS RESERVED</p>
+            <a href="../terms/" class="text-neutral-500 hover:text-white text-[0.6rem] font-bold tracking-[0.1em] uppercase transition-colors">Terms of Service</a>
+        </div>
+    </footer>
+
+    <script src="../js/html/topbar.js"></script>
+    <script type="module" src="../js/html/guides/index.js"></script>
+    <script type="module" src="../js/discord/topbar_buttons.js"></script>
+    <script type="module" src="../js/util/redirect.js"></script>
+    <script src="../js/util/notify.js"></script>
+    <script src="/js/html/bottom-nav.js"></script>
+</body>
+
+</html>

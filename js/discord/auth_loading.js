@@ -77,9 +77,10 @@
 
     function brainHref()
     {
+        // brain-transparent.png was never shipped; fall back to the logo that is.
         var link = document.querySelector('link[rel="icon"], link[rel="shortcut icon"]');
-        if(link && link.href) return link.href.replace(/[^/]*$/, '') + 'brain-transparent.png';
-        return location.origin + '/favicon/brain-transparent.png';
+        if(link && link.href) return link.href.replace(/[^/]*$/, '') + 'logo.png';
+        return location.origin + '/favicon/logo.png';
     }
 
     var veil = null;
