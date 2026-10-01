@@ -215,7 +215,7 @@ async function updateMemberCount() {
 updateMemberCount();
 setInterval(updateMemberCount, 600000);
 
-// Backend came back (visitor solved the connection check) — reload what failed.
+// Backend came back (visitor solved the connection check) – reload what failed.
 if (window.SheldonBackend) {
     window.SheldonBackend.OnRecovered(() => {
         LoadProducts();
@@ -303,7 +303,7 @@ async function claimWorkinkToken() {
     } else {
         try { token = sessionStorage.getItem('pending_workink_token'); } catch (e) {}
     }
-        // The token arrives with a leading space (" <uuid>") — trim it.
+        // The token arrives with a leading space (" <uuid>") – trim it.
     if (token) token = token.trim();
     if (!token) return;
 
@@ -316,13 +316,13 @@ async function claimWorkinkToken() {
     }
 
     // Strict device checks: the grant REQUIRES a complete identity (no silent
-    // fallback). If a blocker eats the checks, the user is told to turn it off —
+    // fallback). If a blocker eats the checks, the user is told to turn it off –
     // and the stashed token is KEPT so they can retry after whitelisting.
     let gate = null;
     try { gate = await ensureChecksOrNotify('the free-key claim'); } catch (e) { gate = null; }
     if (!gate || !gate.ok) return;
 
-    // About to consume the token — clear the stash so it can't loop.
+    // About to consume the token – clear the stash so it can't loop.
     try { sessionStorage.removeItem('pending_workink_token'); } catch (e) {}
 
     try {
@@ -366,12 +366,12 @@ async function claimWorkinkToken() {
             const oldBalance = Math.max(0, data.new_balance - added);
             if (added > 0) playBalanceGain(added, oldBalance);
             if (data.capped && typeof window.Notify === 'function')
-                window.Notify('Daily balance maxed — come back later.', 'info', 5000);
+                window.Notify('Daily balance maxed – come back later.', 'info', 5000);
             else if (added <= 0 && typeof window.Notify === 'function')
                 window.Notify('Balance updated.', 'success', 3000);
         } else if ((res.status === 429 || (data && data.rate_limited_until))) {
             if (typeof window.Notify === 'function')
-                window.Notify((data && data.message) || 'Daily limit reached — try again later.', 'warning', 6000);
+                window.Notify((data && data.message) || 'Daily limit reached – try again later.', 'warning', 6000);
         } else if (data && data.message) {
             if (typeof window.Notify === 'function') window.Notify(data.message, 'error', 5000);
         }

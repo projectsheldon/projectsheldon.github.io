@@ -150,7 +150,7 @@
         ensureLanguage();
     }
 
-    // Language selector lives in js/util/language.js — resolve it next to this
+    // Language selector lives in js/util/language.js – resolve it next to this
     // file (works at any hosting depth), fall back to site-absolute. Load once.
     function langScriptURL()
     {
@@ -190,7 +190,7 @@
             '.logo-box:hover{transform:rotate(10deg) scale(1.05)}' +
             '#discord-login-btn.btn-discord{background:#5865F2;color:#fff;display:inline-flex;align-items:center;gap:.5rem;transition:all .3s ease;border:0;cursor:pointer;font-family:inherit}' +
             // The ID selector above outranks Tailwind's `.hidden`, so auth.js could
-            // never hide the button when signed in — both buttons showed at once.
+            // never hide the button when signed in – both buttons showed at once.
             '#discord-login-btn.hidden{display:none!important}' +
             '#discord-login-btn.btn-discord:hover{background:#4752c4;transform:translateY(-2px);box-shadow:0 10px 30px rgba(88,101,242,.3)}' +
             '#discord-login-btn.btn-discord.is-authed{background:#fff;color:#000}' +
@@ -216,7 +216,7 @@
 
     function wireTryButtons()
     {
-        // Landing page owns the download flow via #hero-cta (login-aware) —
+        // Landing page owns the download flow via #hero-cta (login-aware) –
         // don't also fire the generic /#pricing navigation there.
         if (document.getElementById('hero-cta')) return;
         document.querySelectorAll('[data-nav-download]').forEach(btn =>
@@ -249,7 +249,7 @@
         if(menu) menu.classList.toggle('show');
     };
 
-    // Close mobile menu on link click (language button manages the menu itself —
+    // Close mobile menu on link click (language button manages the menu itself –
     // it needs the anchor rect before the menu collapses).
     document.addEventListener('click', function(e)
     {

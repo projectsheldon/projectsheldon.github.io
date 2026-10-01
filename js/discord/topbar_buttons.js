@@ -1,7 +1,7 @@
 import Api from '../util/backend.js';
 import { CheckAuthStatus, DiscordAuth, UpdateUI } from './auth.js';
 // Consent banner loaded lazily: it (transitively) touches device identity, and
-// a blocked static import would abort THIS module too — leaving the login
+// a blocked static import would abort THIS module too – leaving the login
 // button with no click handler at all. Dynamic import keeps login working.
 import('../util/site_notice.js').catch(() => {});
 
@@ -61,7 +61,7 @@ function ensureAccountMenuStyles()
     document.head.appendChild(st);
 }
 
-// Resolve elements lazily — topbar may be injected asynchronously via topbar.js
+// Resolve elements lazily – topbar may be injected asynchronously via topbar.js
 function getDiscordBtn()
 {
     return document.getElementById('discord-login-btn');
@@ -75,7 +75,7 @@ const userProfileTrigger = getUserProfileTrigger();
 
 window.addEventListener('message', function (event)
 {
-    // Only accept messages from our own origin — the OAuth-callback popup — so third-party
+    // Only accept messages from our own origin – the OAuth-callback popup – so third-party
     // pages can't plant a session token by postMessage from an attacker-controlled window.
     if(event.origin !== window.location.origin) return;
     if(event.data && event.data.type === 'discord_session')
@@ -147,7 +147,7 @@ async function DiscordBtnHandler(e)
                     const res = await fetch(`${apiUrl}/discord/login`);
                     const data = await res.json();
                     if(data && typeof data.url === 'string' && /^https:\/\/discord\.com\//i.test(data.url)) window.location.href = data.url;
-                    else if(typeof Notify !== 'undefined') Notify('Login unavailable — please try again.', 'error', 3500);
+                    else if(typeof Notify !== 'undefined') Notify('Login unavailable – please try again.', 'error', 3500);
                 } catch(err) { if(typeof Notify !== 'undefined') Notify('Could not reach login server.', 'error', 3500); }
             }
         }
@@ -178,13 +178,13 @@ if(discordBtn)
 {
     attachDiscordButtons();
 }
-// Delegated fallback — catches buttons added after this module ran (shared-topbar injection, dynamic content)
+// Delegated fallback – catches buttons added after this module ran (shared-topbar injection, dynamic content)
 document.addEventListener('click', function (e)
 {
     const target = e.target && e.target.closest ? e.target.closest('#discord-login-btn, .discord-login-btn') : null;
     if(!target) return;
     // If this button already has a direct listener, let that handle it and don't double-fire.
-    // We detect by checking if the click already propagated via direct handler — to avoid
+    // We detect by checking if the click already propagated via direct handler – to avoid
     // double-login, just ensure we only handle when direct didn't run. Simplest: if
     // target has dataset bound, the direct handler will already run, so we no-op here.
     // But for buttons that were missed (no dataset), handle here.
@@ -443,7 +443,7 @@ if(document.readyState !== 'loading') { attachDiscordButtons(); attachProfileTri
 
 // Presence heartbeat: while a logged-in tab is open, keep touching /discord/me
 // so the backend's "Website Active Now" counts the visitor the whole time they
-// are on the site — not just on the initial page load.
+// are on the site – not just on the initial page load.
 (function ()
 {
     const HEARTBEAT_MS = 30000;

@@ -1,9 +1,9 @@
-// Device identity helpers (no dependencies — the site is a static no-build site).
+// Device identity helpers (no dependencies – the site is a static no-build site).
 //
 // NOTE ON NAMING: this file used to be called `fingerprint.js`. Adblockers
 // (uBlock Origin / EasyPrivacy et al.) block requests whose URL contains
 // "fingerprint", so a static `import ... from 'fingerprint.js'` made every
-// module that imported it fail to evaluate entirely — login button, products,
+// module that imported it fail to evaluate entirely – login button, products,
 // downloads, checkout all dead at once. This file is deliberately named
 // `device.js` so its URL matches no known filter list, and every consumer
 // loads it via a guarded dynamic `import()` with a localStorage-only fallback,
@@ -141,7 +141,7 @@ export async function GetBrowserFingerprint()
     } catch(e) { return null; }
 }
 
-// Form-urlencoded body (a CORS simple request — no preflight, so it works behind the
+// Form-urlencoded body (a CORS simple request – no preflight, so it works behind the
 // Cloudflare challenge, same reason the rest of the site posts form bodies).
 export async function GetIdentityPayload()
 {

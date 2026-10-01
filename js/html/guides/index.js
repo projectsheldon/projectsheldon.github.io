@@ -22,10 +22,12 @@ function showError(on)
     errorEl.classList.toggle("hidden", !on);
 }
 
+// Card art is optional – guides without an uploaded image render text-only
+// instead of a generated placeholder.
 function thumbFor(guide)
 {
-    if(guide.thumb) return `${apiUrl}/guides/img?file=${encodeURIComponent(guide.thumb)}`;
-    return `${apiUrl}/guides/thumb?slug=${encodeURIComponent(guide.slug)}`;
+    if(!guide.thumb) return "";
+    return `${apiUrl}/guides/img?file=${encodeURIComponent(guide.thumb)}`;
 }
 
 function t(key)
@@ -77,11 +79,12 @@ function cardHTML(g)
 {
     const tags = (g.tags || []).slice(0, 3).map(t =>
         `<span class="text-[0.6rem] font-bold text-neutral-500">#${esc(t)}</span>`).join(" ");
+    const thumb = thumbFor(g);
     return `
         <a href="./?slug=${encodeURIComponent(g.slug)}" class="guide-card glass-card rounded-[1.5rem] overflow-hidden flex flex-col">
-            <div class="aspect-video overflow-hidden bg-black/40">
-                <img src="${esc(thumbFor(g))}" alt="" loading="lazy" class="w-full h-full object-cover">
-            </div>
+            ${thumb ? `<div class="aspect-video overflow-hidden bg-black/40">
+                <img src="${esc(thumb)}" alt="" loading="lazy" class="w-full h-full object-cover">
+            </div>` : ""}
             <div class="p-5 flex flex-col gap-2 flex-1">
                 ${g.category ? `<span class="text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#c7b18f]">${esc(g.category)}</span>` : ""}
                 <div class="text-lg font-extrabold leading-snug">${esc(g.title)}</div>
@@ -136,12 +139,19 @@ function enhanceCallouts(root)
     {
         const first = bq.querySelector("p");
         if(!first) return;
-        const m = first.textContent.match(/^\s*\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]\s*/i);
+        // Splice the marker out of its own text node. Rebuilding from
+        // textContent used to flatten every link and styled span inside a callout.
+        const head = first.firstChild;
+        if(!head || head.nodeType !== 3) return;
+        const m = head.data.match(/^\s*\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]\s*/i);
         if(!m) return;
         const kind = kinds[m[1].toLowerCase()] || "note";
         bq.classList.add("callout", "callout-" + kind);
-        first.innerHTML = `<span class="callout-label">${esc(m[1])}</span>` +
-            esc(first.textContent.slice(m[0].length)).replace(/\n/g, "<br>");
+        const label = document.createElement("span");
+        label.className = "callout-label";
+        label.textContent = m[1];
+        head.data = head.data.slice(m[0].length);
+        first.insertBefore(label, head);
     });
 }
 
@@ -177,13 +187,10 @@ async function loadReader()
         if(!data || !data.ok || !data.guide) throw new Error("not found");
         const g = data.guide;
 
-        document.title = `${g.title} — Sheldon Guides`;
+        document.title = `${g.title} – Sheldon Guides`;
 
         const meta = document.getElementById("guide-meta");
         meta.innerHTML = `
-            <div class="rounded-[1.5rem] overflow-hidden border border-white/10 mb-6">
-                <img src="${esc(thumbFor(g))}" alt="" class="w-full aspect-[16/7] object-cover">
-            </div>
             ${g.category ? `<div class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-[#c7b18f] mb-2">${esc(g.category)}</div>` : ""}
             <h1 class="text-3xl sm:text-4xl font-black tracking-tight mb-3">${esc(g.title)}</h1>
             <div class="flex items-center gap-3 text-sm text-neutral-500">
@@ -211,7 +218,11 @@ async function loadReader()
             ? source.slice(firstLine.length).replace(/^\s*\r?\n/, "")
             : source;
         const raw = marked.parse(md, { breaks: true, gfm: true });
-        const clean = DOMPurify.sanitize(raw, { ADD_ATTR: ["target"] });
+        // style/data-size carry the author's font-size choice; anything else stays scrubbed.
+        const clean = DOMPurify.sanitize(raw, {
+            ADD_ATTR: ["target", "style", "data-size"],
+            ALLOWED_ATTR: ["target", "href", "src", "alt", "title", "width", "height", "class", "id", "style", "data-size", "colspan", "rowspan", "align", "rel", "open"],
+        });
         const body = document.getElementById("guide-body");
         body.innerHTML = clean;
         fixRelativeImgs(body);

@@ -11,15 +11,15 @@
     <link rel="canonical" href="https://www.projectsheldon.me/resellers/directory/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Project Sheldon">
-    <meta property="og:title" content="Project Sheldon — Advanced Roblox Development">
+    <meta property="og:title" content="Project Sheldon – Advanced Roblox Development">
     <meta property="og:description" content="A feature-rich, actively maintained developer tool for Roblox.">
     <meta property="og:url" content="https://www.projectsheldon.me/resellers/directory/">
     <meta property="og:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=2">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Project Sheldon — Advanced Roblox Development">
+    <meta property="og:image:alt" content="Project Sheldon – Advanced Roblox Development">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Project Sheldon — Advanced Roblox Development">
+    <meta name="twitter:title" content="Project Sheldon – Advanced Roblox Development">
     <meta name="twitter:description" content="A feature-rich, actively maintained developer tool for Roblox.">
     <meta name="twitter:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=2">
     <script src="https://cdn.tailwindcss.com?warn=false" onerror="var f=document.createElement('link');f.rel='stylesheet';f.href='../tailwind-fallback.css';document.head.appendChild(f)"></script>
@@ -996,7 +996,7 @@
                 if (!data.ok || !data.resellers || data.resellers.length === 0) {
                     empty.classList.remove('hidden');
                     empty.innerHTML = `
-                        <p class="text-neutral-500 mb-10">No verified resellers yet — check back soon.</p>
+                        <p class="text-neutral-500 mb-10">No verified resellers yet – check back soon.</p>
                         <div class="resellers-grid">
                             ${placeholderCard.repeat(3)}
                         </div>`;
@@ -1030,7 +1030,7 @@
 
         loadDirectory();
 
-        // Scroll-reveal observer (mirrors the home page) — covers the hero and CTA card,
+        // Scroll-reveal observer (mirrors the home page) – covers the hero and CTA card,
         // plus cards injected after loadDirectory resolves. The CTA card is scroll-gated
         // instead (see gateCta below), so it is excluded here.
         const observer = new IntersectionObserver((entries) => {
@@ -1047,7 +1047,7 @@
 
         // The "Interested in Selling Sheldon licenses?" CTA stays hidden until the user actually
         // scrolls (like the landing-page info sections). It reveals once the user has
-        // scrolled and the card has entered the viewport — or immediately when the
+        // scrolled and the card has entered the viewport – or immediately when the
         // page ends up short enough that no scrolling is possible.
         function gateCta() {
             const cta = document.querySelector('.scroll-gated');
@@ -1061,7 +1061,7 @@
         window.addEventListener('scroll', gateCta, { passive: true });
         window.addEventListener('resize', gateCta);
         // Safety net: if the directory fetch never settles, the page stays short and
-        // unrevealed — check once everything has had time to render.
+        // unrevealed – check once everything has had time to render.
         setTimeout(gateCta, 4000);
     </script>
     <script src="/js/html/bottom-nav.js"></script>

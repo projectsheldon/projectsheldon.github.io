@@ -1,11 +1,11 @@
-# Project Sheldon — LuaVM
+# Project Sheldon – LuaVM
 
 > Sheldon LuaVM is a customizable Lua scripting environment for Roblox. This file indexes the documentation for AI assistants and LLMs.
 
 ## Documentation
 
-- [LuaVM Documentation](https://www.projectsheldon.me/luavm/): Full scripting reference — globals, GUI, ImGui, drawing, input, files, internet, memory, cheat, tween, entities, instances, signals and more.
-- [LuaVM Documentation (full plain text)](https://www.projectsheldon.me/llms-full.txt): Every documentation section concatenated as one markdown file — the most reliable source for AI systems.
+- [LuaVM Documentation](https://www.projectsheldon.me/luavm/): Full scripting reference – globals, GUI, ImGui, drawing, input, files, internet, memory, cheat, tween, entities, instances, signals and more.
+- [LuaVM Documentation (full plain text)](https://www.projectsheldon.me/llms-full.txt): Every documentation section concatenated as one markdown file – the most reliable source for AI systems.
 - [API Docs](https://www.projectsheldon.me/api-docs/): Project Sheldon API reference.
 
 ## Sections

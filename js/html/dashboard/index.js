@@ -114,7 +114,7 @@ function last7vsPrev7(daily) {
 
 function deltaHtml(delta) {
     if (!delta) return '';
-    if (delta.dir === 'flat') return '<span class="dash-delta flat">— no change</span>';
+    if (delta.dir === 'flat') return '<span class="dash-delta flat">– no change</span>';
     const arrow = delta.dir === 'up' ? '▲' : '▼';
     return `<span class="dash-delta ${delta.dir}">${arrow} ${Math.abs(delta.pct)}% last 7d</span>`;
 }
@@ -235,7 +235,7 @@ function renderUsageProgress() {
     document.getElementById('dash-usage-ratio').textContent = hours + ' / ' + thresholdHours + ' hours';
     document.getElementById('dash-usage-fill').style.width = pct + '%';
     document.getElementById('dash-usage-caption').textContent = rewarded
-        ? 'Free key claimed. Counter reset — use Sheldon another ' + thresholdHours + ' hours this week for the next.'
+        ? 'Free key claimed. Counter reset – use Sheldon another ' + thresholdHours + ' hours this week for the next.'
         : (remaining > 0
             ? 'Use Sheldon ' + remaining + ' more hour' + (remaining === 1 ? '' : 's') + ' this week to earn a free license without watching an ad.'
             : 'Threshold met! Your next ad grants a free license.');
@@ -464,7 +464,7 @@ function renderChart(el) {
         rangeText === 'No data yet.' ? rangeText : `${rangeText} · ${totalSessions} session${totalSessions === 1 ? '' : 's'} · EU/Athens`;
 }
 
-// Activity heatmap (Daily / Weekly / Cumulative) — same daily payload, no new endpoint.
+// Activity heatmap (Daily / Weekly / Cumulative) – same daily payload, no new endpoint.
 function heatLevel(v, max) {
     if (!(v > 0) || !(max > 0)) return '';
     const r = v / max;
@@ -506,7 +506,7 @@ function renderHeatmap() {
         el.innerHTML = '';
         const p = document.createElement('p');
         p.className = 'text-neutral-500 text-xs py-2';
-        p.textContent = 'No activity yet — your heatmap will appear here.';
+        p.textContent = 'No activity yet – your heatmap will appear here.';
         el.appendChild(p);
         return;
     }

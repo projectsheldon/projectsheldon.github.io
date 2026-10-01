@@ -123,7 +123,7 @@ async function urlProbeBlocked()
     const probe = absUrl('fingerprint.js');
     const control = absUrl('device.js');
 
-    // A blocker/network middlebox may STALL a request instead of rejecting it —
+    // A blocker/network middlebox may STALL a request instead of rejecting it –
     // without our own timeout the gate would hang forever and the claim would
     // die silently. Abort each probe fast; a timeout is "no evidence", and the
     // local bait test (which needs no network) still gets its vote.
@@ -149,7 +149,7 @@ async function urlProbeBlocked()
     {
         const [ probeOk, controlOk ] = await Promise.all([ loadable(probe), loadable(control) ]);
         if(controlOk && !probeOk) return true;   // blocker confirmed
-        return false;                            // both fine, or offline — not our call
+        return false;                            // both fine, or offline – not our call
     }
     catch(e) { return false; }
 }
@@ -199,7 +199,7 @@ export async function getStrictIdentity()
     }
     catch(e)
     {
-        // The dynamic import itself was refused — the blocker ate device.js.
+        // The dynamic import itself was refused – the blocker ate device.js.
         out.blocked = true;
         return out;
     }
@@ -245,7 +245,7 @@ export function showAdblockModal(featureLabel, opts)
     const body = document.createElement('div');
     body.textContent = adblocked
         ? `Free keys are funded by ads and guarded by device checks, so ${feature} needs your blocker turned off. Please disable your ad blocker (or whitelist projectsheldon.me), then press Check again.`
-        : `We couldn't verify this device, so ${feature} is unavailable. A privacy extension may be interfering — please disable it for projectsheldon.me, then press Check again.`;
+        : `We couldn't verify this device, so ${feature} is unavailable. A privacy extension may be interfering – please disable it for projectsheldon.me, then press Check again.`;
     body.style.cssText = 'font-size:13px;line-height:1.6;color:rgba(255,255,255,0.65);margin-bottom:8px;';
 
     const hint = document.createElement('div');
@@ -285,19 +285,19 @@ export function showAdblockModal(featureLabel, opts)
             ]);
             if(!stillBlocked && ident && ident.complete)
             {
-                hint.textContent = 'All clear — reloading…';
-                notifyToast('Blocker disabled — reloading to unlock the feature.', 'success', 3000);
+                hint.textContent = 'All clear – reloading…';
+                notifyToast('Blocker disabled – reloading to unlock the feature.', 'success', 3000);
                 try { window.dispatchEvent(new CustomEvent('sheldon-adblock-cleared')); } catch(e) {}
                 setTimeout(() => window.location.reload(), 700);
             }
             else
             {
                 hint.textContent = stillBlocked
-                    ? 'Still blocked — disable the ad blocker for this site, then try again.'
-                    : 'Still unverified — a privacy extension may still be interfering.';
+                    ? 'Still blocked – disable the ad blocker for this site, then try again.'
+                    : 'Still unverified – a privacy extension may still be interfering.';
             }
         }
-        catch(e) { hint.textContent = 'Check failed — please try again.'; }
+        catch(e) { hint.textContent = 'Check failed – please try again.'; }
         finally
         {
             retryBtn.disabled = false;
@@ -321,7 +321,7 @@ export function showAdblockModal(featureLabel, opts)
 
 export async function ensureChecksOrNotify(featureLabel)
 {
-    // Outer safety net: the gate must NEVER hang — a stuck gate looks exactly
+    // Outer safety net: the gate must NEVER hang – a stuck gate looks exactly
     // like "rewards silently don't work". If anything inside stalls past the
     // budget, fail closed with a notice (never silence).
     const GATE_BUDGET_MS = 10000;
@@ -356,8 +356,8 @@ export async function ensureChecksOrNotify(featureLabel)
     }
     catch(e)
     {
-        try { console.warn('[sheldon] device verification timed out — blocking the action instead of hanging.'); } catch(_) {}
-        notifyToast('Verification timed out — please check your connection and try again.', 'warning', 6000);
+        try { console.warn('[sheldon] device verification timed out – blocking the action instead of hanging.'); } catch(_) {}
+        notifyToast('Verification timed out – please check your connection and try again.', 'warning', 6000);
         return { ok: false, adblocked: false, complete: false, timeout: true };
     }
 
@@ -366,7 +366,7 @@ export async function ensureChecksOrNotify(featureLabel)
         try { console.warn('[sheldon] reward action gated: adblocked=' + adblocked + ' identityComplete=' + !!ident.complete); } catch(_) {}
         const msg = adblocked
             ? `Turn off your ad blocker to use ${featureLabel || 'this feature'}.`
-            : `We couldn't verify this device — disable privacy extensions for this site to use ${featureLabel || 'this feature'}.`;
+            : `We couldn't verify this device – disable privacy extensions for this site to use ${featureLabel || 'this feature'}.`;
         notifyToast(msg, 'warning', 8000);
         try { showAdblockModal(featureLabel, { adblocked }); } catch(e) {}
         return { ok: false, adblocked, complete: !!ident.complete };
@@ -391,7 +391,7 @@ function maybePassiveNotice()
                 if(await detectAdblock())
                 {
                     try { sessionStorage.setItem('sheldon_adblock_noticed', '1'); } catch(e) {}
-                    notifyToast('Heads up: ad blocker is on — your cookie choice still saves, but free keys need ads, so whitelist us when you claim one.', 'warning', 9000);
+                    notifyToast('Heads up: ad blocker is on – your cookie choice still saves, but free keys need ads, so whitelist us when you claim one.', 'warning', 9000);
                 }
             } catch(e) {}
         }, 3000);

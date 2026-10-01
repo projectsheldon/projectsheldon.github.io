@@ -4,7 +4,7 @@ const TEN_MINUTES = 10 * 60 * 1000;
 
 // Allow-list of backend origins that this static site is permitted to talk to.
 // Any URL loaded from localStorage cache OR from the /config/backend response is
-// validated against this list — so a compromised localStorage entry can't redirect
+// validated against this list – so a compromised localStorage entry can't redirect
 // every fetch (including the Discord session token in the Authorization header) to
 // an attacker's host. Add localhost variants for dev.
 const ALLOWED_BACKEND_ORIGINS = new Set([
@@ -94,7 +94,7 @@ const Api = {
             this._backendUrl = stripTrailingSlash(cached);
             return this._backendUrl;
         }
-        // Cache is unusable — clear it so we don't keep falling through.
+        // Cache is unusable – clear it so we don't keep falling through.
         Cache.remove('backend_url');
 
         const remoteServer = stripTrailingSlash('https://backend.projectsheldon.me');

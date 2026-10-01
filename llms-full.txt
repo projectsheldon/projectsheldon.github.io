@@ -1,4 +1,4 @@
-# Sheldon LuaVM — Full Documentation
+# Sheldon LuaVM – Full Documentation
 
 > Scripting reference and API documentation for Sheldon's LuaVM, a customizable Lua scripting environment for Roblox.
 > Source: https://www.projectsheldon.me/luavm/
@@ -24,7 +24,7 @@ raw input
 soon
 Obfuscate →
 
-The scrambler isn't wired up yet — this is the shell. The output will land on its own page.
+The scrambler isn't wired up yet – this is the shell. The output will land on its own page.
 
 ---
 
@@ -38,7 +38,7 @@ awaiting input
 No output yet
 submit a script and the scrambled result lands here
 
-—
+–
 Copy output
 
 ---
@@ -53,9 +53,9 @@ Built-in global functions available in the LuaVM environment.
 | **warn(...)** | Outputs to console with `[warn]` prefix |
 | **error(...)** | Throws a Lua error |
 | **hex(number)** | Formats a number as hex string (e.g. `0x7FF...`) |
-| **tick()** | Returns `GetTickCount64()` — milliseconds since system start |
+| **tick()** | Returns `GetTickCount64()` – milliseconds since system start |
 | **loadstring(source)** | Loads and compiles Lua source code. Returns `(function, nil)` on success or `(nil, error_message)` on failure. |
-| **type(v)** | Overrides Lua's built-in `type()`. Behaves normally for all Lua values, and additionally recognizes Roblox Luau GC addresses returned by `cheat.getgc()`/`cheat.rawget()` — for a number that points at a live GC object it returns `"table"`, `"string"`, `"function"`, `"userdata"`, or `"thread"` depending on the object's type. |
+| **type(v)** | Overrides Lua's built-in `type()`. Behaves normally for all Lua values, and additionally recognizes Roblox Luau GC addresses returned by `cheat.getgc()`/`cheat.rawget()` – for a number that points at a live GC object it returns `"table"`, `"string"`, `"function"`, `"userdata"`, or `"thread"` depending on the object's type. |
 
 ### String Extensions
 
@@ -130,7 +130,7 @@ LZ4 compression utilities. Always available (no library gate).
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **compress.Compress(data)** | `string` | Compresses data using LZ4 (does NOT prepend original size). `Decompress` expects a 4-byte size header — functions are currently incompatible. |
+| **compress.Compress(data)** | `string` | Compresses data using LZ4 (does NOT prepend original size). `Decompress` expects a 4-byte size header – functions are currently incompatible. |
 | **compress.Decompress(data)** | `string` | Decompresses LZ4-compressed data back to original. |
 
 ### Example
@@ -180,7 +180,7 @@ Interpolate instance properties smoothly over time. Modelled on Roblox's TweenSe
 | Method | Signature | Description |
 | --- | --- | --- |
 | **tween:Play(waitForFinish?)** | `bool?` | Starts the tween. When `waitForFinish` is `true`, blocks the calling coroutine until every property has finished tweening; otherwise returns immediately. Both `tween:Play(...)` and `tween.Play(...)` syntaxes are accepted. |
-| **tween:Cancel()** |  | Snaps every property back to the value it had when the tween was created. Does not stop already-scheduled ticks — for that, let the tween finish or overwrite the property. |
+| **tween:Cancel()** |  | Snaps every property back to the value it had when the tween was created. Does not stop already-scheduled ticks – for that, let the tween finish or overwrite the property. |
 
 ### Easing Styles
 
@@ -188,15 +188,15 @@ Interpolate instance properties smoothly over time. Modelled on Roblox's TweenSe
 
 ### Supported Property Types
 
-- `number` — e.g. `Transparency`, `Reflectance`, `WalkSpeed`
+- `number` – e.g. `Transparency`, `Reflectance`, `WalkSpeed`
 
-- `Vector3` — e.g. `Position`, `Size`, `LinearVelocity`, `AngularVelocity`
+- `Vector3` – e.g. `Position`, `Size`, `LinearVelocity`, `AngularVelocity`
 
-- `Color3` — e.g. `Color`
+- `Color3` – e.g. `Color`
 
 The property must be registered for the instance's class (see [Class Properties](#/class-properties)) and must not be read-only. Unsupported properties raise an error at `tween.Create` time.
 
-### Example — Move a part
+### Example – Move a part
 
 ```lua
 local part = workspace.Part
@@ -210,7 +210,7 @@ local t = tween.Create(part, info, {
 t:Play()
 ```
 
-### Example — Wait until finished
+### Example – Wait until finished
 
 ```lua
 local part = workspace.Part
@@ -220,10 +220,10 @@ local t = tween.Create(part, { time = 2, style = "Bounce" }, {
 })
 
 t:Play(true)
-print("Tween finished — running follow-up code")
+print("Tween finished – running follow-up code")
 ```
 
-### Example — Chained tweens
+### Example – Chained tweens
 
 ```lua
 task.spawn(function()
@@ -240,7 +240,7 @@ end)
 
 - Each property tweens independently. Passing multiple properties runs them in parallel on the same schedule.
 
-- `tween:Play(true)` blocks the calling coroutine — use `task.spawn` if you don't want to freeze your main script.
+- `tween:Play(true)` blocks the calling coroutine – use `task.spawn` if you don't want to freeze your main script.
 
 - Tweens write directly to memory. Physics-driven properties (`Position`, `CFrame`, velocities) update visually but the engine may resimulate them next physics step; combine with anchoring or velocity-zeroing for full control.
 
@@ -304,7 +304,7 @@ memory.Write(base + 0x1250, Vector3.new(1, 2, 3), "vector3")
 
 ## cheat
 
-Cheat utilities — event registration, raycasting, server/teleport helpers, and the Roblox Luau garbage-collector interface.
+Cheat utilities – event registration, raycasting, server/teleport helpers, and the Roblox Luau garbage-collector interface.
 
 ### Events
 
@@ -341,8 +341,8 @@ Read and write the target process's Luau GC directly. `getgc` enumerates live ob
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **getgc(includeAll?, searchKey?)** | `bool?, string?` | Enumerates the target process's Luau GC. Default returns tables only; pass `true` as the first arg to include strings, functions, userdata, and threads. If `searchKey` is a non-empty string, `getgc` instead scans every GC table for that key and returns the **first non-nil value** it finds — decoded to a Lua value (`string`/`number`/`boolean`) where possible, or the raw address as a `number` for GC-typed values. Returns `nil` if no table has the key. |
-| **setgc(key, value)** | `string, bool \| number \| address` | Iterates every GC table and writes `value` into every table that already has `key`. Accepts `bool`, `number`, or a GC address (the tt is inferred from the GC object's header). Cannot create new keys and does not issue a GC write barrier. String literals are rejected — pass an existing TString address (a `number`) instead. |
+| **getgc(includeAll?, searchKey?)** | `bool?, string?` | Enumerates the target process's Luau GC. Default returns tables only; pass `true` as the first arg to include strings, functions, userdata, and threads. If `searchKey` is a non-empty string, `getgc` instead scans every GC table for that key and returns the **first non-nil value** it finds – decoded to a Lua value (`string`/`number`/`boolean`) where possible, or the raw address as a `number` for GC-typed values. Returns `nil` if no table has the key. |
+| **setgc(key, value)** | `string, bool \| number \| address` | Iterates every GC table and writes `value` into every table that already has `key`. Accepts `bool`, `number`, or a GC address (the tt is inferred from the GC object's header). Cannot create new keys and does not issue a GC write barrier. String literals are rejected – pass an existing TString address (a `number`) instead. |
 | **rawget(addr, key \| true)** | `number, string \| bool` | Reads a field on the external table at `addr`. 2nd arg: pass a `string` key to fetch a single field, or pass `true` to dump the whole table as a Lua table. Missing keys return `nil`. Returned GC-typed values (tables/functions/userdata) come back as their raw address `number`; call `rawget` recursively on them to dive deeper. |
 | **rawset(addr, key, value)** | `number, string, any` | Writes an **existing** field on the external table at `addr`. Accepts `nil`, `bool`, `number`, or an address for GC-typed values (the tt is inferred from the GC object's header). Returns `true` on success, `false` if the key doesn't already exist. Cannot create new keys and does not issue a GC write barrier. |
 
@@ -741,15 +741,15 @@ Dear ImGui-style immediate mode GUI system.
 
 `DragFloat` / `DragInt` are draggable numeric fields. Drag horizontally to change the value; click without dragging to type a value directly. Hold `Ctrl` while dragging for finer steps (0.1×), `Shift` for coarser (10×).
 
-- `speed` — value change per pixel dragged (default `1`).
+- `speed` – value change per pixel dragged (default `1`).
 
-- `min`, `max` — clamp range. Leave both `0` (or equal) for an **unbounded** field.
+- `min`, `max` – clamp range. Leave both `0` (or equal) for an **unbounded** field.
 
-- `format` — printf-style, may include a suffix, e.g. `"%.2f studs"` or `"%d rounds"`.
+- `format` – printf-style, may include a suffix, e.g. `"%.2f studs"` or `"%d rounds"`.
 
-- `disabled` — when `true`, the field is dimmed and ignores input.
+- `disabled` – when `true`, the field is dimmed and ignores input.
 
-- `DragFloat2` / `DragFloat3` render a labeled property row with 2 / 3 boxes sharing one row's width — ideal for Vector2 / Vector3.
+- `DragFloat2` / `DragFloat3` render a labeled property row with 2 / 3 boxes sharing one row's width – ideal for Vector2 / Vector3.
 
 ### Tabs
 
@@ -916,18 +916,18 @@ local RunService = game:GetService("RunService")
 
 ## RemoteEvent
 
-FireServer, InvokeServer, and bidirectional remote spy — extra members added to RemoteEvent, UnreliableRemoteEvent, and RemoteFunction instances.
+FireServer, InvokeServer, and bidirectional remote spy – extra members added to RemoteEvent, UnreliableRemoteEvent, and RemoteFunction instances.
 
-These members appear on top of the standard [Instance](#/instance) API for any instance whose `ClassName` matches. Reading a spy signal auto-installs the underlying hook on first read — you don't need to opt in ahead of time.
+These members appear on top of the standard [Instance](#/instance) API for any instance whose `ClassName` matches. Reading a spy signal auto-installs the underlying hook on first read – you don't need to opt in ahead of time.
 
-Remotes parented anywhere under `RobloxReplicatedStorage` are treated as protected — trying to access the spy on them errors with `Protected `.
+Remotes parented anywhere under `RobloxReplicatedStorage` are treated as protected – trying to access the spy on them errors with `Protected `.
 
 ### Methods
 
 | Method | Applies to | Description |
 | --- | --- | --- |
 | **FireServer(...)** | `RemoteEvent`, `UnreliableRemoteEvent` | Fires the remote to the server with the given args. |
-| **InvokeServer(...)** | `RemoteFunction` | Invokes the remote against the server with the given args. Currently fire-and-forget — the server WILL reply but the return value is not routed back to Lua yet, so this returns `nil`. If you need the reply value, pair a `RemoteEvent` both directions instead. |
+| **InvokeServer(...)** | `RemoteFunction` | Invokes the remote against the server with the given args. Currently fire-and-forget – the server WILL reply but the return value is not routed back to Lua yet, so this returns `nil`. If you need the reply value, pair a `RemoteEvent` both directions instead. |
 
 #### Example
 
@@ -948,7 +948,7 @@ func:InvokeServer("get", { slot = 1 })  -- returns nil for now
 
 ### Outgoing spy (client → server)
 
-Fires whenever anything in the game (Lua, C++, other exploits) sends args from this client to the server through the remote. One shared hook per class covers every instance — the first read installs it.
+Fires whenever anything in the game (Lua, C++, other exploits) sends args from this client to the server through the remote. One shared hook per class covers every instance – the first read installs it.
 
 | Member | Type | Description |
 | --- | --- | --- |
@@ -980,12 +980,12 @@ end)
 
 ### Incoming spy (server → client)
 
-Fires whenever the server sends args to this client through the remote. Hooked per-instance — the first read installs one shared hooked vtable per unique class-vptr, then every subsequent instance is cheap. Callback receives the args the server sent.
+Fires whenever the server sends args to this client through the remote. Hooked per-instance – the first read installs one shared hooked vtable per unique class-vptr, then every subsequent instance is cheap. Callback receives the args the server sent.
 
 | Member | Type | Description |
 | --- | --- | --- |
 | **OnClientEvent** | `RBXScriptSignal` | Callback fires with the args when the server sends to this client through the `RemoteEvent` / `UnreliableRemoteEvent`. |
-| **OnClientInvoke** | `RBXScriptSignal` | Callback fires with the args when the server invokes this `RemoteFunction` against the client. Purely observational — the connect does not assign a return value the server sees. `RemoteFunction` only. |
+| **OnClientInvoke** | `RBXScriptSignal` | Callback fires with the args when the server invokes this `RemoteFunction` against the client. Purely observational – the connect does not assign a return value the server sees. `RemoteFunction` only. |
 
 #### Example
 
@@ -1157,7 +1157,7 @@ Registered class properties for common Roblox classes.
 
 ### Value Objects
 
-`IntValue`, `BoolValue`, `StringValue`, `NumberValue`, `ObjectValue`, `Color3Value`, `Vector3Value` — all have a single `Value` property of their respective type (RW).
+`IntValue`, `BoolValue`, `StringValue`, `NumberValue`, `ObjectValue`, `Color3Value`, `Vector3Value` – all have a single `Value` property of their respective type (RW).
 
 ### Animation
 
@@ -1414,14 +1414,14 @@ Additional implementation details and behavior notes.
 
 - `print()` outputs with prefix `[print]`; `warn()` outputs with prefix `[warn]`.
 
-- `tick()` returns `GetTickCount64()` — milliseconds since system start (not UNIX time).
+- `tick()` returns `GetTickCount64()` – milliseconds since system start (not UNIX time).
 
 - `loadstring` returns `(function, nil)` on success or `(nil, error_message)` on failure.
 
 - Instance property access via `__index` checks built-in properties first, then registered class properties, then falls back to child lookup by name.
 
-- Property writes respect read-only flags — silently fail on RO properties like `Address`, `FullName`, `RightVector`, `UpVector`, `ForwardVector`, etc.
+- Property writes respect read-only flags – silently fail on RO properties like `Address`, `FullName`, `RightVector`, `UpVector`, `ForwardVector`, etc.
 
 - Both `game` and `Game` globals resolve to the Roblox DataModel instance.
 
-- Compressed data from `compress.Compress` does NOT store the original size, but `compress.Decompress` expects it. This is a known inconsistency — Compress and Decompress are currently incompatible.
+- Compressed data from `compress.Compress` does NOT store the original size, but `compress.Decompress` expects it. This is a known inconsistency – Compress and Decompress are currently incompatible.

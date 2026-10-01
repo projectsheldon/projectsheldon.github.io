@@ -1,4 +1,4 @@
-// Command palette (Ctrl/Cmd+K) — jump between tabs, copy license keys, quick links.
+// Command palette (Ctrl/Cmd+K) – jump between tabs, copy license keys, quick links.
 // Pattern adapted from the admin panel's CommandPalette component.
 (function() {
     if (window.__DashCommandPaletteLoaded) return;
@@ -63,7 +63,7 @@
                     out.push({
                         id: 'lic:' + i,
                         title: lic.key,
-                        sub: (lic.product || 'License') + ' · ' + statusOf(lic) + ' — copy to clipboard',
+                        sub: (lic.product || 'License') + ' · ' + statusOf(lic) + ' – copy to clipboard',
                         icon: 'copy',
                         run: () => bridge().copyText(lic.key)
                     });

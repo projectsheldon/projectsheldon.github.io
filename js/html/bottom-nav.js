@@ -3,7 +3,7 @@
     if(document.getElementById('bottom-nav-styles')) return;
 
     const css = `
-/* Bottom navigation bar — mobile only (≤768px) */
+/* Bottom navigation bar – mobile only (≤768px) */
 .bottom-nav {
     display: none;
     position: fixed;
@@ -84,7 +84,7 @@
         padding-bottom: 56px !important;
     }
 
-    /* Hide hamburger menu button — bottom nav replaces it */
+    /* Hide hamburger menu button – bottom nav replaces it */
     .mobile-menu-btn {
         display: none !important;
     }
@@ -116,7 +116,7 @@
         height: 1.25rem !important;
     }
 
-    /* Hide the topbar login button on mobile — it's in bottom nav */
+    /* Hide the topbar login button on mobile – it's in bottom nav */
     #discord-login-btn {
         display: none !important;
     }

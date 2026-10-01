@@ -11,15 +11,15 @@
     <link rel="canonical" href="https://www.projectsheldon.me/resellers/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Project Sheldon">
-    <meta property="og:title" content="Project Sheldon — Advanced Roblox Development">
+    <meta property="og:title" content="Project Sheldon – Advanced Roblox Development">
     <meta property="og:description" content="A feature-rich, actively maintained developer tool for Roblox.">
     <meta property="og:url" content="https://www.projectsheldon.me/resellers/">
     <meta property="og:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=2">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Project Sheldon — Advanced Roblox Development">
+    <meta property="og:image:alt" content="Project Sheldon – Advanced Roblox Development">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Project Sheldon — Advanced Roblox Development">
+    <meta name="twitter:title" content="Project Sheldon – Advanced Roblox Development">
     <meta name="twitter:description" content="A feature-rich, actively maintained developer tool for Roblox.">
     <meta name="twitter:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=2">
     <script src="https://cdn.tailwindcss.com?warn=false" onerror="var f=document.createElement('link');f.rel='stylesheet';f.href='../tailwind-fallback.css';document.head.appendChild(f)"></script>
@@ -1057,9 +1057,9 @@
 
                             <!-- Sale Webhook Section -->
                             <div class="border-t border-white/5 pt-6">
-                                <h4 class="text-white font-bold text-sm mb-3">Sale Webhook <span class="text-[#c7b18f] text-xs font-medium">— automatic delivery</span></h4>
+                                <h4 class="text-white font-bold text-sm mb-3">Sale Webhook <span class="text-[#c7b18f] text-xs font-medium">– automatic delivery</span></h4>
                                 <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                                    <p class="text-neutral-500 text-xs mb-4">One-time setup, then zero typing. Paste the URL into your shop (Sellix / SellApp / Shopify webhooks) or your DM bot — every paid sale is reported automatically, and when your customer's payment <span class="text-neutral-300">and</span> your wholesale payment both verify, Plan B keys land <span class="text-green-400 font-bold">instantly</span>. No shop? Just type your buyer's Discord at checkout instead.</p>
+                                    <p class="text-neutral-500 text-xs mb-4">One-time setup, then zero typing. Paste the URL into your shop (Sellix / SellApp / Shopify webhooks) or your DM bot – every paid sale is reported automatically, and when your customer's payment <span class="text-neutral-300">and</span> your wholesale payment both verify, Plan B keys land <span class="text-green-400 font-bold">instantly</span>. No shop? Just type your buyer's Discord at checkout instead.</p>
                                     <label class="text-neutral-500 text-xs block mb-1">Webhook URL</label>
                                     <div class="flex items-center gap-2 mb-3">
                                         <input type="text" id="webhook-url-display" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-neutral-300 font-mono" value="Loading…" readonly>
@@ -1067,7 +1067,7 @@
                                             Copy
                                         </button>
                                     </div>
-                                    <label class="text-neutral-500 text-xs block mb-1">Secret <span class="text-neutral-600">(proves sales come from your shop — never share it)</span></label>
+                                    <label class="text-neutral-500 text-xs block mb-1">Secret <span class="text-neutral-600">(proves sales come from your shop – never share it)</span></label>
                                     <div class="flex items-center gap-2 mb-3">
                                         <input type="text" id="webhook-secret-display" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-neutral-400 font-mono" value="••••••••••••••••" readonly>
                                         <button id="webhook-reveal-btn" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap">
@@ -1076,7 +1076,7 @@
                                         <button id="webhook-copy-secret-btn" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap">
                                             Copy
                                         </button>
-                                        <button id="webhook-rotate-btn" class="px-4 py-2 bg-red-600/60 hover:bg-red-600 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap" title="Old secret stops working immediately — update your shop at the same time">
+                                        <button id="webhook-rotate-btn" class="px-4 py-2 bg-red-600/60 hover:bg-red-600 text-white text-xs font-bold uppercase rounded-lg transition-all whitespace-nowrap" title="Old secret stops working immediately – update your shop at the same time">
                                             Rotate
                                         </button>
                                     </div>
@@ -1098,7 +1098,7 @@ Content-Type: application/json
   "timestamp": 1730000000000,
   "signature": "HMAC_SHA256_hex(secret, sale_id.provider_tx_id.amount)"
 }</pre>
-                                        <p class="text-neutral-600 text-[11px] mt-2">Signature examples — Python: <code class="font-mono">hmac.new(secret.encode(), f"{sale_id}.{tx}.{amount}".encode(), hashlib.sha256).hexdigest()</code> · Node: <code class="font-mono">crypto.createHmac("sha256", secret).update(`${sale_id}.${tx}.${amount}`).digest("hex")</code></p>
+                                        <p class="text-neutral-600 text-[11px] mt-2">Signature examples – Python: <code class="font-mono">hmac.new(secret.encode(), f"{sale_id}.{tx}.{amount}".encode(), hashlib.sha256).hexdigest()</code> · Node: <code class="font-mono">crypto.createHmac("sha256", secret).update(`${sale_id}.${tx}.${amount}`).digest("hex")</code></p>
                                     </details>
                                     <div id="webhook-sales-list" class="text-xs"></div>
                                 </div>
@@ -2210,7 +2210,7 @@ Content-Type: application/json
                 if (salesEl) {
                     const proofs = data.recent_proofs || [];
                     if (proofs.length === 0) {
-                        salesEl.innerHTML = '<p class="text-neutral-600">No reported sales yet — your shop reports will appear here.</p>';
+                        salesEl.innerHTML = '<p class="text-neutral-600">No reported sales yet – your shop reports will appear here.</p>';
                     } else {
                         const badge = (v) => v === 'valid'
                             ? '<span class="text-green-400 font-bold">valid ✅</span>'
@@ -2263,7 +2263,7 @@ Content-Type: application/json
             const apiUrl = await getApiUrl();
             const token = DiscordAuth.GetSessionToken();
             if (!token) return;
-            if (!confirm('Rotate webhook secret? The old secret stops working immediately — update your shop at the same time.')) return;
+            if (!confirm('Rotate webhook secret? The old secret stops working immediately – update your shop at the same time.')) return;
 
             const statusEl = document.getElementById('webhook-status');
             try {
@@ -2283,7 +2283,7 @@ Content-Type: application/json
                     if (secretEl) secretEl.value = data.secret;
                     const revealBtn = document.getElementById('webhook-reveal-btn');
                     if (revealBtn) revealBtn.textContent = 'Hide';
-                    if (statusEl) statusEl.textContent = 'New secret generated — update your shop now.';
+                    if (statusEl) statusEl.textContent = 'New secret generated – update your shop now.';
                 } else if (statusEl) {
                     statusEl.textContent = data.message || 'Rotate failed.';
                 }
@@ -2329,9 +2329,9 @@ Content-Type: application/json
                     if (!enabled) {
                         statusEl.textContent = 'Plan B is temporarily unavailable.';
                     } else if (isPlanB) {
-                        statusEl.textContent = 'You are on Plan B — buy on demand with crypto at checkout.';
+                        statusEl.textContent = 'You are on Plan B – buy on demand with crypto at checkout.';
                     } else {
-                        statusEl.textContent = 'You are on Plan A — buy stock in bulk and resell.';
+                        statusEl.textContent = 'You are on Plan A – buy stock in bulk and resell.';
                     }
                 }
             } catch (e) {

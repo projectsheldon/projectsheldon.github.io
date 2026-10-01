@@ -127,7 +127,7 @@ function SetupPlanB() {
             walletsEl.innerHTML = quoteCoins.map(c => `
                 <div class="crypto-option" data-coin="${escAttr(c.coin)}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="window.copyPlanBWallet('${escAttr(c.coin)}')">
                     <span style="font-weight:800;color:#c7b18f;font-size:12px;">${esc(c.coin)}</span>
-                    <span style="font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;white-space:nowrap;">${c.coinAmount != null ? esc(String(c.coinAmount)) + ' ' + esc(c.coin) : '—'}</span>
+                    <span style="font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;white-space:nowrap;">${c.coinAmount != null ? esc(String(c.coinAmount)) + ' ' + esc(c.coin) : '–'}</span>
                     <span style="font-family:monospace;font-size:11px;color:rgba(255,255,255,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.address)}</span>
                     <span style="font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;">COPY</span>
                 </div>
@@ -366,7 +366,7 @@ async function LoadProductInfo() {
         }
         else
         {
-            // Unknown / stale product key (e.g. an old ?product=… link) — no product data.
+            // Unknown / stale product key (e.g. an old ?product=… link) – no product data.
             ShowProductUnavailable();
         }
     } catch (error) {
@@ -381,7 +381,7 @@ function ShowProductUnavailable() {
     window.productUnavailable = true;
 
     const loginEl = document.getElementById('login-required');
-    TogglePaymentForm(false); // hides payment form — note this re-shows login-required, so hide it after
+    TogglePaymentForm(false); // hides payment form – note this re-shows login-required, so hide it after
     if (loginEl) loginEl.style.display = 'none';
     const ticket = document.getElementById('ticket-section');
     if (ticket) ticket.style.display = 'none';
@@ -491,7 +491,7 @@ function SetupTicketModal() {
         fillTimer = setTimeout(function() {
             fillTimer = null;
             if (!filling) return;
-            // Fill completed: arm the button. No auto ticket — the user clicks to confirm.
+            // Fill completed: arm the button. No auto ticket – the user clicks to confirm.
             filling = false;
             confirmBtn.classList.add('armed');
         }, FILL_DURATION);
@@ -686,7 +686,7 @@ async function ShowBalanceCheckout() {
 
                     ${isOnCooldown
                         ? `<button id="purchase-balance-btn" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px; opacity: 0.4; cursor: not-allowed;" disabled>
-                            COOLDOWN — ${formatCooldown(cooldownRemaining)}
+                            COOLDOWN – ${formatCooldown(cooldownRemaining)}
                            </button>`
                         : `<button id="purchase-balance-btn" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px; ${canAfford ? '' : 'opacity: 0.5; cursor: not-allowed;'}" ${canAfford ? '' : 'disabled'}>
                             ${canAfford ? `PURCHASE KEY${qty > 1 ? 'S' : ''}` : 'Insufficient Balance'}
@@ -694,7 +694,7 @@ async function ShowBalanceCheckout() {
                     }
 
                     ${isRateLimited
-                        ? `<span id="rate-limit-msg" style="font-size: 12px; color: #ef4444; font-weight: 700;">Rate limited — max balance reached.${rateLimitRemaining > 0 ? ` Try again in ${formatCooldown(rateLimitRemaining)}.` : ' Come back later.'}</span>`
+                        ? `<span id="rate-limit-msg" style="font-size: 12px; color: #ef4444; font-weight: 700;">Rate limited – max balance reached.${rateLimitRemaining > 0 ? ` Try again in ${formatCooldown(rateLimitRemaining)}.` : ' Come back later.'}</span>`
                         : (isOnCooldown ? '' : `<a href="${workinkLink}" style="font-size: 13px; color: #c7b18f; text-decoration: underline;">
                             ${noCooldown ? 'Watch Ads for 1 Free Key' : (firstAdBoosted ? 'Watch 1 Ad for your First Key' : `Watch Ads for +${adRewardBalance} balance`)}
                            </a>`)
@@ -702,7 +702,7 @@ async function ShowBalanceCheckout() {
 
                     ${firstAdBoosted && !noCooldown && !isOnCooldown
                         ? `<div style="font-size: 12px; color: #22c55e; font-weight: 700; max-width: 80%; line-height: 1.45;">
-                            Your first ad grants +${firstAdBoostBalance.toFixed(1)} — only 1 stage of work for your first free key. After that it's 3 stages per key.
+                            Your first ad grants +${firstAdBoostBalance.toFixed(1)} – only 1 stage of work for your first free key. After that it's 3 stages per key.
                            </div>`
                         : ''}
                 </div>
@@ -721,7 +721,7 @@ async function ShowBalanceCheckout() {
                         return;
                     }
                     const msgEl = document.getElementById('rate-limit-msg');
-                    if (msgEl) msgEl.textContent = `Rate limited — max balance reached. Try again in ${formatCooldown(remaining)}.`;
+                    if (msgEl) msgEl.textContent = `Rate limited – max balance reached. Try again in ${formatCooldown(remaining)}.`;
                 }, 1000);
             }
 
@@ -736,7 +736,7 @@ async function ShowBalanceCheckout() {
                         return;
                     }
                     const btn = document.getElementById('purchase-balance-btn');
-                    if (btn) btn.textContent = `COOLDOWN — ${formatCooldown(remaining)}`;
+                    if (btn) btn.textContent = `COOLDOWN – ${formatCooldown(remaining)}`;
                 }, 1000);
             }
             else
@@ -828,7 +828,7 @@ async function ShowBalanceCheckout() {
     }
 }
 
-// Backend came back (visitor solved the connection check) — reload what failed.
+// Backend came back (visitor solved the connection check) – reload what failed.
 if (window.SheldonBackend) {
     window.SheldonBackend.OnRecovered(async () =>
     {

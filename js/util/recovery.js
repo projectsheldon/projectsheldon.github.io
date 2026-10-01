@@ -1,4 +1,4 @@
-/* Backend connectivity recovery — classic (non-module) script, loaded on the homepage
+/* Backend connectivity recovery – classic (non-module) script, loaded on the homepage
    and checkout only. backend.projectsheldon.me sits behind Cloudflare's adaptive
    Managed Challenge; for challenged clients (VPN / datacenter IPs) the hidden
    clearance iframe in clearance.js cannot pass an *interactive* challenge, so every
@@ -9,7 +9,7 @@
    so the page can reload what had failed.
 
    Deliberately has no imports: clearance.js/backend.js call window.SheldonBackend
-   through optional chaining, so pages without this script stay silent — and adding an
+   through optional chaining, so pages without this script stay silent – and adding an
    import would create a circular dependency (recovery → backend → clearance). */
 
 (function () {
@@ -110,7 +110,7 @@
         title.style.cssText = 'font-size:16px;font-weight:800;color:#fff;margin-bottom:6px;';
 
         var body = document.createElement('div');
-        body.textContent = "Our servers want you to pass a quick security check. If you see a puzzle below, solve it, then press Retry — the page will finish loading by itself.";
+        body.textContent = "Our servers want you to pass a quick security check. If you see a puzzle below, solve it, then press Retry – the page will finish loading by itself.";
         body.style.cssText = 'font-size:12.5px;line-height:1.5;color:rgba(255,255,255,0.65);margin-bottom:14px;';
 
         var frame = document.createElement('iframe');
@@ -179,7 +179,7 @@
         var tries = 0;
         var timer = setInterval(function ()
         {
-            // Modal closed or solved — stop the loop.
+            // Modal closed or solved – stop the loop.
             if(!modalEl) { clearInterval(timer); return; }
             tries += 1;
             if(tries > 25) { clearInterval(timer); return; }

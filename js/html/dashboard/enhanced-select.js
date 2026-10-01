@@ -179,7 +179,7 @@
             const selectedOpt = Array.from(nativeSelect.options).find(o => o.value === value) || nativeSelect.options[0];
             const valueEl = trigger.querySelector('.esel-value');
             if (!selectedOpt || selectedOpt.value === '') {
-                // Empty value — treat first option as placeholder if it looks like one.
+                // Empty value – treat first option as placeholder if it looks like one.
                 valueEl.textContent = selectedOpt ? selectedOpt.textContent : '';
                 valueEl.classList.add('is-placeholder');
             } else {

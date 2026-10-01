@@ -6,13 +6,13 @@
 // "Failed to fetch". This wraps window.fetch so that, for backend requests only, we:
 //
 //   1. always send credentials, so the cf_clearance cookie rides along; and
-//   2. on failure, load the backend once in a hidden *same-site* iframe — which runs
-//      Cloudflare's (usually non-interactive) challenge and sets cf_clearance — then retry.
+//   2. on failure, load the backend once in a hidden *same-site* iframe – which runs
+//      Cloudflare's (usually non-interactive) challenge and sets cf_clearance – then retry.
 //
 // www.projectsheldon.me is same-site with the API, so the clearance cookie applies to the
 // retried fetches, and Cloudflare "caches" it for the cookie's lifetime. Limits: this can't
 // solve an *interactive* challenge from a hidden iframe, and does nothing for the native
-// Loader (a separate client that also can't solve challenges — protect it via Cloudflare
+// Loader (a separate client that also can't solve challenges – protect it via Cloudflare
 // rules, not a browser workaround).
 
 const BACKEND_HOSTS = new Set([
@@ -85,7 +85,7 @@ export function installBackendFetchGuard()
         if(init.credentials === undefined) init.credentials = 'include';
 
         // Only auto-retry idempotent methods. A non-idempotent request (POST) may have already
-        // reached the backend and had a side effect before the response was lost — retrying it
+        // reached the backend and had a side effect before the response was lost – retrying it
         // would double-submit. For /workink/generate that means the token gets consumed twice
         // and the 2nd try returns "expired or invalid"; for purchases it'd double-charge. So we
         // still run the clearance pass (sets cf_clearance for the NEXT request) but do not retry.
@@ -105,7 +105,7 @@ export function installBackendFetchGuard()
         }
         catch(err)
         {
-            // Opaque failure — most often a Cloudflare challenge (the 403 challenge response
+            // Opaque failure – most often a Cloudflare challenge (the 403 challenge response
             // has no CORS headers, so the browser surfaces it as "Failed to fetch"), sometimes
             // a transient network blip. Clear once so the client is evaluated/cleared.
             try { await runClearance(); } catch(e) {}

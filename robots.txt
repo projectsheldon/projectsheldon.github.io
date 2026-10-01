@@ -1,4 +1,4 @@
-# Project Sheldon — robots.txt
+# Project Sheldon – robots.txt
 # Crawling is welcome. Full site map below.
 
 User-agent: *

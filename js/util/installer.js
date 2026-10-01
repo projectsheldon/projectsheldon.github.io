@@ -1,5 +1,5 @@
 // Client-side loader "installer": takes the raw .7z bytes, extracts them in-browser with
-// libarchive.js (WASM), and hands the user ready-to-use files — so nobody needs a 7-Zip
+// libarchive.js (WASM), and hands the user ready-to-use files – so nobody needs a 7-Zip
 // tool. A single extracted file is saved as-is (e.g. the .exe); multiple files are
 // repackaged into a natively-openable .zip.
 //

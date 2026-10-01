@@ -1,13 +1,13 @@
 // Cookie / fingerprint consent banner. Bottom-right prompt on the main pages, "Sure" /
 // "No" buttons that first ask for confirmation (misclick protection), with the choice
-// saved SERVER-SIDE against the device identity — final once recorded. A dismiss (X)
+// saved SERVER-SIDE against the device identity – final once recorded. A dismiss (X)
 // records nothing and the prompt returns on the next visit. Also exposes window.SheldonCookies
 // so the "View Licenses" menu can re-open the prompt and read the consent status.
 import Api from './backend.js';
 
 // Device identity is loaded LAZILY via dynamic import (never a static import):
 // adblockers block fingerprinting scripts, and a blocked static import would
-// abort this entire module — and every module that imports it (login button,
+// abort this entire module – and every module that imports it (login button,
 // products, downloads). Dynamic import + fallback keeps the page fully working.
 async function loadIdentityPayload()
 {
@@ -16,7 +16,7 @@ async function loadIdentityPayload()
         const mod = await import('./device.js');
         if(mod && typeof mod.GetIdentityPayload === 'function') return await mod.GetIdentityPayload();
     }
-    catch(e) { /* blocked by content blocker — fall through to minimal payload */ }
+    catch(e) { /* blocked by content blocker – fall through to minimal payload */ }
     // Minimal fallback: random device id only, no browser signals. The backend
     // treats the enriched fields as optional.
     try
@@ -87,7 +87,7 @@ function notifyToast(msg, type, ms)
 
 export async function RecordChoice(choice)
 {
-    // One-time cookie choice: deliberately LENIENT — no adblock gate. The backend
+    // One-time cookie choice: deliberately LENIENT – no adblock gate. The backend
     // accepts a minimal identity (IP hash + local id) so users with a blocker can
     // still save their Sure/No pick. Strict device checks only apply later, when
     // actually claiming a free key.
@@ -105,7 +105,7 @@ export async function RecordChoice(choice)
             return true;
         }
     } catch(e) {}
-    notifyToast('Could not save your choice — check your connection and try again.', 'warning', 6000);
+    notifyToast('Could not save your choice – check your connection and try again.', 'warning', 6000);
     return false;
 }
 
@@ -175,7 +175,7 @@ function buildConfirmModal(choice)
     title.style.cssText = 'font-size:16px;font-weight:800;color:#fff;margin-bottom:8px;';
 
     const body = document.createElement('div');
-    body.textContent = `You're about to ${label}. This choice is saved on our server and is final — it can't be changed later.`;
+    body.textContent = `You're about to ${label}. This choice is saved on our server and is final – it can't be changed later.`;
     body.style.cssText = 'font-size:13px;line-height:1.5;color:rgba(255,255,255,0.65);margin-bottom:18px;';
 
     const row = document.createElement('div');
@@ -240,6 +240,6 @@ window.SheldonCookies = {
     }
     catch(e)
     {
-        // Backend unreachable — stay completely silent, never break the page.
+        // Backend unreachable – stay completely silent, never break the page.
     }
 })();

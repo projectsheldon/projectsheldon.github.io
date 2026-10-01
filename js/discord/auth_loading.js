@@ -1,4 +1,4 @@
-/* Auth loading veil — covers the page from the very first paint until the
+/* Auth loading veil – covers the page from the very first paint until the
    Discord session has been confirmed (logged in or not). Loaded as a classic
    (non-module) script at the top of <body>, so it installs before any module
    script runs and the page never paints unauthenticated UI.

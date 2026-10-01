@@ -1,7 +1,7 @@
 // Minimal, dependency-free ZIP writer (STORE / no compression).
 //
-// We use it to repackage the files extracted from the loader's .7z into a single .zip —
-// which every OS opens natively — so users never need a 7-Zip tool installed. STORE (no
+// We use it to repackage the files extracted from the loader's .7z into a single .zip –
+// which every OS opens natively – so users never need a 7-Zip tool installed. STORE (no
 // compression) is intentional: the payload is already the final installer files, and staying
 // dependency-free keeps this bulletproof and easy to verify. Filenames are written UTF-8.
 

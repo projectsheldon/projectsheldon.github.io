@@ -52,7 +52,7 @@ export async function CheckAuthStatus()
 function UpdateUI(loggedIn, user = null)
 {
     // The loading veil stays up until the auth check settles on a definite
-    // answer (logged in or not) — never leave the page covered.
+    // answer (logged in or not) – never leave the page covered.
     if(window.AuthLoading) window.AuthLoading.hide();
 
     const discordBtn = document.getElementById('discord-login-btn');
@@ -113,7 +113,7 @@ function UpdateUI(loggedIn, user = null)
 
         if(discordBtn)
         {
-            // Logged in: hide the button — the account menu's "Sign out" is the
+            // Logged in: hide the button – the account menu's "Sign out" is the
             // logout path now. The logged-out branch below removes `hidden` and
             // restores the "Login" label, so the button reappears after sign-out.
             discordBtn.classList.add('hidden');
@@ -334,7 +334,7 @@ const DiscordAuth = {
         };
         noBtn.onclick = () => {
             callback('browser');
-            // Do NOT closeOverlay here — the poll keeps the same overlay alive as a
+            // Do NOT closeOverlay here – the poll keeps the same overlay alive as a
             // "Waiting for Discord…" state so the user sees progress instead of a
             // vanished popup polluting the background. _PollForToken will transform
             // this modal in place, and removeOverlay() there is the single close path.
@@ -354,7 +354,7 @@ const DiscordAuth = {
         window._discordLoginPopupOpen = true;
 
         // Fetch critical config. If it fails we STILL open the chooser overlay so the
-        // click always produces visible feedback — the old early-return here was the
+        // click always produces visible feedback – the old early-return here was the
         // classic "click does nothing" bug when the backend hiccupped and the flag
         // reset silently with only a toast (or no toast if Notify hadn't loaded).
         let apiUrl, clientId;
@@ -428,7 +428,7 @@ const DiscordAuth = {
                                 '</div>' +
                                 '<div id="auth-code-hint" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);min-height:14px;"></div>' +
                             '</div>'
-                            : '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.18);border-radius:8px;padding:12px;margin-bottom:8px;font-size:12px;color:rgba(255,255,255,0.75);">Could not reach the authentication server. You can still try the browser flow — it may recover.</div>');
+                            : '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.18);border-radius:8px;padding:12px;margin-bottom:8px;font-size:12px;color:rgba(255,255,255,0.75);">Could not reach the authentication server. You can still try the browser flow – it may recover.</div>');
                 }
 
 
@@ -458,7 +458,7 @@ const DiscordAuth = {
                             const data = await res.json().catch(()=> ({}));
                             if(data.ok && data.status === 'success')
                             {
-                                setHint('Code accepted — signing you in…', '#22c55e');
+                                setHint('Code accepted – signing you in…', '#22c55e');
                                 if(window._resolveAuthPoll) window._resolveAuthPoll(data.token);
                             }
                             else if(data.ok && data.status === 'error')
@@ -468,12 +468,12 @@ const DiscordAuth = {
                             }
                             else if(data.status === 'pending')
                             {
-                                setHint('Code not ready yet — finish authorizing in the other tab, then try again.', '#fbbf24');
+                                setHint('Code not ready yet – finish authorizing in the other tab, then try again.', '#fbbf24');
                             }
                             else if(data.status === 'rate_limited' || is429)
                             {
-                                setHint('Too many attempts — wait 30s and try again.', '#fbbf24');
-                                if(typeof Notify !== 'undefined') Notify('Too many attempts — wait a moment.', 'warning', 3000);
+                                setHint('Too many attempts – wait 30s and try again.', '#fbbf24');
+                                if(typeof Notify !== 'undefined') Notify('Too many attempts – wait a moment.', 'warning', 3000);
                             }
                             else if(data.status === 'expired')
                             {
@@ -484,7 +484,7 @@ const DiscordAuth = {
                             {
                                 setHint('Invalid code. Check and try again.', '#f87171');
                             }
-                        } catch(e) { setHint('Network error — try again.', '#f87171'); }
+                        } catch(e) { setHint('Network error – try again.', '#f87171'); }
                         finally { submitting = false; if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='Verify'; submitBtn.style.opacity='1'; } }
                     };
 
@@ -516,7 +516,7 @@ const DiscordAuth = {
                         '<h3 style="color:white;font-size:17px;margin:0 0 6px;">Waiting for Discord…</h3>' +
                         '<p style="color:rgba(255,255,255,0.55);font-size:13px;margin:0 0 16px;">A popup should have opened. Authorize there and you’ll be signed in automatically.</p>' +
                         '<div style="display:flex;gap:10px;justify-content:center;"><button id="browser-popup-retry" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:white;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;">Re-open popup</button><button id="browser-cancel" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;">Cancel</button></div>' +
-                        '<p style="margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35);">Keep this window open — you’ll be signed in automatically.</p>';
+                        '<p style="margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35);">Keep this window open – you’ll be signed in automatically.</p>';
                 }
                 const retryBtn = document.getElementById('browser-popup-retry');
                 const cancelBtn = document.getElementById('browser-cancel');
@@ -526,8 +526,8 @@ const DiscordAuth = {
                     const p = window.open(oauthUrl, 'sheldon_discord_auth', 'popup=1,width=480,height=700');
                     if(!p)
                     {
-                        // Popup blocked — fall back to navigating this tab, but warn first.
-                        if(typeof Notify !== 'undefined') Notify('Popup blocked — redirecting this tab to Discord.', 'warning', 4000);
+                        // Popup blocked – fall back to navigating this tab, but warn first.
+                        if(typeof Notify !== 'undefined') Notify('Popup blocked – redirecting this tab to Discord.', 'warning', 4000);
                         setTimeout(()=> { window.location.href = oauthUrl; }, 600);
                         return null;
                     }
@@ -541,20 +541,20 @@ const DiscordAuth = {
                 };
 
                 // Browser flow completes via hash/postMessage (state is the return URL, not the
-                // 6-char code), so we don't poll poll-auth with authCode here — that only
+                // 6-char code), so we don't poll poll-auth with authCode here – that only
                 // spammed the backend with pending checks that could never succeed and hit
                 // the rate limit. Just wait for the token to appear via the hash listener.
                 DiscordAuth._PollForToken(oauthUrl, null, apiUrl, popupRef);
             }
             else if(choice === null)
             {
-                // User dismissed the chooser (ESC / click outside) — ensure flag is cleared.
+                // User dismissed the chooser (ESC / click outside) – ensure flag is cleared.
                 window._discordLoginPopupOpen = false;
                 if(window._discordOverlayCleanup) window._discordOverlayCleanup();
             }
         });
 
-        // /discord/init-auth failed (backend unreachable / challenged) — the code box will be
+        // /discord/init-auth failed (backend unreachable / challenged) – the code box will be
         // missing from the modal. Tell the visitor instead of silently degrading.
         if(!authCode)
         {
@@ -566,7 +566,7 @@ const DiscordAuth = {
                 if(already) return;
                 const note = document.createElement('div');
                 note.id = 'init-auth-warning';
-                note.textContent = "Can't reach the authentication server. The browser popup may still work — try \"Use Browser\" or close and try again.";
+                note.textContent = "Can't reach the authentication server. The browser popup may still work – try \"Use Browser\" or close and try again.";
                 note.style.cssText = 'margin-top:14px;padding:10px 12px;border-radius:8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.18);font-size:11px;color:rgba(255,255,255,0.75);';
                 modal.appendChild(note);
             }, 80);
@@ -579,7 +579,7 @@ const DiscordAuth = {
         {
             // We only tear the overlay down once the backend CONFIRMS a real session. Any
             // other outcome (cancelled, expired, unconfirmed, timed out) keeps the overlay
-            // open so the user can retry or finish via the code — we never auto-dismiss or
+            // open so the user can retry or finish via the code – we never auto-dismiss or
             // navigate them away.
             let settled = false;
             let verifying = false;
@@ -684,11 +684,11 @@ const DiscordAuth = {
                 }
 
                 // If the hash receiver already dropped a token into localStorage (popup
-                // redirect fallback), consume it immediately — don't wait for the poll.
+                // redirect fallback), consume it immediately – don't wait for the poll.
                 const existing = DiscordAuth.GetSessionToken();
                 if(existing)
                 {
-                    // Only auto-finish if we weren't already logged in — avoids re-verifying
+                    // Only auto-finish if we weren't already logged in – avoids re-verifying
                     // in a tight loop after a successful tryFinish that already set the token.
                     // Check whether currentUser is still null; if so, we need to verify.
                     if(!DiscordAuth.currentUser)
@@ -696,7 +696,7 @@ const DiscordAuth = {
                         await tryFinish(existing);
                         if(settled) return;
                     }
-                    // Already logged in — we are done, but keep the timer to avoid spamming.
+                    // Already logged in – we are done, but keep the timer to avoid spamming.
                     schedule(5000);
                     return;
                 }
@@ -713,7 +713,7 @@ const DiscordAuth = {
                         {
                             const d429 = await res.json().catch(()=>({}));
                             rateLimitedUntil = Date.now() + ((d429.retry_after || 30) * 1000);
-                            if(typeof Notify !== 'undefined') Notify('Too many checks — slowing down for a moment.', 'warning', 3000);
+                            if(typeof Notify !== 'undefined') Notify('Too many checks – slowing down for a moment.', 'warning', 3000);
                             schedule(8000);
                             return;
                         }
@@ -721,11 +721,11 @@ const DiscordAuth = {
                         if(data.ok && data.status === 'success') { await tryFinish(data.token); return; }
                         if(data.ok && data.status === 'error') { keepOpen('Login Cancelled', 'You cancelled the Discord authorization.'); return; }
                         if(data.status === 'expired') { keepOpen('Code expired', 'That login code expired. Please try again.'); return; }
-                        if(data.status === 'rate_limited') { rateLimitedUntil = Date.now() + 30000; if(typeof Notify !== 'undefined') Notify('Too many attempts — wait a moment.', 'warning', 3000); schedule(8000); return; }
+                        if(data.status === 'rate_limited') { rateLimitedUntil = Date.now() + 30000; if(typeof Notify !== 'undefined') Notify('Too many attempts – wait a moment.', 'warning', 3000); schedule(8000); return; }
                         // pending => continue with backoff
                     } catch(e) {
                         // Network hiccup: don't treat as fatal, just back off and retry.
-                        if(e && e.name === 'AbortError') { /* timeout — retry */ }
+                        if(e && e.name === 'AbortError') { /* timeout – retry */ }
                     }
                 }
 
@@ -798,7 +798,7 @@ window.DiscordAuth = DiscordAuth;
         // ourselves. Without this pairing, anyone can craft
         //   https://projectsheldon.github.io/#discord_token=ATTACKER
         // send the victim, and they end up using the attacker's Discord session.
-        // Nonce TTL: 15 min — plenty for a real OAuth round-trip.
+        // Nonce TTL: 15 min – plenty for a real OAuth round-trip.
         const pending = (() => { try { return Number(localStorage.getItem('discord_login_pending')) || 0; } catch(e) { return 0; } })();
         const NONCE_TTL_MS = 15 * 60 * 1000;
         const nonceValid = pending > 0 && (Date.now() - pending) < NONCE_TTL_MS;

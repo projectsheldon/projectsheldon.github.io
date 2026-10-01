@@ -1,4 +1,4 @@
-/* Sheldon language selector — anchored dropdown + persisted choice + strings.
+/* Sheldon language selector – anchored dropdown + persisted choice + strings.
  * Add data-i18n="key" to any element to have its text replaced on language
  * change. Add data-i18n-ph="key" to inputs for placeholder translation.
  * Language buttons: any element with [data-lang-btn] toggles the dropdown.
@@ -25,7 +25,7 @@
         { code: 'ar', native: 'العربية',     english: 'Arabic',     region: 'الشرق الأوسط' },
     ];
 
-    // Languages written right-to-left — page direction flips while active.
+    // Languages written right-to-left – page direction flips while active.
     const RTL_LANGS = ['ar'];
 
     const STRINGS = {
@@ -193,7 +193,7 @@
             'nav.pricing.resellers.t': 'Реселлеры', 'nav.pricing.resellers.s': 'Проверенные продавцы',
             'nav.community.discord.t': 'Discord-сервер', 'nav.community.discord.s': 'Чат и поддержка',
             'nav.community.guides.t': 'Гайды', 'nav.community.guides.s': 'Пошаговые инструкции',
-            'hero.subtitle': 'Получи Project Sheldon сегодня — лучший и единственный Freemium External.',
+            'hero.subtitle': 'Получи Project Sheldon сегодня – лучший и единственный Freemium External.',
             'hero.download': 'Скачать для Windows', 'hero.pricing': 'Смотреть цены',
             'hero.terms.pre': 'Используя Sheldon, ты принимаешь',
             'hero.terms.link': 'Условия использования', 'hero.terms.post': '',
@@ -253,7 +253,7 @@
             'nav.pricing.resellers.t': '经销商', 'nav.pricing.resellers.s': '认证卖家',
             'nav.community.discord.t': 'Discord 服务器', 'nav.community.discord.s': '聊天与支持',
             'nav.community.guides.t': '指南', 'nav.community.guides.s': '分步教程',
-            'hero.subtitle': '立即获取 Project Sheldon —— 最佳且唯一的 Freemium External。',
+            'hero.subtitle': '立即获取 Project Sheldon –– 最佳且唯一的 Freemium External。',
             'hero.download': '下载 Windows 版', 'hero.pricing': '查看价格',
             'hero.terms.pre': '使用 Sheldon 即表示你同意',
             'hero.terms.link': '服务条款', 'hero.terms.post': '',
@@ -283,7 +283,7 @@
             'nav.pricing.resellers.t': 'リセラー', 'nav.pricing.resellers.s': '認証済み販売者',
             'nav.community.discord.t': 'Discord サーバー', 'nav.community.discord.s': 'チャットとサポート',
             'nav.community.guides.t': 'ガイド', 'nav.community.guides.s': 'ステップバイステップ解説',
-            'hero.subtitle': 'Project Sheldon を今すぐ入手 — 最高かつ唯一の Freemium External。',
+            'hero.subtitle': 'Project Sheldon を今すぐ入手 – 最高かつ唯一の Freemium External。',
             'hero.download': 'Windows 版をダウンロード', 'hero.pricing': '料金を見る',
             'hero.terms.pre': 'Sheldonの利用により',
             'hero.terms.link': '利用規約', 'hero.terms.post': 'に同意したものとみなされます',
@@ -628,7 +628,7 @@
             {
                 const empty = document.createElement('div');
                 empty.className = 'sl-empty';
-                empty.textContent = '—';
+                empty.textContent = '–';
                 list.append(empty);
                 return;
             }
@@ -674,7 +674,7 @@
             const btn = e.target && e.target.closest ? e.target.closest('[data-lang-btn]') : null;
             if (!btn) return;
             e.preventDefault();
-            // Capture position first — the mobile menu (if open) closes and
+            // Capture position first – the mobile menu (if open) closes and
             // would otherwise invalidate the anchor rect.
             const rect = btn.getBoundingClientRect();
             const menu = document.getElementById('mobileMenu');
