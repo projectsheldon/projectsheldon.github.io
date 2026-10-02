@@ -88,6 +88,10 @@
 
         /* ---- reader typography ---- */
         .guide-body { font-size: 0.95rem; line-height: 1.75; color: #d4d4d4; }
+        /* First/last child must not carry block margins – otherwise the card
+           shows a big empty gap above the first line and below the last one. */
+        .guide-body > :first-child { margin-top: 0 !important; }
+        .guide-body > :last-child { margin-bottom: 0 !important; }
         .guide-body h1, .guide-body h2, .guide-body h3, .guide-body h4 {
             color: white; font-weight: 800; letter-spacing: -0.01em;
             margin: 1.8em 0 0.6em; line-height: 1.3;
