@@ -1,0 +1,48 @@
+name: Seasonal OG image
+
+on:
+  schedule:
+    # 03:17 UTC daily. Off-the-hour on purpose so this does not pile onto the
+    # top-of-hour GitHub Actions queue with everyone else's cron jobs.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Preview a specific date (YYYY-MM-DD). Leave empty for today."
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: og-image
+  cancel-in-progress: false
+
+jobs:
+  pick:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Copies the season's variant over favicon/og-image.png and rewrites the
+      # ?v= stamp in every page. Both steps are no-ops when nothing changed, so
+      # the commit below is skipped for the ~360 days a year the art stays the same.
+      - name: Point og:image at the current season
+        run: node favicon/og/pick.mjs ${{ inputs.date && format('--date={0}', inputs.date) || '' }}
+
+      - name: Commit the swap
+        run: |
+          if git diff --quiet; then
+            echo "seasonal art unchanged, nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add favicon/og-image.png "*.html" "*/*.html" "*/*/*.html"
+          git commit -m "og: switch seasonal embed image"
+          git pull --rebase --autostash
+          git push
