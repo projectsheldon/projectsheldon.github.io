@@ -53,6 +53,26 @@ function esc(s)
     return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// Image title → per-image options. Unknown keys are ignored so the format can
+// grow without breaking guides already in the database.
+function parseImgTitle(title)
+{
+    const out = { width: "", align: "" };
+    for(const token of String(title).trim().split(/\s+/))
+    {
+        const kv = token.match(/^(width|align):(.+)$/);
+        if(!kv) continue;
+        if(kv[1] === "width")
+        {
+            // A bare number means percent, matching what the editor writes.
+            const w = kv[2].match(/^(\d+(?:\.\d+)?)(px|%)?$/);
+            if(w) out.width = w[1] + (w[2] || "%");
+        }
+        else if(kv[2] === "left" || kv[2] === "right") out.align = kv[2];
+    }
+    return out;
+}
+
 // ---- list view ----
 
 function renderCats()
@@ -161,14 +181,13 @@ function fixRelativeImgs(root)
     {
         const src = img.getAttribute("src") || "";
         if(src.startsWith("guides/")) img.src = apiUrl + "/" + src;
-        // Editor stores per-image widths in the title: ![alt](url "width:50%").
-        const title = img.getAttribute("title") || "";
-        const m = title.match(/^width:(\d+%?)$/);
-        if(m)
-        {
-            img.setAttribute("width", m[1].endsWith("%") ? m[1] : m[1] + "%");
-            img.removeAttribute("title");
-        }
+        // The editor stores per-image width and alignment in the title:
+        // ![alt](url "width:50% align:left"). Centre is the default and is left
+        // unwritten, so guides saved before alignment existed are untouched.
+        const attrs = parseImgTitle(img.getAttribute("title") || "");
+        if(attrs.width) img.setAttribute("width", attrs.width);
+        if(attrs.align) img.setAttribute("data-align", attrs.align);
+        img.removeAttribute("title");
         img.loading = "lazy";
     });
 }
@@ -227,6 +246,7 @@ async function loadReader()
         body.innerHTML = clean;
         fixRelativeImgs(body);
         enhanceCallouts(body);
+        initLightbox(body);
         if(window.hljs) body.querySelectorAll("pre code").forEach(el =>
         {
             try { window.hljs.highlightElement(el); } catch(e) {}
@@ -237,6 +257,155 @@ async function loadReader()
         showError(true);
     }
     showLoading(false);
+}
+
+// ---- image lightbox ----
+// Guides are screenshot-heavy, and a 50%-width image inside the reader hides the
+// detail people are actually trying to read. Clicking any image opens it here at
+// its real pixel size, with pan and zoom.
+
+const LB = { el: null, img: null, stage: null, pct: null, scale: 1, nw: 0, nh: 0, restore: null };
+
+function buildLightbox()
+{
+    if(LB.el) return;
+    const el = document.createElement("div");
+    el.className = "glb";
+    el.hidden = true;
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-modal", "true");
+    el.setAttribute("aria-label", "Image preview");
+    el.innerHTML =
+        '<div class="glb-stage"><img class="glb-img" alt=""></div>' +
+        '<button class="glb-close" type="button" aria-label="Close preview">&times;</button>' +
+        '<div class="glb-bar">' +
+            '<button type="button" data-z="out" aria-label="Zoom out">&minus;</button>' +
+            '<span class="glb-pct">100%</span>' +
+            '<button type="button" data-z="in" aria-label="Zoom in">+</button>' +
+            '<span class="glb-div"></span>' +
+            '<button type="button" data-z="fit">Fit</button>' +
+            '<button type="button" data-z="one" title="Show at original size">1:1</button>' +
+        "</div>";
+    document.body.append(el);
+    LB.el = el;
+    LB.img = el.querySelector(".glb-img");
+    LB.stage = el.querySelector(".glb-stage");
+    LB.pct = el.querySelector(".glb-pct");
+
+    el.querySelector(".glb-close").addEventListener("click", closeLightbox);
+    // Clicking the backdrop closes, but a click that lands on the image or on the
+    // controls must not.
+    el.addEventListener("click", e =>
+    {
+        if(e.target === el || e.target === LB.stage) closeLightbox();
+    });
+    el.querySelectorAll("[data-z]").forEach(b => b.addEventListener("click", () =>
+    {
+        const z = b.dataset.z;
+        if(z === "in") setScale(LB.scale * 1.25);
+        else if(z === "out") setScale(LB.scale / 1.25);
+        else if(z === "fit") setScale(fitScale());
+        else setScale(1);
+    }));
+    LB.stage.addEventListener("wheel", e =>
+    {
+        if(!LB.nw) return;
+        e.preventDefault();
+        setScale(LB.scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+    }, { passive: false });
+    LB.img.addEventListener("dblclick", () => setScale(LB.scale === 1 ? fitScale() : 1));
+
+    // Drag to pan once the image is larger than the stage. Native scrolling still
+    // handles touch, so this only covers mouse users.
+    let drag = null;
+    LB.stage.addEventListener("pointerdown", e =>
+    {
+        if(e.button !== 0) return;
+        if(LB.stage.scrollWidth <= LB.stage.clientWidth && LB.stage.scrollHeight <= LB.stage.clientHeight) return;
+        drag = { x: e.clientX, y: e.clientY, l: LB.stage.scrollLeft, t: LB.stage.scrollTop };
+        LB.stage.setPointerCapture(e.pointerId);
+        LB.stage.classList.add("grabbing");
+    });
+    LB.stage.addEventListener("pointermove", e =>
+    {
+        if(!drag) return;
+        LB.stage.scrollLeft = drag.l - (e.clientX - drag.x);
+        LB.stage.scrollTop = drag.t - (e.clientY - drag.y);
+    });
+    const endDrag = () => { drag = null; LB.stage.classList.remove("grabbing"); };
+    LB.stage.addEventListener("pointerup", endDrag);
+    LB.stage.addEventListener("pointercancel", endDrag);
+
+    document.addEventListener("keydown", e =>
+    {
+        if(LB.el.hidden) return;
+        if(e.key === "Escape") { closeLightbox(); return; }
+        if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+        if(e.key === "+" || e.key === "=") { e.preventDefault(); setScale(LB.scale * 1.25); }
+        else if(e.key === "-" || e.key === "_") { e.preventDefault(); setScale(LB.scale / 1.25); }
+        else if(e.key === "0") { e.preventDefault(); setScale(fitScale()); }
+        else if(e.key === "1") { e.preventDefault(); setScale(1); }
+    });
+}
+
+function fitScale()
+{
+    if(!LB.nw || !LB.nh) return 1;
+    const pad = 48;
+    const availW = Math.max(80, LB.stage.clientWidth - pad);
+    const availH = Math.max(80, LB.stage.clientHeight - pad);
+    // Never blow a small image up past 100% - "fit" should mean fully visible.
+    return Math.min(availW / LB.nw, availH / LB.nh, 1);
+}
+
+function setScale(v)
+{
+    LB.scale = Math.max(0.1, Math.min(8, v));
+    LB.img.style.width = Math.round(LB.nw * LB.scale) + "px";
+    LB.pct.textContent = Math.round(LB.scale * 100) + "%";
+    LB.el.classList.toggle("zoomed", LB.scale > fitScale() + 0.001);
+}
+
+function openLightbox(img)
+{
+    buildLightbox();
+    LB.nw = img.naturalWidth || img.width || 0;
+    LB.nh = img.naturalHeight || img.height || 0;
+    LB.img.src = img.currentSrc || img.src;
+    LB.img.alt = img.alt || "";
+    LB.restore = document.activeElement;
+    LB.el.hidden = false;
+    // The stage has no measurable size until the overlay is displayed.
+    document.body.style.overflow = "hidden";
+    LB.stage.scrollLeft = 0;
+    LB.stage.scrollTop = 0;
+    setScale(fitScale());
+    LB.el.querySelector(".glb-close").focus({ preventScroll: true });
+}
+
+function closeLightbox()
+{
+    if(!LB.el || LB.el.hidden) return;
+    LB.el.hidden = true;
+    LB.img.removeAttribute("src");
+    document.body.style.overflow = "";
+    if(LB.restore && LB.restore.focus) LB.restore.focus({ preventScroll: true });
+    LB.restore = null;
+}
+
+function initLightbox(root)
+{
+    // Delegated on the article, which survives re-renders - so bind exactly once
+    // or a retry / language switch would stack duplicate listeners.
+    if(root.dataset.lbReady) return;
+    root.dataset.lbReady = "1";
+    root.addEventListener("click", e =>
+    {
+        const img = e.target.closest ? e.target.closest("img") : null;
+        if(!img || !root.contains(img)) return;
+        e.preventDefault();
+        openLightbox(img);
+    });
 }
 
 document.getElementById("guides-retry")?.addEventListener("click", () =>

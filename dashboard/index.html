@@ -1076,24 +1076,6 @@
             margin-left: 88px;
         }
 
-        footer a {
-            position: relative;
-        }
-
-        footer a::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: #c7b18f;
-            transition: width 0.3s ease;
-        }
-
-        footer a:hover::after {
-            width: 100%;
-        }
 
         @media (max-width: 900px) {
             .dash-shell {
@@ -1776,58 +1758,11 @@
 
     <div class="footer-spacer" aria-hidden="true"></div>
 
-    <footer>
-        <div class="max-w-6xl mx-auto px-6">
-            <div class="flex flex-col md:flex-row justify-between items-start gap-12 mb-8">
-                <div class="space-y-6 max-w-sm">
-                    <div class="text-3xl font-black tracking-tighter text-white flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm">
-                            <div class="logo-box w-8 h-8 rounded-lg flex items-center justify-center">
-                                <img src="../favicon/favicon.ico" alt="Logo" class="w-8 h-8 rounded-lg">
-                            </div>
-                        </div>SHELDON
-                    </div>
-                    <p class="text-neutral-500 text-sm font-medium leading-relaxed">
-                        Have fun using Project Sheldon, and also if you can support me by purchasing a license!
-                    </p>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-16 md:gap-24">
-                    <div class="space-y-6">
-                        <h4 class="text-[0.65rem] font-black text-white uppercase tracking-[0.2em]">Community</h4>
-                        <ul class="space-y-4 text-sm font-bold">
-                            <li><a href="javascript:void(0)" onclick="RedirectToPlatform('personal_youtube')"
-                                    class="text-neutral-400 hover:text-white transition-colors">YouTube</a></li>
-                            <li><a href="javascript:void(0)" onclick="RedirectToPlatform('discord_invite')"
-                                    class="text-neutral-400 hover:text-white transition-colors">Discord Server</a></li>
-                        </ul>
-                    </div>
-                    <div class="space-y-6">
-                        <h4 class="text-[0.65rem] font-black text-white uppercase tracking-[0.2em]">Legal</h4>
-                        <ul class="space-y-4 text-sm font-bold">
-                            <li><a href="/terms" class="text-neutral-400 hover:text-white transition-colors">Terms of
-                                    Service</a></li>
-                        </ul>
-                    </div>
-                    <div class="space-y-6">
-                        <h4 class="text-[0.65rem] font-black text-white uppercase tracking-[0.2em]">System</h4>
-                        <ul class="space-y-4 text-sm font-bold">
-                            <li>
-                                <a href="javascript:void(0)" onclick="RedirectToPlatform('status')"
-                                    class="text-neutral-400 hover:text-white transition-colors flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Status</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="pt-4 border-t border-white/5 flex justify-center md:justify-start">
-                <p class="text-neutral-600 text-[0.6rem] font-bold tracking-[0.1em] uppercase">&copy; 2026 PROJECT
-                    SHELDON • ALL RIGHTS RESERVED</p>
-            </div>
-        </div>
-    </footer>
+    <div id="shared-footer"></div>
 
     <script src="../js/html/render/canvas.js"></script>
     <script src="/js/html/topbar.js"></script>
+    <script src="/js/html/footer.js"></script>
     <script type="module" src="../js/html/dashboard/index.js"></script>
     <script src="../js/html/dashboard/command-palette.js"></script>
     <script src="../js/util/notify.js"></script>
