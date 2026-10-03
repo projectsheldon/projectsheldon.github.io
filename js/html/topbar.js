@@ -202,7 +202,18 @@
             '.mobile-section-label{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.2em;color:#525252;padding:0 .25rem}' +
             '.mobile-link{display:block;padding:.65rem .75rem;border-radius:.75rem;font-size:.9rem;font-weight:600;color:#d4d4d4;transition:all .2s}' +
             '.mobile-link:hover{background:rgba(255,255,255,.06);color:#fff}' +
-            '.mobile-menu{top:64px!important;max-height:calc(100vh - 64px);overflow-y:auto;gap:1rem!important;padding:1rem 1.25rem 1.5rem!important}' +
+            // The whole mobile-menu box, not just its spacing. Host pages carry
+            // their own copy of `.mobile-menu{display:none}` / `.show{display:flex}`,
+            // and the ones that do not (guides, luavm, resellers) left the panel
+            // permanently on screen - the hamburger toggled a class nothing read.
+            // Owning display here with !important makes the toggle work on every
+            // page regardless of what the page's stylesheet happens to say.
+            '.mobile-menu{display:none!important;position:fixed;top:64px;left:0;right:0;z-index:999;' +
+                'max-height:calc(100vh - 64px);overflow-y:auto;-webkit-overflow-scrolling:touch;' +
+                'flex-direction:column;gap:1rem;padding:1rem 1.25rem 1.5rem;' +
+                'background:rgba(5,5,5,.98);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);' +
+                'border-bottom:1px solid rgba(255,255,255,.1)}' +
+            '.mobile-menu.show{display:flex!important}' +
             // Mobile has no room for two groups, so flatten them into one flex row
             // and let DOM order do the work: hamburger, logo, account, Discord,
             // globe. The logo therefore sits on the right, after the buttons.
@@ -211,8 +222,7 @@
             '.nav-shell>div{display:contents}' +
             '.mobile-menu-btn-lead{margin-right:auto}' +
             '#discord-login-btn.btn-discord{padding:.5rem .75rem!important}' +
-            '#discord-login-btn .discord-login-icon,#discord-login-btn .discord-logout-icon,#discord-login-btn .discord-login-spinner{width:1.25rem;height:1.25rem}}' +
-            '@media (min-width:1024px){.mobile-menu{display:none!important}}';
+            '#discord-login-btn .discord-login-icon,#discord-login-btn .discord-logout-icon,#discord-login-btn .discord-login-spinner{width:1.25rem;height:1.25rem}}';
         const el = document.createElement('style');
         el.id = 'sheldon-topbar-styles';
         el.textContent = css;

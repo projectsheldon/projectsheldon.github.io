@@ -18,7 +18,6 @@
                         '<div class="text-3xl font-black tracking-tighter text-white flex items-center gap-3">' +
                             '<div class="logo-box w-8 h-8 flex items-center justify-center">' +
                                 '<img src="/favicon/icon.png" alt="Logo" class="w-8 h-8">' +
-                            '</div>' +
                             '</div>SHELDON' +
                         '</div>' +
                         '<p class="text-neutral-500 text-sm font-medium leading-relaxed">' +
