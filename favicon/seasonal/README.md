@@ -10,7 +10,7 @@ tab, follows the calendar. Seven variants, swapped automatically.
 | `valentine` | heart + rose    | heart with ribbon| 7 – 15 Feb                    |
 | `april`     | clown + dice    | clown face       | 1 – 2 Apr                     |
 | `easter`    | egg + blossom   | cherry blossom   | Easter − 9 days → Easter + 16 |
-| `halloween` | pumpkin + webs  | jack-o'-lantern  | 20 Oct – 5 Nov                |
+| `halloween` | pumpkin + webs  | jack-o'-lantern  | 1 Oct – 5 Nov                 |
 | `christmas` | tree + gifts    | christmas tree   | 15 Nov – 25 Dec               |
 
 Easter is computed, not hardcoded, using the anonymous Gregorian algorithm.
