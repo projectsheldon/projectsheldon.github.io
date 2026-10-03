@@ -1,38 +1,34 @@
 # Seasonal brand assets
 
-Everything the site shows when someone drops a Project Sheldon link, or opens the
-tab, follows the calendar. Seven variants, swapped automatically.
+One thing on this site follows the calendar: the Discord embed art, which is what
+you see when someone pastes a Project Sheldon link into a chat. Seven variants,
+swapped automatically.
 
-| Variant     | OG art          | Icon / logo      | Window                        |
-|-------------|-----------------|------------------|-------------------------------|
-| `default`   | no seasonal art | the shipped logo | everything not listed below  |
-| `newyear`   | party popper    | party popper     | 26 Dec – 6 Jan                |
-| `valentine` | heart + rose    | heart with ribbon| 7 – 15 Feb                    |
-| `april`     | clown + dice    | clown face       | 1 – 2 Apr                     |
-| `easter`    | egg + blossom   | cherry blossom   | Easter − 9 days → Easter + 16 |
-| `halloween` | pumpkin + webs  | jack-o'-lantern  | 1 Oct – 5 Nov                 |
-| `christmas` | tree + gifts    | christmas tree   | 15 Nov – 25 Dec               |
+| Variant     | OG art          | Window                        |
+|-------------|-----------------|-------------------------------|
+| `default`   | no seasonal art | everything not listed below  |
+| `newyear`   | party popper    | 26 Dec – 6 Jan                |
+| `valentine` | heart + rose    | 7 – 15 Feb                    |
+| `april`     | clown + dice    | 1 – 2 Apr                     |
+| `easter`    | egg + blossom   | Easter − 9 days → Easter + 16 |
+| `halloween` | pumpkin + webs  | 1 Oct – 5 Nov                 |
+| `christmas` | tree + gifts    | 15 Nov – 25 Dec               |
 
 Easter is computed, not hardcoded, using the anonymous Gregorian algorithm.
+
+The favicon, the apple-touch icon, `icon.png` and the in-page logo are **not**
+seasonal. They are the bare mark on transparency, byte for byte identical in all
+seven variants, so the calendar never touches them. That used to be a seasonal
+tinted tile; it is now just the mark.
 
 ## What gets swapped
 
 | Live file              | Source in `variants/`            |
 |------------------------|----------------------------------|
 | `favicon/og-image.png` | `og-<season>.png`                |
-| `favicon/logo.png`     | `logo-<season>.png`              |
-| `favicon/favicon.ico`  | `favicon-<season>.ico`           |
-| `favicon/apple-touch-icon.png` | `apple-touch-<season>.png` |
-| `favicon/icon.png`     | `icon-<season>-512.png`          |
 
-Only the first two actually vary. The icon files are the bare mark in every
-season, so `build-logo.mjs` renders them once per season to identical bytes and
-`pick.mjs` finds them already equal and skips the copy. The calendar moves the
-Discord embed art and the in-page logo, never the icon.
-
-Out of season `default` copies the shipped logo byte for byte rather than
-re-rendering it, so nothing about the in-page mark changes when no holiday is
-running.
+That is the whole list. `favicon.ico`, `apple-touch-icon.png`, `icon.png` and
+`logo.png` are committed once and never swapped.
 
 ## Why the URLs have a query string
 
@@ -53,9 +49,9 @@ they were created with. Only new posts pick up a change.
 ## Files
 
     build-og.mjs     renders the OG art to SVG, rasterises to 1200x630 PNG
-    build-logo.mjs   renders the seasonal logo tint and the bare-mark icons
+    build-logo.mjs   renders the mark: the favicon, the touch icon, icon.png, logo.png
     season.mjs       date -> variant id, plus the Easter calculation
-    pick.mjs         swaps the live files and stamps the HTML
+    pick.mjs         swaps the embed art and stamps the HTML
     variants/        the rendered assets
     emoji/           Twemoji vectors, used by build-og.mjs
     logo.png         the Sheldon mark, the source for everything logo-side
@@ -66,10 +62,16 @@ Needs Node and a Chromium build. The rasterisers look for the headless shell in 
 local Playwright cache (`%LOCALAPPDATA%\ms-playwright`).
 
     node favicon/seasonal/build-og.mjs                   # all OG variants
-    node favicon/seasonal/build-logo.mjs                 # all logo variants
+    node favicon/seasonal/build-logo.mjs                 # all mark renders
     node favicon/seasonal/build-og.mjs --only=halloween  # one variant
     node favicon/seasonal/pick.mjs --dry                 # what today would change
     node favicon/seasonal/pick.mjs --date=2026-12-25     # stage a specific day
+
+`build-logo.mjs` writes the same bytes for all seven variants, so running it once
+is enough. If `logo.png` (the source) is replaced with artwork with different
+padding, rerun it and copy `variants/favicon-default.ico`, `apple-touch-default.png`,
+`icon-default-512.png` and `logo-default.png` up into `favicon/` – they are no
+longer swapped by `pick.mjs`.
 
 `build-og.mjs` writes the SVG and the PNG side by side in `variants/` and drops a
 `_contact-sheet.png` here, which is the fastest way to eyeball a change across
@@ -78,8 +80,17 @@ every season at once.
 ## Icon construction
 
 The icon is the mark on transparency and nothing else: no tile, no glow, no
-hairline border, no seasonal emblem. Anything behind the mark made the 16 px entry
-illegible and tinted the browser tab, which is not what a favicon is for.
+hairline border, no seasonal emblem, no seasonal tint. Anything behind the mark
+made the 16 px entry illegible and tinted the browser tab, which is not what a
+favicon is for.
+
+`logo.png` – the source – carries transparent padding on all four sides, which
+left the mark filling only ~77% of the canvas and reading as small. The builder
+decodes the source alpha channel, finds the tightest box around the ink, widens
+it to a square and uses that as the SVG viewBox. So the mark touches the top and
+bottom edges of the icon, and the leftover margin lands on the left and right,
+where the mark is naturally narrower. No resampling: the image is placed at its
+own pixel size and only the viewport is smaller.
 
 `favicon.ico` is a real multi-size icon: 16, 32 and 48 px, each rendered
 separately rather than downscaled, with PNG-compressed entries, which every browser
@@ -91,14 +102,16 @@ drawn from a large render rather than upscaled out of the 48 px ICO entry.
 
 ## Adding a season
 
+Only the OG art is seasonal now.
+
 1. Download the emoji you want from
    [twemoji](https://github.com/jdecked/twemoji/tree/main/assets/svg) into `emoji/`,
    named `<codepoint>.svg`.
-2. Add an entry to `SEASONS` in **both** builders with the emblem, marks and accent
-   colours. They are two tables on purpose: the OG art is its own composition, and
-   `build-logo.mjs` only needs the accent, which tints the in-page mark.
+2. Add an entry to `SEASONS` in `build-og.mjs` with the emblem, marks and accent
+   colours. `build-logo.mjs` has a plain list of the seven ids and nothing else –
+   the mark does not change per season, so there is nothing to configure there.
 3. Add the window to `WINDOWS` in `season.mjs`.
-4. Run both builders and check the contact sheet. Narrow windows go above wide
+4. Run `build-og.mjs` and check the contact sheet. Narrow windows go above wide
    ones, first match wins.
 
 ## Artwork licence

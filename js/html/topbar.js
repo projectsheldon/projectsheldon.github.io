@@ -28,19 +28,15 @@
             '</div></div>';
     }
 
-    function langButton(desktop)
+    // One button for every breakpoint. Below `lg` the label and the chevron are
+    // hidden and the padding collapses, so it reads as a bare globe icon - the
+    // dropdown that opens off it is unchanged.
+    function langButton()
     {
-        if (desktop)
-        {
-            return '<button data-lang-btn class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-[0.65rem] font-black uppercase tracking-wide border border-white/10 text-neutral-300 hover:bg-white/5 hover:text-white transition-all" aria-label="Select language">' +
-                globeIcon('w-3.5 h-3.5') +
-                '<span data-lang-current>English</span>' +
-                '<svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg></button>';
-        }
-        return '<div><div class="mobile-section-label" data-i18n="lang.language">Language</div>' +
-            '<button data-lang-btn class="mobile-link w-full text-left flex items-center gap-2">' +
-            globeIcon('w-4 h-4 text-neutral-500') +
-            '<span data-lang-current>English</span></button></div>';
+        return '<button data-lang-btn class="flex items-center gap-2 px-2.5 lg:px-4 py-2 rounded-xl text-[0.65rem] font-black uppercase tracking-wide border border-white/10 text-neutral-300 hover:bg-white/5 hover:text-white transition-all" aria-label="Select language">' +
+            globeIcon('w-3.5 h-3.5') +
+            '<span data-lang-current class="hidden lg:inline">English</span>' +
+            '<svg class="hidden lg:inline w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg></button>';
     }
 
     function navMarkup()
@@ -65,9 +61,17 @@
                 panelLink('/guides/', 'nav.community.guides', 'Guides', 'Step-by-step tutorials'));
 
         return '<nav class="fixed top-0 w-full z-[100] bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/10">' +
-            '<div class="max-w-[1400px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">' +
+            '<div class="nav-shell max-w-[1400px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">' +
                 '<div class="flex items-center gap-6 min-w-0">' +
-                    '<a href="/" class="flex items-center shrink-0" aria-label="Sheldon home">' +
+                    // First in the DOM so that on mobile, once both groups are
+                    // flattened with display:contents, the order reads
+                    // hamburger / logo / account / discord / globe.
+                    '<button class="mobile-menu-btn lg:hidden mobile-menu-btn-lead" onclick="toggleMobileMenu()" aria-label="Menu">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />' +
+                        '</svg>' +
+                    '</button>' +
+                    '<a href="/" class="logo-link flex items-center shrink-0" aria-label="Sheldon home">' +
                         '<div class="logo-box w-7 h-7 flex items-center justify-center">' +
                             '<img src="/favicon/icon.png" alt="Logo" class="w-7 h-7">' +
                         '</div></a>' +
@@ -109,13 +113,7 @@
                         '<span id="discord-login-txt" class="hidden sm:inline">Sign in</span>' +
                     '</button>' +
 
-                    langButton(true) +
-
-                    '<button class="mobile-menu-btn lg:hidden" onclick="toggleMobileMenu()" aria-label="Menu">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
-                            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />' +
-                        '</svg>' +
-                    '</button>' +
+                    langButton() +
                 '</div>' +
             '</div>' +
 
@@ -134,7 +132,6 @@
                 '<div><div class="mobile-section-label" data-i18n="nav.community">Community</div>' +
                     '<a href="javascript:void(0)" onclick="RedirectToPlatform(\'discord_invite\')" class="mobile-link" data-i18n="nav.community.discord.t">Discord server</a>' +
                     '<a href="/guides/" class="mobile-link" data-i18n="nav.community.guides.t">Guides</a></div>' +
-                langButton(false) +
             '</div>' +
         '</nav>';
     }
@@ -206,7 +203,15 @@
             '.mobile-link{display:block;padding:.65rem .75rem;border-radius:.75rem;font-size:.9rem;font-weight:600;color:#d4d4d4;transition:all .2s}' +
             '.mobile-link:hover{background:rgba(255,255,255,.06);color:#fff}' +
             '.mobile-menu{top:64px!important;max-height:calc(100vh - 64px);overflow-y:auto;gap:1rem!important;padding:1rem 1.25rem 1.5rem!important}' +
-            '@media (max-width:1023px){.nav-tabs-desktop{display:none!important}.mobile-menu-btn{display:block!important}}' +
+            // Mobile has no room for two groups, so flatten them into one flex row
+            // and let DOM order do the work: hamburger, logo, account, Discord,
+            // globe. The logo therefore sits on the right, after the buttons.
+            '@media (max-width:1023px){.nav-tabs-desktop{display:none!important}.mobile-menu-btn{display:block!important}' +
+            '.nav-shell{justify-content:flex-end!important;gap:.5rem!important}' +
+            '.nav-shell>div{display:contents}' +
+            '.mobile-menu-btn-lead{margin-right:auto}' +
+            '#discord-login-btn.btn-discord{padding:.5rem .75rem!important}' +
+            '#discord-login-btn .discord-login-icon,#discord-login-btn .discord-logout-icon,#discord-login-btn .discord-login-spinner{width:1.25rem;height:1.25rem}}' +
             '@media (min-width:1024px){.mobile-menu{display:none!important}}';
         const el = document.createElement('style');
         el.id = 'sheldon-topbar-styles';
