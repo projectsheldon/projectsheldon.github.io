@@ -1,12 +1,12 @@
-// Points the published og:image at the right seasonal art, and gives the URL a new
-// value whenever it changes.
+// Points every published brand asset at the current season, and gives the URLs a
+// new value whenever it changes.
 //
-// Discord caches an embed image by URL. Same URL means the same bitmap no matter
-// what the file now contains, so a season flip alone would never reach an embed
-// that already exists. Rewriting the query string to <season>-<iso week> means
-// every flip (plus a weekly safety bump) hands Discord a URL it has never fetched.
+// Discord caches an embed image by URL. Serve the right bytes at the same URL and
+// an embed that already exists still shows the old picture, so the query string is
+// stamped with <season>-<iso week>: each flip hands every cache a URL it has never
+// fetched, and the weekly component is a safety net for windows retuned later.
 //
-//   node favicon/og/pick.mjs [--date=YYYY-MM-DD] [--dry]
+//   node favicon/seasonal/pick.mjs [--date=YYYY-MM-DD] [--dry]
 //
 // Intended to run from the repo root, daily, from .github/workflows/og-image.yml.
 
@@ -16,6 +16,7 @@ import { fileURLToPath } from "url";
 import { resolveSeason } from "./season.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+const FAVICON = path.resolve(HERE, "..");
 const ROOT = path.resolve(HERE, "..", "..");
 
 const args = process.argv.slice(2);
@@ -25,7 +26,7 @@ const forced = (args.find(a => a.startsWith("--date=")) || "").slice(7);
 const date = forced ? new Date(`${forced}T12:00:00`) : new Date();
 const season = resolveSeason(date);
 
-// ISO week, so the cache-buster also moves for seasons we did not anticipate.
+// ISO week, so the stamp also moves for seasons we did not anticipate.
 function isoWeek(d) {
     const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const day = t.getUTCDay() || 7;
@@ -35,22 +36,37 @@ function isoWeek(d) {
 }
 
 const stamp = `${season}-${date.getFullYear()}w${String(isoWeek(date)).padStart(2, "0")}`;
+const variants = path.join(HERE, "variants");
 
-// 1. the image itself
-const variant = path.join(HERE, "variants", `og-${season}.png`);
-const live = path.join(HERE, "..", "og-image.png");
-if (!fs.existsSync(variant)) {
-    console.error(`missing variant: ${variant}`);
-    process.exit(1);
-}
+// ---------------------------------------------------------------- assets
+// The swap table. `out` is relative to favicon/, `src` to the variants dir.
+const ASSETS = [
+    { out: "og-image.png", src: `og-${season}.png` },
+    { out: "favicon.ico", src: `favicon-${season}.ico` },
+    { out: "logo.png", src: `logo-${season}.png` },
+    { out: "apple-touch-icon.png", src: `apple-touch-${season}.png` }
+];
+
 let changed = false;
-if (!fs.existsSync(live) || !fs.readFileSync(variant).equals(fs.readFileSync(live))) {
+for (const asset of ASSETS) {
+    const src = path.join(variants, asset.src);
+    const dst = path.join(FAVICON, asset.out);
+    if (!fs.existsSync(src)) {
+        if (asset.optional) {
+            console.warn(`skip ${asset.out}: ${asset.src} not built`);
+            continue;
+        }
+        console.error(`missing variant: ${src}`);
+        process.exit(1);
+    }
+    const same = fs.existsSync(dst) && fs.readFileSync(src).equals(fs.readFileSync(dst));
+    if (same) continue;
     changed = true;
-    if (!DRY) fs.copyFileSync(variant, live);
-    console.log(`og-image.png <- og-${season}.png`);
+    if (!DRY) fs.copyFileSync(src, dst);
+    console.log(`${asset.out} <- ${asset.src}`);
 }
 
-// 2. the cache-buster in every page that advertises the image
+// ---------------------------------------------------------------- html
 function htmlFiles(dir) {
     const out = [];
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -62,10 +78,26 @@ function htmlFiles(dir) {
     return out;
 }
 
-const TAG = /((?:property|name)="(?:og:image|twitter:image)"\s+content="[^"]*og-image\.png)(\?v=[^"]*)?"/g;
+// Any of these four assets, in a meta tag or a link tag. The group is what gets
+// the ?v=, so the pattern stays one line instead of four.
+const ASSET_REF = /((?:property|name)="(?:og:image|twitter:image)"|rel="(?:icon|apple-touch-icon)")(\s+[^>]*?content| href)="([^"]*?(?:og-image\.png|favicon\.ico|apple-touch-icon\.png|logo\.png))(\?v=[^"]*)?"/g;
+
 for (const file of htmlFiles(ROOT)) {
     const before = fs.readFileSync(file, "utf-8");
-    const after = before.replace(TAG, (m, head, old) => `${head}?v=${stamp}"`);
+    let after = before.replace(ASSET_REF, (m, tag, attr, url) => `${tag}${attr}="${url}?v=${stamp}"`);
+
+    // iOS takes its home screen icon from apple-touch-icon only. Derive the href
+    // from the page's own favicon link so the relative path is always right.
+    if (!/rel="apple-touch-icon"/.test(after)) {
+        const icon = after.match(/<link rel="icon" href="([^"]*favicon\.ico)\?v=[^"]*"/);
+        if (icon) {
+            const href = icon[1].replace(/favicon\.ico$/, "apple-touch-icon.png");
+            const link = `<link rel="apple-touch-icon" href="${href}?v=${stamp}">`;
+            const at = after.match(/<link rel="icon"[^>]*>\r?\n/);
+            after = at ? after.replace(at[0], at[0] + "    " + link + "\n") : after;
+        }
+    }
+
     if (after !== before) {
         changed = true;
         if (!DRY) fs.writeFileSync(file, after);

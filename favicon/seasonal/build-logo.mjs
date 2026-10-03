@@ -78,12 +78,12 @@ function svgWrap(size, body) {
 
 // The tile. `detail` adds the seasonal glyph, which only survives above 180px;
 // below that it turns to mush and only makes the icon noisier.
-function tileSvg(season, detail) {
+function tileSvg(season, detail, size) {
     const { accent, glyph } = season;
     const mark = fs.readFileSync(SOURCE).toString("base64");
     const glyphSize = detail ? 168 : 0;
 
-    return svgWrap(TILE_SIZE, `
+    return svgWrap(size, `
   <defs>
     <linearGradient id="tileBg" x1="0%" y1="0%" x2="30%" y2="100%">
       <stop offset="0%" stop-color="#191920"/>
@@ -102,7 +102,7 @@ function tileSvg(season, detail) {
     ${glyphSize ? `<g transform="translate(${n(512 - glyphSize - 34)} ${n(512 - glyphSize - 30)}) rotate(-8 ${n(glyphSize / 2)} ${n(glyphSize / 2)})" opacity="0.92"><svg width="${glyphSize}" height="${glyphSize}" viewBox="0 0 36 36">${emoji(glyph)}</svg></g>` : ""}
   </g>
   <rect x="1" y="1" width="510" height="510" rx="117" fill="none" stroke="#ffffff" stroke-opacity="0.09"/>
-  <image href="data:image/png;base64,${mark}" x="122" y="122" width="268" height="268"/>`);
+  <image href="data:image/png;base64,${mark}" x="108" y="108" width="296" height="296"/>`);
 }
 
 function logoSvg(season) {
@@ -134,6 +134,9 @@ function shot(svgPath, pngPath, size) {
     if (fs.existsSync(pngPath)) fs.rmSync(pngPath);
     const res = spawnSync(shell, [
         "--headless", "--disable-gpu", "--hide-scrollbars", "--no-sandbox", "--force-device-scale-factor=1",
+        // without this the page under a transparent SVG is white, and the
+        // transparent logo comes out with an opaque white square behind it
+        "--default-background-color=00000000",
         `--user-data-dir=${path.join(os.tmpdir(), "og-logo-profile")}`,
         `--screenshot=${pngPath}`, `--window-size=${size},${size}`,
         "file:///" + svgPath.replace(/\\/g, "/")
@@ -187,7 +190,9 @@ for (const season of picked) {
         if (!fs.existsSync(logo) || !fs.existsSync(ico)) throw new Error("shipped logo.png / favicon.ico missing");
         fs.copyFileSync(logo, path.join(OUT, `logo-${id}.png`));
         fs.copyFileSync(ico, path.join(OUT, `favicon-${id}.ico`));
-        written.push(`logo-${id}.png`, `favicon-${id}.ico`);
+        // iOS has no .ico, so its home screen icon is the shipped mark as-is
+        fs.copyFileSync(logo, path.join(OUT, `apple-touch-${id}.png`));
+        written.push(`logo-${id}.png`, `favicon-${id}.ico`, `apple-touch-${id}.png`);
         console.log(`${id.padEnd(10)} copied shipped assets unchanged`);
         continue;
     }
@@ -202,7 +207,7 @@ for (const season of picked) {
     const renders = new Map();
     for (const size of sizes) {
         const svgPath = path.join(WORK, `tile-${id}-${size}.svg`);
-        fs.writeFileSync(svgPath, tileSvg(season, size >= APPLE_SIZE));
+        fs.writeFileSync(svgPath, tileSvg(season, size >= APPLE_SIZE, size));
         const data = shot(svgPath, path.join(WORK, `tile-${id}-${size}.png`), size);
         renders.set(size, data);
     }

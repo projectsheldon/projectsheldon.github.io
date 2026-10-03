@@ -1,4 +1,4 @@
-name: Seasonal OG image
+name: Seasonal brand assets
 
 on:
   schedule:
@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: og-image
+  group: seasonal-brand
   cancel-in-progress: false
 
 jobs:
@@ -28,21 +28,23 @@ jobs:
         with:
           node-version: "22"
 
-      # Copies the season's variant over favicon/og-image.png and rewrites the
-      # ?v= stamp in every page. Both steps are no-ops when nothing changed, so
-      # the commit below is skipped for the ~360 days a year the art stays the same.
-      - name: Point og:image at the current season
-        run: node favicon/og/pick.mjs ${{ inputs.date && format('--date={0}', inputs.date) || '' }}
+      # Swaps favicon/og-image.png, favicon.ico, logo.png and apple-touch-icon.png
+      # to the current season and rewrites the ?v= stamp in every page. Both steps
+      # are no-ops when nothing changed, so the commit below is skipped for the
+      # ~360 days a year the art stays the same.
+      - name: Point the brand assets at the current season
+        run: node favicon/seasonal/pick.mjs ${{ inputs.date && format('--date={0}', inputs.date) || '' }}
 
       - name: Commit the swap
         run: |
           if git diff --quiet; then
-            echo "seasonal art unchanged, nothing to commit"
+            echo "seasonal assets unchanged, nothing to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add favicon/og-image.png "*.html" "*/*.html" "*/*/*.html"
-          git commit -m "og: switch seasonal embed image"
+          git add favicon/og-image.png favicon/favicon.ico favicon/logo.png favicon/apple-touch-icon.png
+          git add "*.html" "*/*.html" "*/*/*.html"
+          git commit -m "brand: switch seasonal assets"
           git pull --rebase --autostash
           git push
