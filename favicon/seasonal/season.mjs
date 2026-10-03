@@ -32,7 +32,7 @@ const WINDOWS = [
     { id: "newyear",   from: [12, 26],  to: [1, 6] },
     { id: "valentine", from: [2, 7],    to: [2, 15] },
     { id: "april",     from: [4, 1],    to: [4, 2] },
-    { id: "halloween", from: [10, 20],  to: [11, 5] },
+    { id: "halloween", from: [10, 1],   to: [11, 5] },
     { id: "christmas", from: [11, 15],  to: [12, 25] }
 ];
 
