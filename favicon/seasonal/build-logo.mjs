@@ -1,119 +1,156 @@
-// Seasonal logo builder for Project Sheldon.
+// Logo/icon builder for Project Sheldon.
 //
-// The brain mark stays exactly as it is - it is the brand and it reads at 256px.
-// What changes with the calendar is the tile it sits on, plus a hue shift on the
-// transparent logo used inside the page.
+// Everything this writes is the bare Sheldon mark on transparency: no tile, no
+// glow, no border, no seasonal badge, no seasonal tint. The mark is the brand
+// and it is the same in December as it is in October.
 //
-//   favicon.ico            multi-size icon (16/32/48), PNG entries
-//   apple-touch-<s>.png    180px tile for the iOS home screen
-//   icon-<s>-512.png       512px tile, high-dpi and future og use
-//   logo-<s>.png           256px transparent mark, tinted toward the season
+// The Discord embed art is the one seasonal thing left, and it lives in
+// build-og.mjs. This builder has no opinion about the calendar, so it writes the
+// same bytes whatever `--only` says.
+//
+//   logo-<s>.png           256px mark for in-page use
+//   favicon-<s>.ico        multi-size icon (16/32/48), PNG entries
+//   apple-touch-<s>.png    180px mark for the iOS home screen
+//   icon-<s>-512.png       512px mark, high-dpi and in-page use
 //
 //   node build-logo.mjs [outDir] [--only=halloween]
-//
-// The default season copies the shipped assets byte for byte rather than
-// re-rendering them, so nothing about the logo changes outside a season.
 
 import fs from "fs";
 import os from "os";
 import path from "path";
+import zlib from "zlib";
 import { spawnSync } from "child_process";
 import { fileURLToPath } from "url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const FAVICON = path.resolve(HERE, "..");
 const positional = process.argv.slice(2).filter(a => !a.startsWith("--"));
 const OUT = path.resolve(positional[0] || path.join(HERE, "variants"));
 const WORK = path.join(HERE, "_icon-work");
 const ONLY = (process.argv.find(a => a.startsWith("--only=")) || "").slice(7).split(",").filter(Boolean);
 
 const SOURCE = path.resolve(HERE, "logo.png");
-const EMOJI_DIR = path.resolve(HERE, "emoji");
 
-// Sizes that ship inside the .ico, and the two standalone tiles.
+// Sizes that ship inside the .ico, and the two standalone renders.
 const ICO_SIZES = [16, 32, 48];
 const APPLE_SIZE = 180;
-const TILE_SIZE = 512;
+const ICON_SIZE = 512;
+const LOGO_SIZE = 256;
 
-const SEASONS = [
-    { id: "default", accent: "#e8b767", soft: "#f7e3ba", glyph: null },
-    { id: "newyear", accent: "#ffd478", soft: "#d8e8ff", glyph: "1f389" },
-    { id: "valentine", accent: "#ff5a76", soft: "#ffd2dc", glyph: "1f49d" },
-    { id: "april", accent: "#9ee84a", soft: "#ff6fd8", glyph: "1f921" },
-    { id: "easter", accent: "#63e0bd", soft: "#ffb2ce", glyph: "1f338" },
-    { id: "halloween", accent: "#ff8a1f", soft: "#b07bff", glyph: "1f383" },
-    { id: "christmas", accent: "#e63c52", soft: "#3fae77", glyph: "1f384" }
-];
+// The variant ids, kept so `--only=halloween` still resolves. Nothing seasonal
+// happens per id any more; the table is just the list of files to write.
+const SEASONS = ["default", "newyear", "valentine", "april", "easter", "halloween", "christmas"];
 
-const n = v => Number(v).toFixed(1);
+// ---------------------------------------------------------------- source bounds
+// The shipped mark sits inside a 256px canvas with transparent padding on all
+// four sides, so drawing it 1:1 leaves the mark filling only ~77% of the icon and
+// it reads as small at 16px. Decoding the alpha channel gives the real bounds, and
+// the icon renders exactly that square instead: the mark touches the top and
+// bottom edges, and keeps its own left/right margin because the mark is taller
+// than it is wide.
+//
+// Just enough PNG to find the edge of the ink - 8-bit, non-interlaced, with or
+// without an alpha channel. Node's zlib does the rest.
+function decodeRgba(file) {
+    const buf = fs.readFileSync(file);
+    if (buf.readUInt32BE(0) !== 0x89504e47) throw new Error("not a PNG: " + file);
 
-function rgb(hex) {
-    const h = hex.replace("#", "");
-    return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+    let width = 0, height = 0, depth = 0, colorType = 0, interlace = 0;
+    const idat = [];
+    for (let o = 8; o < buf.length;) {
+        const len = buf.readUInt32BE(o);
+        const type = buf.toString("ascii", o + 4, o + 8);
+        const body = buf.subarray(o + 8, o + 8 + len);
+        if (type === "IHDR") {
+            width = body.readUInt32BE(0);
+            height = body.readUInt32BE(4);
+            depth = body[8];
+            colorType = body[9];
+            interlace = body[12];
+        } else if (type === "IDAT") idat.push(body);
+        else if (type === "IEND") break;
+        o += 12 + len;
+    }
+
+    if (depth !== 8 || interlace !== 0 || (colorType !== 6 && colorType !== 2))
+        throw new Error(`unsupported PNG (depth ${depth}, color ${colorType}, interlace ${interlace}): ${file}`);
+
+    const channels = colorType === 6 ? 4 : 3;
+    const stride = width * channels;
+    const raw = zlib.inflateSync(Buffer.concat(idat));
+    const px = Buffer.alloc(stride * height);
+
+    // Undo the per-scanline filters. Each row is prefixed with its filter type and
+    // refers to the pixel to the left (Sub/Average/Paeth) or the row above.
+    for (let y = 0; y < height; y++) {
+        const filter = raw[y * (stride + 1)];
+        const line = raw.subarray(y * (stride + 1) + 1, y * (stride + 1) + 1 + stride);
+        const out = px.subarray(y * stride, (y + 1) * stride);
+        const up = y > 0 ? px.subarray((y - 1) * stride, y * stride) : null;
+        for (let i = 0; i < stride; i++) {
+            const a = i >= channels ? out[i - channels] : 0;
+            const b = up ? up[i] : 0;
+            const c = up && i >= channels ? up[i - channels] : 0;
+            let v = line[i];
+            if (filter === 1) v += a;
+            else if (filter === 2) v += b;
+            else if (filter === 3) v += (a + b) >> 1;
+            else if (filter === 4) {
+                const p = a + b - c;
+                const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+                v += (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c);
+            }
+            out[i] = v & 0xff;
+        }
+    }
+
+    return { width, height, channels, px };
 }
 
-// Mixes the mark's greys toward the season hue without flattening the shading:
-// every channel keeps its luminance response, the accent channels get a lift and
-// a small floor so the darks pick up a tint instead of staying neutral black.
-function tintMatrix(accent) {
-    const [r, g, b] = rgb(accent);
-    const k = 0.42;
-    const floor = 0.10;
-    return [
-        (1 - k) + k * r, (1 - k) * 0.55, (1 - k) * 0.55, 0, r * floor,
-        (1 - k) * 0.55, (1 - k) + k * g, (1 - k) * 0.55, 0, g * floor,
-        (1 - k) * 0.55, (1 - k) * 0.55, (1 - k) + k * b, 0, b * floor,
-        0, 0, 0, 1, 0
-    ].map(v => n(v)).join(" ");
+// Tightest box containing every pixel with any ink in it.
+function inkBounds(img) {
+    const { width, height, channels, px } = img;
+    let minX = width, maxX = -1, minY = height, maxY = -1;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = y * width * channels + x * channels;
+            // Without an alpha channel there is nothing to threshold: any pixel counts.
+            if (channels === 4 && px[i + 3] <= 8) continue;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        }
+    }
+    if (maxX < 0) throw new Error("source has no visible pixels: " + SOURCE);
+    return { minX, maxX, minY, maxY };
 }
 
-function emoji(code) {
-    const raw = fs.readFileSync(path.join(EMOJI_DIR, `${code}.svg`), "utf-8");
-    return raw.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+// The ink box widened to a square, so scaling it into a square viewport cannot
+// distort the mark. The extra room lands on the left and right, where the mark
+// already has the most slack.
+function squareCrop(img) {
+    const { minX, maxX, minY, maxY } = inkBounds(img);
+    const side = Math.max(maxX - minX, maxY - minY);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const x = cx - side / 2;
+    const y = cy - side / 2;
+    return { x, y, size: side, ink: { minX, maxX, minY, maxY } };
 }
 
-function svgWrap(size, body) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="${size}" height="${size}">${body}</svg>`;
-}
+const SRC = decodeRgba(SOURCE);
+const CROP = squareCrop(SRC);
 
-// The tile. `detail` adds the seasonal glyph, which only survives above 180px;
-// below that it turns to mush and only makes the icon noisier.
-function tileSvg(season, detail, size) {
-    const { accent, glyph } = season;
+// ---------------------------------------------------------------- svg
+// The image is placed at its own pixel size and the viewBox does the cropping, so
+// there is no resampling step between the source and the render - only the
+// viewport is smaller than the canvas.
+function markSvg(size, crop) {
     const mark = fs.readFileSync(SOURCE).toString("base64");
-    const glyphSize = detail ? 168 : 0;
-
-    return svgWrap(size, `
-  <defs>
-    <linearGradient id="tileBg" x1="0%" y1="0%" x2="30%" y2="100%">
-      <stop offset="0%" stop-color="#191920"/>
-      <stop offset="100%" stop-color="#07070a"/>
-    </linearGradient>
-    <radialGradient id="tileGlow" cx="50%" cy="38%" r="62%">
-      <stop offset="0%" stop-color="${accent}" stop-opacity="0.34"/>
-      <stop offset="58%" stop-color="${accent}" stop-opacity="0.07"/>
-      <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
-    </radialGradient>
-    <clipPath id="squircle"><rect width="512" height="512" rx="118"/></clipPath>
-  </defs>
-  <g clip-path="url(#squircle)">
-    <rect width="512" height="512" fill="url(#tileBg)"/>
-    <rect width="512" height="512" fill="url(#tileGlow)"/>
-    ${glyphSize ? `<g transform="translate(${n(512 - glyphSize - 34)} ${n(512 - glyphSize - 30)}) rotate(-8 ${n(glyphSize / 2)} ${n(glyphSize / 2)})" opacity="0.92"><svg width="${glyphSize}" height="${glyphSize}" viewBox="0 0 36 36">${emoji(glyph)}</svg></g>` : ""}
-  </g>
-  <rect x="1" y="1" width="510" height="510" rx="117" fill="none" stroke="#ffffff" stroke-opacity="0.09"/>
-  <image href="data:image/png;base64,${mark}" x="108" y="108" width="296" height="296"/>`);
-}
-
-function logoSvg(season) {
-    const mark = fs.readFileSync(SOURCE).toString("base64");
-    return svgWrap(256, `
-  <defs>
-    <filter id="tint" color-interpolation-filters="sRGB">
-      <feColorMatrix type="matrix" values="${tintMatrix(season.accent)}"/>
-    </filter>
-  </defs>
-  <image href="data:image/png;base64,${mark}" x="0" y="0" width="256" height="256" filter="url(#tint)"/>`);
+    const c = crop || CROP;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${c.x} ${c.y} ${c.size} ${c.size}">` +
+        `<image href="data:image/png;base64,${mark}" x="0" y="0" width="${SRC.width}" height="${SRC.height}"/>` +
+        `</svg>`;
 }
 
 // ---------------------------------------------------------------- rasterise
@@ -144,6 +181,13 @@ function shot(svgPath, pngPath, size) {
     if (res.error) throw res.error;
     if (!fs.existsSync(pngPath)) throw new Error(`screenshot failed: ${svgPath}`);
     return fs.readFileSync(pngPath);
+}
+
+// Renders one size and returns the PNG bytes.
+function render(name, size) {
+    const svgPath = path.join(WORK, `${name}.svg`);
+    fs.writeFileSync(svgPath, markSvg(size));
+    return shot(svgPath, path.join(WORK, `${name}.png`), size);
 }
 
 // ---------------------------------------------------------------- ico writer
@@ -177,47 +221,32 @@ function buildIco(entries) {
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(WORK, { recursive: true });
 
-const picked = SEASONS.filter(s => !ONLY.length || ONLY.includes(s.id));
+const { minX, maxX, minY, maxY } = CROP.ink;
+console.log(
+    `source ${SRC.width}x${SRC.height}, ink x[${minX}..${maxX}] y[${minY}..${maxY}] ` +
+    `-> crop ${CROP.size}px square at ${CROP.x.toFixed(1)},${CROP.y.toFixed(1)} ` +
+    `(mark was ${Math.round(100 * (maxY - minY) / SRC.height)}% of the canvas tall)\n`
+);
+
+const picked = SEASONS.filter(id => !ONLY.length || ONLY.includes(id));
 const written = [];
 
-for (const season of picked) {
-    const { id } = season;
-
-    if (id === "default") {
-        // out of season the site keeps the exact bytes it shipped before this
-        const logo = path.join(FAVICON, "logo.png");
-        const ico = path.join(FAVICON, "favicon.ico");
-        if (!fs.existsSync(logo) || !fs.existsSync(ico)) throw new Error("shipped logo.png / favicon.ico missing");
-        fs.copyFileSync(logo, path.join(OUT, `logo-${id}.png`));
-        fs.copyFileSync(ico, path.join(OUT, `favicon-${id}.ico`));
-        // iOS has no .ico, so its home screen icon is the shipped mark as-is
-        fs.copyFileSync(logo, path.join(OUT, `apple-touch-${id}.png`));
-        written.push(`logo-${id}.png`, `favicon-${id}.ico`, `apple-touch-${id}.png`);
-        console.log(`${id.padEnd(10)} copied shipped assets unchanged`);
-        continue;
-    }
-
-    // transparent, tinted mark for in-page use
+for (const id of picked) {
     const logoSvgPath = path.join(WORK, `logo-${id}.svg`);
-    fs.writeFileSync(logoSvgPath, logoSvg(season));
-    shot(logoSvgPath, path.join(OUT, `logo-${id}.png`), 256);
+    fs.writeFileSync(logoSvgPath, markSvg(LOGO_SIZE));
+    shot(logoSvgPath, path.join(OUT, `logo-${id}.png`), LOGO_SIZE);
 
-    // tiles, big to small, so the ico can be assembled from real renders
-    const sizes = [...new Set([TILE_SIZE, APPLE_SIZE, ...ICO_SIZES])].sort((a, b) => b - a);
+    // Big to small, so the ico can be assembled from real renders.
+    const sizes = [...new Set([ICON_SIZE, APPLE_SIZE, ...ICO_SIZES])].sort((a, b) => b - a);
     const renders = new Map();
-    for (const size of sizes) {
-        const svgPath = path.join(WORK, `tile-${id}-${size}.svg`);
-        fs.writeFileSync(svgPath, tileSvg(season, size >= APPLE_SIZE, size));
-        const data = shot(svgPath, path.join(WORK, `tile-${id}-${size}.png`), size);
-        renders.set(size, data);
-    }
+    for (const size of sizes) renders.set(size, render(`icon-${id}-${size}`, size));
 
     fs.writeFileSync(path.join(OUT, `favicon-${id}.ico`), buildIco(ICO_SIZES.map(size => ({ size, data: renders.get(size) }))));
     fs.writeFileSync(path.join(OUT, `apple-touch-${id}.png`), renders.get(APPLE_SIZE));
-    fs.writeFileSync(path.join(OUT, `icon-${id}-${TILE_SIZE}.png`), renders.get(TILE_SIZE));
+    fs.writeFileSync(path.join(OUT, `icon-${id}-${ICON_SIZE}.png`), renders.get(ICON_SIZE));
 
-    written.push(`logo-${id}.png`, `favicon-${id}.ico`, `apple-touch-${id}.png`, `icon-${id}-${TILE_SIZE}.png`);
-    console.log(`${id.padEnd(10)} logo.png + favicon.ico [${ICO_SIZES.join("/")}] + apple-touch ${APPLE_SIZE} + tile ${TILE_SIZE}`);
+    written.push(`logo-${id}.png`, `favicon-${id}.ico`, `apple-touch-${id}.png`, `icon-${id}-${ICON_SIZE}.png`);
+    console.log(`${id.padEnd(10)} logo ${LOGO_SIZE} + favicon.ico [${ICO_SIZES.join("/")}] + apple-touch ${APPLE_SIZE} + icon ${ICON_SIZE}`);
 }
 
 console.log(`\n${written.length} files in ${path.relative(process.cwd(), OUT) || OUT}`);

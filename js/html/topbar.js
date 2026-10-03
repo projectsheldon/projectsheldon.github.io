@@ -68,8 +68,8 @@
             '<div class="max-w-[1400px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">' +
                 '<div class="flex items-center gap-6 min-w-0">' +
                     '<a href="/" class="flex items-center shrink-0" aria-label="Sheldon home">' +
-                        '<div class="logo-box w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden">' +
-                            '<img src="/favicon/favicon.ico" alt="Logo" class="w-7 h-7 rounded-lg">' +
+                        '<div class="logo-box w-7 h-7 flex items-center justify-center">' +
+                            '<img src="/favicon/icon.png" alt="Logo" class="w-7 h-7">' +
                         '</div></a>' +
                     '<div class="hidden lg:flex items-center gap-0.5 nav-tabs-desktop">' + drops + '</div>' +
                 '</div>' +

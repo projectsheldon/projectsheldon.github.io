@@ -70,9 +70,11 @@
 
     function faviconHref()
     {
+        // The bare mark, not the .ico - the ico tops out at 48px and this is the
+        // fallback when logo.png is missing, so it wants the 512 render.
         var link = document.querySelector('link[rel="icon"], link[rel="shortcut icon"]');
-        if(link && link.href) return link.href;
-        return location.origin + '/favicon/favicon.ico';
+        if(link && link.href) return link.href.replace(/[^/]*$/, '') + 'icon.png';
+        return location.origin + '/favicon/icon.png';
     }
 
     function brainHref()

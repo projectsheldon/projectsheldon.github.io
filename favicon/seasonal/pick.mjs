@@ -1,14 +1,18 @@
-// Points every published brand asset at the current season, and gives the URLs a
-// new value whenever it changes.
+// Points the Discord embed art at the current season, and gives it a new value
+// whenever it changes.
 //
 // Discord caches an embed image by URL. Serve the right bytes at the same URL and
 // an embed that already exists still shows the old picture, so the query string is
 // stamped with <season>-<iso week>: each flip hands every cache a URL it has never
 // fetched, and the weekly component is a safety net for windows retuned later.
 //
+// The icon and the in-page logo are not in this table. They are the bare mark in
+// every season, so they are committed once and never swapped.
+//
 //   node favicon/seasonal/pick.mjs [--date=YYYY-MM-DD] [--dry]
 //
-// Intended to run from the repo root, daily, from .github/workflows/og-image.yml.
+// Intended to run from the repo root, daily, from
+// .github/workflows/seasonal-brand.yml.
 
 import fs from "fs";
 import path from "path";
@@ -40,11 +44,9 @@ const variants = path.join(HERE, "variants");
 
 // ---------------------------------------------------------------- assets
 // The swap table. `out` is relative to favicon/, `src` to the variants dir.
+// The embed art is the only seasonal file left.
 const ASSETS = [
-    { out: "og-image.png", src: `og-${season}.png` },
-    { out: "favicon.ico", src: `favicon-${season}.ico` },
-    { out: "logo.png", src: `logo-${season}.png` },
-    { out: "apple-touch-icon.png", src: `apple-touch-${season}.png` }
+    { out: "og-image.png", src: `og-${season}.png` }
 ];
 
 let changed = false;
@@ -78,9 +80,11 @@ function htmlFiles(dir) {
     return out;
 }
 
-// Any of these four assets, in a meta tag or a link tag. The group is what gets
-// the ?v=, so the pattern stays one line instead of four.
-const ASSET_REF = /((?:property|name)="(?:og:image|twitter:image)"|rel="(?:icon|apple-touch-icon)")(\s+[^>]*?content| href)="([^"]*?(?:og-image\.png|favicon\.ico|apple-touch-icon\.png|logo\.png))(\?v=[^"]*)?"/g;
+// Only the Discord embed art is stamped. The icon files hold the same bytes in
+// every season, so a stamp on them would hand every cache a new URL for an image
+// it already has - and would keep the site logo pinned to whatever mark shipped
+// the day the query string was last added.
+const ASSET_REF = /((?:property|name)="(?:og:image|twitter:image)")(\s+[^>]*?content)="([^"]*?og-image\.png)(\?v=[^"]*)?"/g;
 
 for (const file of htmlFiles(ROOT)) {
     const before = fs.readFileSync(file, "utf-8");
@@ -89,14 +93,17 @@ for (const file of htmlFiles(ROOT)) {
     // iOS takes its home screen icon from apple-touch-icon only. Derive the href
     // from the page's own favicon link so the relative path is always right.
     if (!/rel="apple-touch-icon"/.test(after)) {
-        const icon = after.match(/<link rel="icon" href="([^"]*favicon\.ico)\?v=[^"]*"/);
+        const icon = after.match(/<link rel="icon"[^>]*href="([^"]*favicon\.ico)(?:\?v=[^"]*)?"/);
         if (icon) {
             const href = icon[1].replace(/favicon\.ico$/, "apple-touch-icon.png");
-            const link = `<link rel="apple-touch-icon" href="${href}?v=${stamp}">`;
+            const link = `<link rel="apple-touch-icon" href="${href}">`;
             const at = after.match(/<link rel="icon"[^>]*>\r?\n/);
             after = at ? after.replace(at[0], at[0] + "    " + link + "\n") : after;
         }
     }
+
+    // Older pages still carry a stamp left over from when the icon was seasonal.
+    after = after.replace(/((?:rel="(?:icon|apple-touch-icon)")[^>]*?href="[^"]*?)(\?v=[^"]*)?"/g, "$1\"");
 
     if (after !== before) {
         changed = true;

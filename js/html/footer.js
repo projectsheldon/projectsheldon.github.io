@@ -16,10 +16,9 @@
                 '<div class="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">' +
                     '<div class="space-y-6 max-w-sm">' +
                         '<div class="text-3xl font-black tracking-tighter text-white flex items-center gap-3">' +
-                            '<div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm">' +
-                                '<div class="logo-box w-8 h-8 rounded-lg flex items-center justify-center">' +
-                                    '<img src="/favicon/favicon.ico" alt="Logo" class="w-8 h-8 rounded-lg">' +
-                                '</div>' +
+                            '<div class="logo-box w-8 h-8 flex items-center justify-center">' +
+                                '<img src="/favicon/icon.png" alt="Logo" class="w-8 h-8">' +
+                            '</div>' +
                             '</div>SHELDON' +
                         '</div>' +
                         '<p class="text-neutral-500 text-sm font-medium leading-relaxed">' +

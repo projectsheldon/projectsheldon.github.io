@@ -20,21 +20,32 @@ Easter is computed, not hardcoded, using the anonymous Gregorian algorithm.
 | Live file              | Source in `variants/`            |
 |------------------------|----------------------------------|
 | `favicon/og-image.png` | `og-<season>.png`                |
-| `favicon/favicon.ico`  | `favicon-<season>.ico`           |
 | `favicon/logo.png`     | `logo-<season>.png`              |
+| `favicon/favicon.ico`  | `favicon-<season>.ico`           |
 | `favicon/apple-touch-icon.png` | `apple-touch-<season>.png` |
+| `favicon/icon.png`     | `icon-<season>-512.png`          |
 
-Out of season `default` copies the shipped assets byte for byte rather than
-re-rendering, so nothing about the logo changes when no holiday is running.
+Only the first two actually vary. The icon files are the bare mark in every
+season, so `build-logo.mjs` renders them once per season to identical bytes and
+`pick.mjs` finds them already equal and skips the copy. The calendar moves the
+Discord embed art and the in-page logo, never the icon.
+
+Out of season `default` copies the shipped logo byte for byte rather than
+re-rendering it, so nothing about the in-page mark changes when no holiday is
+running.
 
 ## Why the URLs have a query string
 
-Discord caches an embed image by URL, and browsers cache favicons the same way.
-Serve the right bytes at the same URL and every existing embed and every installed
-home screen icon keeps what it already has. So `pick.mjs` also stamps
-`?v=<season>-<year>w<week>` on every `og:image`, `twitter:image`, `rel="icon"` and
-`rel="apple-touch-icon"` reference. Each season flip hands every cache a URL it has
-never fetched, and the weekly component is a safety net for windows retuned later.
+Discord caches an embed image by URL. Serve the right bytes at the same URL and
+every existing embed keeps the picture it was created with. So `pick.mjs` also
+stamps `?v=<season>-<year>w<week>` on every `og:image` and `twitter:image`
+reference. Each season flip hands every cache a URL it has never fetched, and the
+weekly component is a safety net for windows retuned later.
+
+The icon links carry no query string at all. The icon is the bare mark and its
+bytes never change, so a stamp would only hand caches a new URL for an image they
+already hold, and the query string would pin the site logo to whatever mark
+shipped on the day it was last added.
 
 The one thing this cannot fix: messages that were already posted keep the embed
 they were created with. Only new posts pick up a change.
@@ -42,11 +53,11 @@ they were created with. Only new posts pick up a change.
 ## Files
 
     build-og.mjs     renders the OG art to SVG, rasterises to 1200x630 PNG
-    build-logo.mjs   renders the icon tiles, assembles the multi-size .ico
+    build-logo.mjs   renders the seasonal logo tint and the bare-mark icons
     season.mjs       date -> variant id, plus the Easter calculation
     pick.mjs         swaps the live files and stamps the HTML
     variants/        the rendered assets
-    emoji/           Twemoji vectors used by both builders
+    emoji/           Twemoji vectors, used by build-og.mjs
     logo.png         the Sheldon mark, the source for everything logo-side
 
 ## Regenerating by hand
@@ -66,13 +77,17 @@ every season at once.
 
 ## Icon construction
 
+The icon is the mark on transparency and nothing else: no tile, no glow, no
+hairline border, no seasonal emblem. Anything behind the mark made the 16 px entry
+illegible and tinted the browser tab, which is not what a favicon is for.
+
 `favicon.ico` is a real multi-size icon: 16, 32 and 48 px, each rendered
 separately rather than downscaled, with PNG-compressed entries, which every browser
 worth supporting reads. `build-logo.mjs` writes the ICO itself (`ICONDIR` plus a
 directory entry per size) so the build needs no image library.
 
-The seasonal glyph in the corner of the tile is only drawn at 180 px and up.
-Below that it turns to mush, so the small sizes get the tile and the mark alone.
+`icon.png` (512) is what the pages render in the topbar and footer, so the mark is
+drawn from a large render rather than upscaled out of the 48 px ICO entry.
 
 ## Adding a season
 
@@ -80,8 +95,8 @@ Below that it turns to mush, so the small sizes get the tile and the mark alone.
    [twemoji](https://github.com/jdecked/twemoji/tree/main/assets/svg) into `emoji/`,
    named `<codepoint>.svg`.
 2. Add an entry to `SEASONS` in **both** builders with the emblem, marks and accent
-   colours. They are two tables on purpose: the OG puts the mark beside the
-   wordmark, the icon puts it in a corner of the tile.
+   colours. They are two tables on purpose: the OG art is its own composition, and
+   `build-logo.mjs` only needs the accent, which tints the in-page mark.
 3. Add the window to `WINDOWS` in `season.mjs`.
 4. Run both builders and check the contact sheet. Narrow windows go above wide
    ones, first match wins.
