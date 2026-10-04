@@ -1263,6 +1263,20 @@ if (endInput) {
     });
 }
 
+// The injected topbar is 64px of content plus its own 1px bottom border, so the
+// hand-written --dash-topbar-h was always a pixel short and the sidebar's top
+// edge sat under that border. Measure it instead and publish it back.
+function syncTopbarHeight() {
+    const nav = document.querySelector('nav.fixed.top-0');
+    if (!nav) return;
+    const h = Math.round(nav.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--dash-topbar-h', h + 'px');
+}
+
+syncTopbarHeight();
+window.addEventListener('load', syncTopbarHeight);
+window.addEventListener('resize', syncTopbarHeight);
+
 // addEventListener, not `window.onload =`: js/html/render/canvas.js registers its
 // own onload handler and would be silently overwritten depending on script order.
 window.addEventListener('load', () => {

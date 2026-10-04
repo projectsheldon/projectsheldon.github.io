@@ -93,7 +93,11 @@
             pointer-events: none;
         }
 
-        .hidden {
+        /* Scoped to the reader on purpose. A global `.hidden { display: none !important }`
+           outranks the shared topbar's own `hidden lg:flex` / `hidden lg:inline`
+           utilities (both plain `display`), so every desktop nav link and the
+           language label silently vanished and left a void in the topbar. */
+        .dash-reader .hidden {
             display: none !important;
         }
 
@@ -122,31 +126,6 @@
             -webkit-backdrop-filter: blur(16px) saturate(1.2);
             border-right: 1px solid var(--dash-line);
             transition: transform .28s var(--dash-ease), width .25s var(--dash-ease), padding .25s var(--dash-ease);
-        }
-
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0 8px 16px;
-            min-width: 0;
-        }
-
-        .sidebar-brand img {
-            width: 32px;
-            height: 32px;
-            border-radius: var(--dash-r-sm);
-            flex: none;
-        }
-
-        .sidebar-brand-text {
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: -.01em;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         /* Command palette, parked in the sidebar exactly like /admin: icon, label
@@ -238,11 +217,13 @@
         }
 
         /* Footer carries the collapse control at the sidebar floor, same shape as
-           /admin: hairline above it, inset 4px, and dead centre once the rail
-           narrows (its inner box is 46.4px for a 38px button). */
+           /admin: hairline above it, and it must not shift when the rail narrows.
+           1px of inline padding puts the button at x=13 in both states, so
+           auto-margins in the rail land on the exact same spot; padding-bottom 0
+           leaves the gap below it equal to the sidebar's own top padding. */
         .sidebar-footer {
             margin-top: auto;
-            padding: 12px 4px 4px;
+            padding: 12px 1px 0;
             border-top: 1px solid var(--dash-line);
         }
 
@@ -361,7 +342,7 @@
         /* ---------- main column ---------- */
         .dash-main {
             margin-left: var(--dash-sidebar-w);
-            padding: 84px 28px 48px;
+            padding: calc(var(--dash-topbar-h) + 20px) 28px 48px;
             transition: margin-left .25s var(--dash-ease);
         }
 
@@ -545,6 +526,7 @@
         .dash-stats {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: start;
             gap: 16px;
         }
 
@@ -601,12 +583,12 @@
         }
 
         /* Two facts in one card, split by the same hairline the panels use
-           (mirrors /admin's .now-strip). align-content centres the pair as a
-           block, so both labels share a baseline even when one cell is taller. */
+           (mirrors /admin's .now-strip). `align-items: start` on the row above
+           keeps this card at its own height instead of stretching it to match
+           the sparkline card. */
         .dash-stat--split {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            align-content: center;
             padding: 0;
         }
 
@@ -653,17 +635,6 @@
                 linear-gradient(180deg, rgba(199, 177, 143, .09) 0%, rgba(199, 177, 143, 0) 70%),
                 var(--dash-panel);
             padding: 1.15rem 1.3rem 1.3rem;
-        }
-
-        /* Gold rail on the leading edge, matching the sidebar's active marker. */
-        .usage-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: var(--dash-gold);
         }
 
         .usage-card-top {
@@ -1446,17 +1417,10 @@
                 padding-right: .55rem;
             }
 
-            .dash-sidebar.collapsed .sidebar-brand-text,
             .dash-sidebar.collapsed .sidebar-search,
             .dash-sidebar.collapsed .sidebar-group-label,
             .dash-sidebar.collapsed .nav-label {
                 display: none !important;
-            }
-
-            .dash-sidebar.collapsed .sidebar-brand {
-                justify-content: center;
-                padding-left: 0;
-                padding-right: 0;
             }
 
             .dash-sidebar.collapsed .nav-tab {
@@ -1475,9 +1439,9 @@
             }
 
             /* auto margins split the rail's leftover half pixel, so the gaps match */
-            /* auto margins split the rail's leftover half pixel so the gaps match;
-               the footer's negative right margin hands back the pixel the sidebar's
-               1px border takes, the same trick the nav uses to reach the edge. */
+            /* auto margins land the button on the same x the expanded sidebar uses; the
+               negative right margin hands back the pixel the sidebar's 1px border
+               takes, the same trick the nav uses to reach the edge. */
             .dash-sidebar.collapsed .sidebar-footer {
                 margin-right: -1px;
             }
@@ -1514,7 +1478,7 @@
 
             .dash-main {
                 margin-left: 0;
-                padding: 84px 16px 40px;
+                padding: calc(var(--dash-topbar-h) + 20px) 16px 40px;
             }
 
             .panel--fullscreen {
@@ -1563,10 +1527,6 @@
     <canvas id="particle-canvas"></canvas>
 
     <aside id="dash-sidebar" class="dash-sidebar" aria-label="Dashboard sections">
-        <div class="sidebar-brand">
-            <img src="/favicon/favicon.ico" alt="Sheldon">
-            <span class="sidebar-brand-text">SHELDON</span>
-        </div>
         <button type="button" id="dash-cmdp-btn" class="sidebar-search" title="Search actions and license keys (Ctrl+K)" aria-label="Search actions and license keys">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <span class="sidebar-search-label">Search</span>
