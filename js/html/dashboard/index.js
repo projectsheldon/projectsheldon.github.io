@@ -2,13 +2,16 @@
 import Api from "../../util/backend.js";
 import { DiscordAuth } from "../../discord/auth.js";
 
+const COLLAPSE_KEY = 'sheldon.sidebar.collapsed';
+const MOBILE_QUERY = '(max-width: 900px)';
+
 let state = {
     data: null,
     filter: 'all',
     range: 14,
     end: '',
     expanded: null,
-    heatMode: 'daily'
+    view: 'daily'
 };
 
 function escapeHtml(s) {
@@ -39,6 +42,16 @@ function formatDuration(totalSeconds) {
     return s + ' seconds';
 }
 
+// Hours with one decimal â€“ matches the topbar balance precision style and keeps
+// sub-hour days from rendering as an empty bar.
+function formatHours(seconds) {
+    const s = Math.max(0, Number(seconds) || 0);
+    if (s < 60) return Math.round(s) + 's';
+    const h = s / 3600;
+    if (h < 1) return Math.round(s / 60) + 'm';
+    return (h >= 10 ? h.toFixed(0) : h.toFixed(1)) + 'h';
+}
+
 function formatDate(ms) {
     if (!ms || ms <= 0) return 'Unknown';
     return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -60,7 +73,8 @@ function athensDateStrClient(ts) {
 }
 
 function licenseStatus(lic) {
-    if (lic.banned || lic.disabled) return 'disabled';
+    if (lic.banned) return 'banned';
+    if (lic.disabled) return 'disabled';
     if (lic.expires_at !== -1 && Date.now() > lic.expires_at) return 'expired';
     return 'active';
 }
@@ -72,6 +86,7 @@ function isActiveLicense(lic) {
 // Profile / stats
 
 function setAvatar(imgEl, fallbackEl, avatarUrl, name) {
+    if (!imgEl || !fallbackEl) return;
     if (avatarUrl) {
         imgEl.src = avatarUrl;
         imgEl.style.display = 'block';
@@ -85,7 +100,7 @@ function setAvatar(imgEl, fallbackEl, avatarUrl, name) {
 
 function sparklineSvg(values, w, h) {
     w = w || 96;
-    h = h || 28;
+    h = h || 26;
     const max = Math.max(...values, 1);
     const pts = values.map((v, i) => {
         const x = values.length > 1 ? (i / (values.length - 1)) * (w - 2) + 1 : 1;
@@ -114,70 +129,39 @@ function last7vsPrev7(daily) {
 
 function deltaHtml(delta) {
     if (!delta) return '';
-    if (delta.dir === 'flat') return '<span class="dash-delta flat">– no change</span>';
-    const arrow = delta.dir === 'up' ? '▲' : '▼';
+    if (delta.dir === 'flat') return '<span class="dash-delta flat">â€“ no change</span>';
+    const arrow = delta.dir === 'up' ? 'â–²' : 'â–¼';
     return `<span class="dash-delta ${delta.dir}">${arrow} ${Math.abs(delta.pct)}% last 7d</span>`;
 }
 
-function renderProfile() {
+function renderStats() {
     const { user, banned, memberSince, usage, licenses } = state.data;
-    const name = user.globalName || user.username || 'Account';
-
-    setAvatar(document.getElementById('dash-avatar'), document.getElementById('dash-avatar-fallback'), user.avatar, name);
-    document.getElementById('dash-username').textContent = name;
-    document.getElementById('dash-user-sub').textContent = '@' + (user.username || 'unknown');
-
-    const balanceEl = document.getElementById('dash-side-balance');
-    if (balanceEl) balanceEl.textContent = '$' + Number(user.balance || 0).toFixed(2);
-
-    const dot = document.getElementById('dash-status-dot');
-    if (dot) {
-        dot.className = 'dash-status-dot ' + (banned ? 'red' : 'green');
-        dot.title = banned ? 'Banned' : 'Active';
-    }
-
-    // Centered profile header (mirrors sidebar identity, same data source).
-    const pAvatar = document.getElementById('dash-profile-avatar');
-    const pFallback = document.getElementById('dash-profile-avatar-fallback');
-    if (pAvatar && pFallback) setAvatar(pAvatar, pFallback, user.avatar, name);
-    const pName = document.getElementById('dash-profile-name');
-    if (pName) pName.textContent = name;
-    const pSub = document.getElementById('dash-profile-sub');
-    if (pSub) pSub.textContent = '@' + (user.username || 'unknown') + ' · Member since ' + formatDate(memberSince);
-    const pStatus = document.getElementById('dash-profile-status');
-    if (pStatus) {
-        pStatus.textContent = banned ? 'Banned' : 'Active';
-        pStatus.className = 'dash-pill ' + (banned ? 'red' : 'green');
-    }
-    const pBal = document.getElementById('dash-profile-balance');
-    if (pBal) pBal.textContent = '$' + Number(user.balance || 0).toFixed(2) + ' balance';
-
     const daily = (state.data.activity && state.data.activity.daily) || [];
     const dailySeconds = daily.map(d => Number(d.seconds) || 0);
-
     const activeCount = (licenses || []).filter(isActiveLicense).length;
-    const planLabel = banned ? 'Banned' : (activeCount > 0 ? 'Active plan' : 'No plan');
+    const balance = Number(user.balance || 0).toFixed(1);
+
+    const cards = [
+        { label: 'Status', value: banned ? 'Banned' : 'Active' },
+        { label: 'Current plan', value: banned ? 'Banned' : (activeCount > 0 ? 'Active plan' : 'No plan') },
+        { label: 'Total usage', value: formatDuration(usage.totalSeconds), cls: 'gold', spark: dailySeconds, delta: last7vsPrev7(daily) },
+        { label: 'Balance', value: balance, cls: 'gold', sub: 'wallet credits' },
+        { label: 'Member since', value: formatDate(memberSince), compact: true }
+    ];
 
     const stats = document.getElementById('dash-stats');
     stats.innerHTML = '';
-    const cards = [
-        { label: 'Status', value: banned ? 'Banned' : 'Active', cls: banned ? '' : '' },
-        { label: 'Current plan', value: planLabel },
-        { label: 'Total usage', value: formatDuration(usage.totalSeconds), cls: 'gold', spark: dailySeconds, delta: last7vsPrev7(daily) },
-        { label: 'Balance', value: '$' + Number(user.balance || 0).toFixed(2), sub: 'wallet credits', cls: 'gold' },
-        { label: 'Member since', value: formatDate(memberSince) }
-    ];
     cards.forEach(card => {
         const el = document.createElement('div');
         el.className = 'dash-stat';
 
-        const label = document.createElement('div');
+        const label = document.createElement('span');
         label.className = 'dash-stat-label';
         label.textContent = card.label;
 
         const value = document.createElement('div');
-        value.className = 'dash-stat-value' + (card.cls ? ' ' + card.cls : '');
-        value.appendChild(document.createTextNode(card.value));
+        value.className = 'dash-stat-value' + (card.cls ? ' ' + card.cls : '') + (card.compact ? ' compact' : '');
+        value.textContent = card.value;
 
         el.appendChild(label);
         el.appendChild(value);
@@ -185,7 +169,7 @@ function renderProfile() {
         if (card.spark && card.spark.length) el.insertAdjacentHTML('beforeend', sparklineSvg(card.spark));
         if (card.delta) el.insertAdjacentHTML('beforeend', deltaHtml(card.delta));
         if (card.sub) {
-            const sub = document.createElement('div');
+            const sub = document.createElement('span');
             sub.className = 'dash-stat-sub';
             sub.textContent = card.sub;
             el.appendChild(sub);
@@ -193,24 +177,23 @@ function renderProfile() {
 
         stats.appendChild(el);
     });
+}
 
-    const actions = document.getElementById('dash-quick-actions');
-    if (actions) actions.style.display = 'flex';
+function renderSidebarUser() {
+    const { user, banned } = state.data;
+    const name = user.globalName || user.username || 'Account';
 
-    const copyBtn = document.getElementById('dash-action-copykey');
-    if (copyBtn && licenses.length > 0) {
-        const newest = licenses
-            .filter(isActiveLicense)
-            .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))[0] || licenses[0];
-        copyBtn.disabled = false;
-        copyBtn.style.opacity = '';
-        copyBtn.style.cursor = '';
-        copyBtn.title = 'Copy key: ' + newest.key;
-        copyBtn.onclick = () => {
-            copyKey(copyBtn, newest.key);
-            if (window.NotifySuccess) window.NotifySuccess('License key copied');
-        };
-    }
+    setAvatar(
+        document.getElementById('dash-side-avatar'),
+        document.getElementById('dash-side-avatar-fallback'),
+        user.avatar,
+        name
+    );
+    document.getElementById('dash-side-name').textContent = name;
+    document.getElementById('dash-side-handle').textContent = banned
+        ? 'Banned'
+        : '@' + (user.username || 'unknown');
+    document.getElementById('dash-side-balance').textContent = Number(user.balance || 0).toFixed(1);
 }
 
 // Weekly usage progress
@@ -235,45 +218,113 @@ function renderUsageProgress() {
     document.getElementById('dash-usage-ratio').textContent = hours + ' / ' + thresholdHours + ' hours';
     document.getElementById('dash-usage-fill').style.width = pct + '%';
     document.getElementById('dash-usage-caption').textContent = rewarded
-        ? 'Free key claimed. Counter reset – use Sheldon another ' + thresholdHours + ' hours this week for the next.'
+        ? 'Free key claimed. Counter reset â€“ use Sheldon another ' + thresholdHours + ' hours this week for the next.'
         : (remaining > 0
             ? 'Use Sheldon ' + remaining + ' more hour' + (remaining === 1 ? '' : 's') + ' this week to earn a free license without watching an ad.'
             : 'Threshold met! Your next ad grants a free license.');
-    card.style.display = 'block';
+    card.style.display = '';
 }
 
-// Activity chart
+// Activity
 
-function chartHours(daily) {
-    // Map API daily entries (seconds) to whole hours for the chart.
-    return (daily || []).map(d => ({
-        ts: d.ts,
-        date: d.date,
+// One bucket per chart column, driven by the Daily / Weekly / Cumulative tabs.
+function activityBuckets() {
+    const daily = (state.data.activity && state.data.activity.daily) || [];
+
+    if (state.view === 'weekly') {
+        const out = [];
+        for (let i = 0; i < daily.length; i += 7) {
+            const chunk = daily.slice(i, i + 7);
+            out.push({
+                seconds: chunk.reduce((a, d) => a + (Number(d.seconds) || 0), 0),
+                sessions: chunk.reduce((a, d) => a + (Number(d.sessions) || 0), 0),
+                label: (chunk[0] && chunk[0].label) || ('Week ' + (out.length + 1)),
+                range: chunk.length > 1 ? chunk[0].label + ' â€“ ' + chunk[chunk.length - 1].label : ''
+            });
+        }
+        return out;
+    }
+
+    if (state.view === 'cumulative') {
+        let run = 0;
+        return daily.map(d => {
+            run += Number(d.seconds) || 0;
+            return { seconds: run, sessions: 0, label: d.label };
+        });
+    }
+
+    return daily.map(d => ({
+        seconds: Number(d.seconds) || 0,
+        sessions: Number(d.sessions) || 0,
         label: d.label,
-        count: Math.round((Number(d.seconds) || 0) / 3600),
-        sessions: d.sessions || 0
+        ts: d.ts,
+        date: d.date
     }));
 }
 
-function barChartHtml(daily, getSub, opts) {
-    const max = Math.max(...daily.map(d => d.count), 1);
-    const min = Math.min(...daily.map(d => d.count));
-    const hasData = daily.some(d => d.count > 0);
-    const last = daily.length - 1;
-    const bars = daily.map((d, i) => {
-        const h = d.count > 0 ? Math.max((d.count / max) * 100, 4) : 0;
-        const cls = d.count > 0 ? 'bar' : 'bar bar-empty';
-        const today = d.count > 0 && i === last && opts?.highlightLast !== false ? ' bar-today' : '';
-        const sub = typeof getSub === 'function' ? getSub(d) : '';
+// KPIs stay day-based in every view so the numbers do not shift under the tabs.
+function renderActivityKpis() {
+    const el = document.getElementById('dash-activity-kpis');
+    if (!el) return;
+    const daily = (state.data.activity && state.data.activity.daily) || [];
+
+    if (!daily.length) {
+        el.innerHTML = '';
+        return;
+    }
+
+    const total = daily.reduce((a, d) => a + (Number(d.seconds) || 0), 0);
+    let peakSeconds = 0;
+    let peakLabel = '';
+    let active = 0;
+    daily.forEach(d => {
+        const s = Number(d.seconds) || 0;
+        if (s > 0) active++;
+        if (s > peakSeconds) {
+            peakSeconds = s;
+            peakLabel = d.label;
+        }
+    });
+
+    const avg = daily.length ? total / daily.length : 0;
+    const cells = [
+        { label: 'Total', value: formatHours(total), sub: daily.length + (daily.length === 1 ? ' day' : ' days'), accent: true },
+        { label: 'Peak day', value: peakSeconds > 0 ? formatHours(peakSeconds) : 'â€“', sub: peakLabel || 'no activity' },
+        { label: 'Avg / day', value: total > 0 ? formatHours(avg) : '0s', sub: 'across range' },
+        { label: 'Active days', value: active + ' / ' + daily.length, sub: total > 0 ? Math.round((active / daily.length) * 100) + '% of range' : 'â€“' }
+    ];
+
+    el.innerHTML = cells.map(c => `
+        <div class="kpi">
+            <span class="kpi-label">${escapeHtml(c.label)}</span>
+            <span class="kpi-value${c.accent ? ' accent' : ''}">${escapeHtml(c.value)}</span>
+            <span class="kpi-sub">${escapeHtml(c.sub)}</span>
+        </div>
+    `).join('');
+}
+
+function barChartHtml(buckets, opts) {
+    opts = opts || {};
+    const max = Math.max(...buckets.map(b => b.seconds), 1);
+    const hasData = buckets.some(b => b.seconds > 0);
+    const last = buckets.length - 1;
+
+    const bars = buckets.map((b, i) => {
+        const hours = (Number(b.seconds) || 0) / 3600;
+        const h = b.seconds > 0 ? Math.max((hours / (max / 3600)) * 100, 4) : 0;
+        const cls = b.seconds > 0 ? 'bar' : 'bar bar-empty';
+        const today = b.seconds > 0 && i === last && opts.highlightLast !== false ? ' bar-today' : '';
+        const sub = b.sessions > 0 ? b.sessions + ' session' + (b.sessions === 1 ? '' : 's') : '';
         return `
             <div class="bar-col">
-                <div class="${cls}${today}" style="height:0" data-h="${h.toFixed(1)}" data-label="${escapeHtml(d.label)}" data-count="${escapeHtml(d.count + 'h')}"${d.ts ? ` data-ts="${d.ts}"` : ''}${d.date ? ` data-date="${escapeHtml(d.date)}"` : ''}${sub ? ` data-sub="${escapeHtml(sub)}"` : ''}></div>
+                <div class="${cls}${today}" style="height:0" data-h="${h.toFixed(1)}" data-label="${escapeHtml(b.label)}" data-count="${escapeHtml(formatHours(b.seconds))}"${sub ? ` data-sub="${escapeHtml(sub)}"` : ''}${b.ts ? ` data-ts="${b.ts}"` : ''}${b.date ? ` data-date="${escapeHtml(b.date)}"` : ''}></div>
             </div>
         `;
     }).join('');
+
     return `
         <div class="stats-chart">
-            ${hasData ? `<span class="chart-max">Peak: ${max}h · Lowest: ${min}h</span>` : ''}
+            ${hasData ? `<span class="chart-max">Peak: ${escapeHtml(formatHours(max))} Â· Lowest: ${escapeHtml(formatHours(Math.min(...buckets.map(b => Number(b.seconds) || 0))))}</span>` : ''}
             <span class="chart-gridline" style="top:25%"></span>
             <span class="chart-gridline" style="top:50%"></span>
             <span class="chart-gridline" style="top:75%"></span>
@@ -359,25 +410,28 @@ function hourlyItems(hourly) {
     const ordered = hourly.slice(1).concat(hourly[0]);
     return ordered.map((n, idx) => ({
         label: fmtHour((idx + 1) % 24),
-        count: Math.round((Number(n.seconds) || 0) / 3600)
+        seconds: Number(n.seconds) || 0,
+        sessions: 0
     }));
 }
 
 function dateRangeText(daily) {
-    if (!Array.isArray(daily) || daily.length === 0 || !daily.some(d => d.count > 0)) return 'No data yet.';
+    if (!Array.isArray(daily) || daily.length === 0 || !daily.some(d => (Number(d.seconds) || 0) > 0)) return 'No data yet.';
     const first = daily[0].label;
     const last = daily[daily.length - 1].label;
-    return first === last ? first : `${first} – ${last}`;
+    return first === last ? first : `${first} â€“ ${last}`;
 }
 
 // X-axis labels, thinned on long ranges.
-function chartLabelsHtml(daily) {
-    const step = Math.max(1, Math.ceil(daily.length / 7));
-    const items = daily.map((d, i) => {
-        const show = i % step === 0 || i === daily.length - 1;
-        return `<span>${show ? escapeHtml(d.label) : ''}</span>`;
+function chartAxisHtml(buckets) {
+    const step = Math.max(1, Math.ceil(buckets.length / 8));
+    const cells = buckets.map((b, i) => {
+        const isLast = i === buckets.length - 1;
+        const show = i % step === 0 || isLast;
+        const cls = i === 0 ? ' class="is-start"' : (isLast ? ' class="is-end"' : '');
+        return `<span${cls}>${show ? escapeHtml(b.label) : ''}</span>`;
     }).join('');
-    return `<div class="chart-xlabels">${items}</div>`;
+    return `<div class="chart-axis">${cells}</div>`;
 }
 
 function skeletonChartHtml() {
@@ -390,9 +444,9 @@ function skeletonChartHtml() {
 function emptyStateHtml(text) {
     return `
         <div class="chart-empty">
-            <div class="flex flex-col items-center gap-2 text-center px-6">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-600"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                <p class="text-xs text-neutral-500">${escapeHtml(text)}</p>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;padding:0 1.5rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <p class="empty" style="padding:0;">${escapeHtml(text)}</p>
             </div>
         </div>
     `;
@@ -401,11 +455,12 @@ function emptyStateHtml(text) {
 function hourlyWrapHtml(label, items) {
     return `
         <div class="hourly-wrap">
-            <div class="flex items-center justify-between gap-3 pb-2 mb-1 border-b border-white/10">
-                <span class="text-xs text-neutral-400 font-mono">${escapeHtml(label)} &mdash; hourly</span>
-                <button class="hourly-back flex items-center gap-1 text-[11px] text-neutral-400 hover:text-white transition-colors">← back</button>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding-bottom:.6rem;margin-bottom:.5rem;border-bottom:1px solid var(--dash-line);">
+                <span class="panel-meta">${escapeHtml(label)} &mdash; hourly</span>
+                <button class="hourly-back">â† back</button>
             </div>
-            ${barChartHtml(items, null, { highlightLast: false })}
+            ${barChartHtml(items, { highlightLast: false })}
+            ${chartAxisHtml(items)}
         </div>
     `;
 }
@@ -444,100 +499,42 @@ function collapseHourly() {
 }
 
 function renderChart(el) {
-    renderHeatmap();
-    const daily = chartHours(state.data.activity.daily);
-    if (daily.length === 0) {
+    if (!el) return;
+    renderActivityKpis();
+
+    const daily = (state.data.activity && state.data.activity.daily) || [];
+    const buckets = activityBuckets();
+
+    if (buckets.length === 0) {
         el.innerHTML = emptyStateHtml('No activity yet.');
         document.getElementById('dash-activity-date-range').textContent = 'No data yet.';
         return;
     }
-    el.innerHTML = barChartHtml(daily, d => d.count > 0
-        ? `${d.count}h · ${d.sessions} session${d.sessions === 1 ? '' : 's'}`
-        : '');
-    el.insertAdjacentHTML('beforeend', chartLabelsHtml(daily));
-    bindChartTooltips(el, bar => expandHourly(Number(bar.dataset.ts), bar));
+
+    el.innerHTML = barChartHtml(buckets);
+    el.insertAdjacentHTML('beforeend', chartAxisHtml(buckets));
+    // Hourly drill-down only makes sense on the daily view.
+    bindChartTooltips(el, state.view === 'daily' ? bar => expandHourly(Number(bar.dataset.ts), bar) : null);
     animateBars(el);
 
     const rangeText = dateRangeText(daily);
-    const totalSessions = daily.reduce((a, d) => a + (d.sessions || 0), 0);
+    const totalSessions = daily.reduce((a, d) => a + (Number(d.sessions) || 0), 0);
     document.getElementById('dash-activity-date-range').textContent =
-        rangeText === 'No data yet.' ? rangeText : `${rangeText} · ${totalSessions} session${totalSessions === 1 ? '' : 's'} · EU/Athens`;
-}
+        rangeText === 'No data yet.'
+            ? rangeText
+            : `${rangeText} Â· ${totalSessions} session${totalSessions === 1 ? '' : 's'} Â· EU/Athens`;
 
-// Activity heatmap (Daily / Weekly / Cumulative) – same daily payload, no new endpoint.
-function heatLevel(v, max) {
-    if (!(v > 0) || !(max > 0)) return '';
-    const r = v / max;
-    if (r <= 0.25) return 'l1';
-    if (r <= 0.5) return 'l2';
-    if (r <= 0.8) return 'l3';
-    return 'l4';
-}
-
-function heatmapValues() {
-    const daily = (state.data && state.data.activity && state.data.activity.daily) || [];
-    const secs = daily.map(d => Number(d.seconds) || 0);
-    if (state.heatMode === 'weekly') {
-        const weeks = [];
-        for (let i = 0; i < secs.length; i += 7) {
-            weeks.push({
-                seconds: secs.slice(i, i + 7).reduce((a, b) => a + b, 0),
-                label: (daily[i] && daily[i].label ? daily[i].label + ' week' : 'Week ' + (weeks.length + 1)),
-                sessions: daily.slice(i, i + 7).reduce((a, d) => a + (Number(d.sessions) || 0), 0)
-            });
-        }
-        return weeks;
-    }
-    if (state.heatMode === 'cumulative') {
-        let run = 0;
-        return secs.map((s, i) => {
-            run += s;
-            return { seconds: run, label: (daily[i] && daily[i].label) || ('Day ' + (i + 1)), sessions: Number((daily[i] && daily[i].sessions) || 0) };
-        });
-    }
-    return secs.map((s, i) => ({ seconds: s, label: (daily[i] && daily[i].label) || ('Day ' + (i + 1)), sessions: Number((daily[i] && daily[i].sessions) || 0) }));
-}
-
-function renderHeatmap() {
-    const el = document.getElementById('dash-heatmap');
-    if (!el || !state.data) return;
-    const vals = heatmapValues();
-    if (!vals.length || !vals.some(v => v.seconds > 0)) {
-        el.innerHTML = '';
-        const p = document.createElement('p');
-        p.className = 'text-neutral-500 text-xs py-2';
-        p.textContent = 'No activity yet – your heatmap will appear here.';
-        el.appendChild(p);
-        return;
-    }
-    const max = Math.max(...vals.map(v => v.seconds), 1);
-    el.innerHTML = '';
-    // 7-row GitHub-style columns; weekly/cumulative collapse to one row per bucket.
-    const perCol = state.heatMode === 'daily' ? 7 : 1;
-    for (let i = 0; i < vals.length; i += perCol) {
-        const col = document.createElement('div');
-        col.className = 'dash-heat-col';
-        vals.slice(i, i + perCol).forEach(v => {
-            const c = document.createElement('span');
-            c.className = 'dash-heat-cell ' + heatLevel(v.seconds, max);
-            const hrs = (v.seconds / 3600);
-            const hrsText = hrs < 1 ? Math.round(v.seconds / 60) + 'm' : hrs.toFixed(hrs < 10 ? 1 : 0) + 'h';
-            c.title = v.label + ' · ' + hrsText + (v.sessions ? ' · ' + v.sessions + ' sessions' : '');
-            col.appendChild(c);
-        });
-        el.appendChild(col);
-    }
-    document.querySelectorAll('.dash-heat-btn').forEach(b => {
-        const on = b.dataset.mode === state.heatMode;
-        b.classList.toggle('active', on);
-        b.setAttribute('aria-selected', on ? 'true' : 'false');
+    document.querySelectorAll('.stats-view-tab').forEach(btn => {
+        const on = btn.dataset.mode === state.view;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
     });
 }
 
 // Licenses
 
-const copyIcon = `<svg class="copy-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>`;
-const checkIcon = `<svg class="check-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+const copyIcon = `<svg class="copy-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>`;
+const checkIcon = `<svg class="check-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>`;
 
 function copyKey(btn, val) {
     const done = () => {
@@ -582,33 +579,31 @@ function renderLicenses() {
     });
 
     const summary = document.getElementById('dash-license-summary');
+    const count = document.getElementById('dash-license-count');
+    const active = licenses.filter(isActiveLicense).length;
     if (summary) {
-        const active = licenses.filter(isActiveLicense).length;
-        const inactive = licenses.length - active;
         summary.textContent = licenses.length === 0
             ? 'No licenses yet.'
-            : `${licenses.length} key${licenses.length === 1 ? '' : 's'} · ${active} active · ${inactive} inactive`;
+            : `${active} active Â· ${licenses.length - active} inactive Â· ${filtered.length} shown`;
     }
+    if (count) count.textContent = filtered.length ? String(filtered.length) : '';
 
     list.innerHTML = '';
     if (filtered.length === 0) {
         const p = document.createElement('p');
-        p.className = 'text-neutral-500 text-sm py-6 text-center';
+        p.className = 'empty';
         p.textContent = licenses.length === 0 ? 'No licenses found.' : 'No licenses match this filter.';
         list.appendChild(p);
         return;
     }
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'admin-table-wrapper';
-
     const table = document.createElement('table');
-    table.className = 'admin-table';
+    table.className = 'dash-table';
     table.setAttribute('data-resizable', '');
-    table.style.minWidth = '900px';
+    table.style.minWidth = '760px';
 
     const colgroup = document.createElement('colgroup');
-    ['26%', '14%', '11%', '15%', '14%', '15%', '5%'].forEach(w => {
+    ['27%', '13%', '10%', '14%', '14%', '15%', '7%'].forEach(w => {
         const col = document.createElement('col');
         col.style.width = w;
         colgroup.appendChild(col);
@@ -617,24 +612,19 @@ function renderLicenses() {
 
     const thead = document.createElement('thead');
     const headRow = document.createElement('tr');
-    const headCells = [
-        { label: 'Key', cls: '' },
-        { label: 'Product', cls: '' },
-        { label: 'Status', cls: '' },
+    [
+        { label: 'Key' },
+        { label: 'Product' },
+        { label: 'Status' },
         { label: 'Expires', cls: 'td-num' },
         { label: 'Created', cls: 'td-num' },
         { label: 'Last activity', cls: 'td-num' },
-        { label: '', cls: '' }
-    ];
-    headCells.forEach(cell => {
+        { label: '' }
+    ].forEach(cell => {
         const th = document.createElement('th');
+        th.className = 'is-sticky';
         th.textContent = cell.label;
         if (cell.cls) th.classList.add(cell.cls);
-        if (cell.label) {
-            const resizer = document.createElement('span');
-            resizer.className = 'col-resizer';
-            th.appendChild(resizer);
-        }
         headRow.appendChild(th);
     });
     thead.appendChild(headRow);
@@ -652,14 +642,8 @@ function renderLicenses() {
         const tdProd = document.createElement('td');
         tdProd.textContent = lic.product || 'License';
 
-        let status;
-        if (lic.banned) status = 'banned';
-        else if (lic.disabled) status = 'disabled';
-        else if (lic.expires_at !== -1 && Date.now() > lic.expires_at) status = 'expired';
-        else status = 'active';
-
         const tdStatus = document.createElement('td');
-        tdStatus.innerHTML = licenseStatusBadge(status);
+        tdStatus.innerHTML = licenseStatusBadge(licenseStatus(lic));
 
         const tdExp = document.createElement('td');
         tdExp.className = 'td-num';
@@ -676,24 +660,20 @@ function renderLicenses() {
         const tdCopy = document.createElement('td');
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copy-btn';
-        copyBtn.title = 'Copy Key';
+        copyBtn.title = 'Copy key';
         copyBtn.dataset.key = lic.key;
         copyBtn.innerHTML = copyIcon + checkIcon;
-        copyBtn.addEventListener('click', function() { copyKey(this, this.dataset.key); });
+        copyBtn.addEventListener('click', function () {
+            copyKey(this, this.dataset.key);
+            if (window.NotifySuccess) window.NotifySuccess('License key copied');
+        });
         tdCopy.appendChild(copyBtn);
 
-        tr.appendChild(tdKey);
-        tr.appendChild(tdProd);
-        tr.appendChild(tdStatus);
-        tr.appendChild(tdExp);
-        tr.appendChild(tdCr);
-        tr.appendChild(tdLa);
-        tr.appendChild(tdCopy);
+        tr.append(tdKey, tdProd, tdStatus, tdExp, tdCr, tdLa, tdCopy);
         tbody.appendChild(tr);
     });
     table.appendChild(tbody);
-    wrapper.appendChild(table);
-    list.appendChild(wrapper);
+    list.appendChild(table);
 
     if (window.ResizableColumns) window.ResizableColumns.attach(table);
 }
@@ -731,7 +711,7 @@ function showError(message) {
     if (list) {
         list.innerHTML = '';
         const p = document.createElement('p');
-        p.className = 'text-neutral-500 text-sm py-6 text-center';
+        p.className = 'empty';
         p.textContent = message || 'Failed to load.';
         list.appendChild(p);
     }
@@ -746,7 +726,8 @@ async function loadAll() {
             return;
         }
         state.data = data;
-        renderProfile();
+        renderSidebarUser();
+        renderStats();
         renderUsageProgress();
         renderChart(chart);
         renderLicenses();
@@ -756,17 +737,178 @@ async function loadAll() {
     }
 }
 
-// Init
+// Reload the range without touching the rest of the page state.
+async function reloadActivity() {
+    const chart = document.getElementById('dash-activity-chart');
+    state.expanded = null;
+    chart.innerHTML = skeletonChartHtml();
+    try {
+        const data = await loadDashboard();
+        if (!data) { window.location.href = '/'; return; }
+        state.data = data;
+        renderSidebarUser();
+        renderUsageProgress();
+        renderChart(chart);
+        renderLicenses();
+    } catch (e) {
+        showError();
+    }
+}
+
+// Tabs
 
 function switchTab(tab) {
-    document.querySelectorAll('.side-nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.nav-tab[data-tab]').forEach(b => {
+        const on = b.dataset.tab === tab;
+        b.classList.toggle('active', on);
+        if (on) b.setAttribute('aria-current', 'page');
+        else b.removeAttribute('aria-current');
+    });
     document.getElementById('tab-overview').classList.toggle('hidden', tab !== 'overview');
     document.getElementById('tab-licenses').classList.toggle('hidden', tab !== 'licenses');
-    const title = document.getElementById('dash-page-title');
-    const sub = document.getElementById('dash-page-sub');
-    if (title) title.textContent = tab === 'licenses' ? 'Licenses' : 'Overview';
-    if (sub) sub.textContent = tab === 'licenses' ? 'View and copy your license keys' : 'Your usage, stats and licenses';
+    // table-heavy tabs use the full available width
+    document.getElementById('dash-reader').classList.toggle('is-wide', tab === 'licenses');
+    document.getElementById('dash-page-title').textContent = tab === 'licenses' ? 'Licenses' : 'Overview';
+    document.getElementById('dash-page-sub').textContent = tab === 'licenses'
+        ? 'View and copy your license keys'
+        : 'Your usage, stats and licenses';
 }
+
+// Sidebar â€“ desktop collapse to an icon rail, mobile off-canvas drawer.
+
+function isMobile() {
+    return window.matchMedia(MOBILE_QUERY).matches;
+}
+
+function setCollapsed(collapsed, opts) {
+    const sidebar = document.getElementById('dash-sidebar');
+    const toggle = document.getElementById('dash-sidebar-toggle');
+    const backdrop = document.getElementById('dash-sidebar-backdrop');
+    const main = document.getElementById('dash-main');
+    const footer = document.querySelector('.site-footer');
+    const mobile = isMobile();
+
+    if (mobile) {
+        if (sidebar) {
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.toggle('open', !collapsed);
+        }
+        if (backdrop) backdrop.classList.toggle('show', !collapsed);
+        document.body.classList.toggle('drawer-open', !collapsed);
+    } else {
+        document.body.classList.remove('drawer-open');
+        if (sidebar) {
+            sidebar.classList.remove('open');
+            sidebar.classList.toggle('collapsed', collapsed);
+        }
+    }
+
+    // Empty string clears the inline value so the stylesheet breakpoint wins on mobile.
+    const offset = mobile ? '' : (collapsed ? 'var(--dash-rail-w)' : 'var(--dash-sidebar-w)');
+    if (main) main.style.marginLeft = offset;
+    if (footer) footer.style.marginLeft = offset;
+
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+        toggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        toggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+    }
+
+    if (!opts || opts.persist !== false) {
+        try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (e) {}
+    }
+}
+
+function toggleSidebar() {
+    setCollapsed(!isMobile() && !document.getElementById('dash-sidebar').classList.contains('collapsed'));
+}
+
+function restoreCollapsed() {
+    if (isMobile()) {
+        setCollapsed(true, { persist: false });
+        return;
+    }
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(COLLAPSE_KEY) === '1'; } catch (e) {}
+    setCollapsed(collapsed, { persist: false });
+}
+
+function closeSidebarDrawer() {
+    if (isMobile()) setCollapsed(true, { persist: false });
+}
+
+(function initSidebar() {
+    const toggle = document.getElementById('dash-sidebar-toggle');
+    const drawerBtn = document.getElementById('dash-drawer-btn');
+    const backdrop = document.getElementById('dash-sidebar-backdrop');
+
+    toggle?.addEventListener('click', toggleSidebar);
+    drawerBtn?.addEventListener('click', () => setCollapsed(false));
+    backdrop?.addEventListener('click', closeSidebarDrawer);
+
+    document.querySelectorAll('.nav-tab[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchTab(btn.dataset.tab);
+            closeSidebarDrawer();
+        });
+    });
+
+    restoreCollapsed();
+    window.matchMedia(MOBILE_QUERY).addEventListener('change', restoreCollapsed);
+})();
+
+// Sidebar filter (same behaviour as /admin: narrows the nav groups).
+
+(function initSidebarFilter() {
+    const input = document.getElementById('dashSidebarFilter');
+    const nav = document.getElementById('dashSidebarNav');
+    if (!input || !nav) return;
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        nav.querySelectorAll('[data-sidebar-group]').forEach(group => {
+            let visible = 0;
+            group.querySelectorAll('.nav-tab').forEach(tab => {
+                const label = (tab.querySelector('.nav-label')?.textContent || '').toLowerCase();
+                const hit = !q || label.includes(q);
+                tab.classList.toggle('hidden', !hit);
+                if (hit) visible++;
+            });
+            let label = group.previousElementSibling;
+            while (label && !label.classList.contains('sidebar-group-label')) label = label.previousElementSibling;
+            const divider = group.previousElementSibling?.classList.contains('sidebar-divider') ? group.previousElementSibling : null;
+            if (label) label.classList.toggle('hidden', visible === 0);
+            if (divider) divider.classList.toggle('hidden', visible === 0);
+        });
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            input.value = '';
+            input.dispatchEvent(new Event('input'));
+            input.blur();
+        }
+        if (e.key === 'Enter') {
+            const first = nav.querySelector('.nav-tab:not(.hidden)[data-tab]');
+            if (first) {
+                switchTab(first.dataset.tab);
+                closeSidebarDrawer();
+            }
+        }
+    });
+
+    nav.addEventListener('keydown', (e) => {
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+        const tabs = [...nav.querySelectorAll('.nav-tab:not(.hidden)')];
+        if (!tabs.length) return;
+        e.preventDefault();
+        const idx = tabs.indexOf(document.activeElement);
+        if (e.key === 'Home') tabs[0].focus();
+        else if (e.key === 'End') tabs[tabs.length - 1].focus();
+        else if (e.key === 'ArrowDown') tabs[(idx + 1 + tabs.length) % tabs.length].focus();
+        else tabs[(idx - 1 + tabs.length) % tabs.length].focus();
+    });
+})();
 
 // Bridge for the command palette (and anything else) to reuse dashboard internals.
 window.DashBridge = {
@@ -774,7 +916,7 @@ window.DashBridge = {
     copyKey,
     getLicenses: () => (state.data && state.data.licenses) || [],
     getState: () => state,
-    copyText: function(val) {
+    copyText: function (val) {
         const done = () => window.NotifySuccess && window.NotifySuccess('Copied to clipboard');
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(val).then(done).catch(() => fallbackCopy(val, done));
@@ -783,6 +925,42 @@ window.DashBridge = {
         }
     }
 };
+
+// Activity controls
+
+document.querySelectorAll('.stats-view-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        state.view = btn.dataset.mode || 'daily';
+        renderChart(document.getElementById('dash-activity-chart'));
+    });
+});
+
+document.querySelectorAll('.dash-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.dash-filter-btn').forEach(b => {
+            const on = b === btn;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        state.filter = btn.dataset.filter;
+        renderLicenses();
+    });
+});
+
+document.getElementById('dash-activity-range').addEventListener('change', function () {
+    state.range = this.value === 'all' ? 'all' : (parseInt(this.value, 10) || 14);
+    reloadActivity();
+});
+
+// End-date picker, Athens calendar.
+const endInput = document.getElementById('dash-activity-end');
+if (endInput) {
+    endInput.max = athensDateStrClient(Date.now());
+    endInput.addEventListener('change', function () {
+        state.end = this.value;
+        reloadActivity();
+    });
+}
 
 window.onload = () => {
     if (typeof initParticles === 'function') {
@@ -794,98 +972,3 @@ window.onload = () => {
     }
     loadAll();
 };
-
-document.querySelectorAll('.side-nav-btn[data-tab]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        switchTab(btn.dataset.tab);
-        closeSidebarDrawer();
-    });
-});
-
-// Sidebar: desktop collapse + mobile drawer
-
-function closeSidebarDrawer() {
-    const sb = document.getElementById('dash-sidebar');
-    const bd = document.getElementById('dash-sidebar-backdrop');
-    if (sb) sb.classList.remove('open');
-    if (bd) bd.classList.remove('show');
-}
-
-(function initSidebar() {
-    const sb = document.getElementById('dash-sidebar');
-    const toggle = document.getElementById('dash-sidebar-toggle');
-    const backdrop = document.getElementById('dash-sidebar-backdrop');
-    const drawerBtn = document.getElementById('dash-drawer-btn');
-
-    if (sb && toggle) {
-        if (localStorage.getItem('dash_sidebar_collapsed') === '1') {
-            document.body.classList.add('sidebar-collapsed');
-        }
-        toggle.addEventListener('click', () => {
-            const collapsed = document.body.classList.toggle('sidebar-collapsed');
-            localStorage.setItem('dash_sidebar_collapsed', collapsed ? '1' : '0');
-        });
-    }
-
-    if (sb && drawerBtn && backdrop) {
-        drawerBtn.addEventListener('click', () => {
-            sb.classList.add('open');
-            backdrop.classList.add('show');
-        });
-        backdrop.addEventListener('click', closeSidebarDrawer);
-    }
-})();
-
-document.querySelectorAll('.dash-heat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        state.heatMode = btn.dataset.mode || 'daily';
-        renderHeatmap();
-    });
-});
-
-document.querySelectorAll('.dash-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.dash-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.filter = btn.dataset.filter;
-        renderLicenses();
-    });
-});
-
-document.getElementById('dash-activity-range').addEventListener('change', async function() {
-    const raw = this.value;
-    state.range = raw === 'all' ? 'all' : (parseInt(raw, 10) || 14);
-    state.expanded = null;
-    const chart = document.getElementById('dash-activity-chart');
-    chart.innerHTML = skeletonChartHtml();
-    try {
-        const data = await loadDashboard();
-        if (!data) { window.location.href = '/'; return; }
-        state.data = data;
-        renderChart(chart);
-        renderLicenses();
-    } catch (e) {
-        showError();
-    }
-});
-
-// End-date picker, Athens calendar.
-const endInput = document.getElementById('dash-activity-end');
-if (endInput) {
-    endInput.max = athensDateStrClient(Date.now());
-    endInput.addEventListener('change', async function() {
-        state.end = this.value;
-        state.expanded = null;
-        const chart = document.getElementById('dash-activity-chart');
-        chart.innerHTML = skeletonChartHtml();
-        try {
-            const data = await loadDashboard();
-            if (!data) { window.location.href = '/'; return; }
-            state.data = data;
-            renderChart(chart);
-            renderLicenses();
-        } catch (e) {
-            showError();
-        }
-    });
-}
