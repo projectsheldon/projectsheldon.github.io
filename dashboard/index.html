@@ -116,7 +116,7 @@
             z-index: 90;
             display: flex;
             flex-direction: column;
-            padding: 20px 12px 16px;
+            padding: 20px 12px 20px;
             background: rgba(15, 15, 17, .82);
             backdrop-filter: blur(16px) saturate(1.2);
             -webkit-backdrop-filter: blur(16px) saturate(1.2);
@@ -149,16 +149,30 @@
             text-overflow: ellipsis;
         }
 
+        /* Command palette, parked in the sidebar exactly like /admin: icon, label
+           and the Ctrl K hint inside one pill. */
         .sidebar-search {
             display: flex;
             align-items: center;
             gap: 8px;
+            width: 100%;
+            min-width: 0;
+            margin: 0 2px 10px;
+            padding: 7px 9px;
             background: rgba(255, 255, 255, .04);
             border: 1px solid var(--dash-line);
             border-radius: 10px;
-            padding: 7px 9px;
-            margin: 0 2px 10px;
-            min-width: 0;
+            color: var(--dash-mut);
+            font-family: 'Inter', sans-serif;
+            font-size: 12.5px;
+            cursor: pointer;
+            transition: color .15s, border-color .15s, background .15s;
+        }
+
+        .sidebar-search:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, .22);
+            background: rgba(255, 255, 255, .06);
         }
 
         .sidebar-search svg {
@@ -168,63 +182,40 @@
             color: var(--dash-dim);
         }
 
-        .sidebar-search:focus-within {
-            border-color: rgba(199, 177, 143, .55);
-            background: rgba(255, 255, 255, .06);
-        }
-
-        #dashSidebarFilter {
+        .sidebar-search-label {
             flex: 1;
             min-width: 0;
-            background: transparent;
-            border: 0;
-            outline: 0;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            font-size: 12.5px;
-            padding: 0;
-        }
-
-        #dashSidebarFilter::placeholder {
-            color: #5a5a5a;
-        }
-
-        #dashPaletteBtn {
-            flex: none;
-            display: inline-flex;
-            align-items: center;
-            background: rgba(255, 255, 255, .06);
-            border: 1px solid var(--dash-line-2);
-            border-radius: 6px;
-            padding: 3px;
-            cursor: pointer;
+            text-align: left;
             white-space: nowrap;
-            line-height: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        #dashPaletteBtn kbd {
-            display: inline-block;
+        .sidebar-search kbd {
+            flex: none;
             font-size: 10px;
             line-height: 1.4;
             font-family: 'JetBrains Mono', monospace;
             color: var(--dash-mut);
-            background: none;
-            border: 0;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid var(--dash-line);
+            border-radius: 5px;
             padding: 1px 6px;
             white-space: nowrap;
         }
 
-        #dashPaletteBtn:hover {
-            border-color: rgba(255, 255, 255, .25);
-        }
-
-        #dashPaletteBtn:hover kbd {
+        .sidebar-search:hover kbd {
             color: #fff;
         }
 
+        /* The inline margin cancels the sidebar's own 12px padding, so the nav's
+           padding box reaches the sidebar edge. The active gold rail is drawn at
+           left:-12px and would otherwise be clipped by the scroll container. */
         .sidebar-nav {
             flex: 1;
             min-height: 0;
+            margin-inline: -12px;
+            padding-inline: 12px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -237,13 +228,47 @@
             text-transform: uppercase;
             color: #525252;
             padding: 0 .8rem;
-            margin: .35rem 0 .4rem;
+            margin: .3rem 0 .35rem;
         }
 
         .sidebar-divider {
             height: 1px;
             background: var(--dash-line);
-            margin: .7rem .4rem .55rem;
+            margin: .35rem .4rem .125rem;
+        }
+
+        /* Footer carries the collapse control at the sidebar floor, same shape as
+           /admin: hairline above it, inset 4px, and dead centre once the rail
+           narrows (its inner box is 46.4px for a 38px button). */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 12px 4px 4px;
+            border-top: 1px solid var(--dash-line);
+        }
+
+        .sidebar-collapse-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--dash-line-2);
+            background: rgba(255, 255, 255, .03);
+            color: var(--dash-mut);
+            cursor: pointer;
+            transition: color .15s, border-color .15s, background .15s;
+        }
+
+        .sidebar-collapse-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, .25);
+            background: rgba(255, 255, 255, .06);
+        }
+
+        .sidebar-collapse-btn svg {
+            width: 18px;
+            height: 18px;
         }
 
         .sidebar-group {
@@ -294,7 +319,8 @@
 
         .nav-tab.active {
             color: #fff;
-            background: rgba(255, 255, 255, .06);
+            background: rgba(199, 177, 143, .1);
+            box-shadow: inset 0 0 0 1px rgba(199, 177, 143, .22);
             font-weight: 600;
         }
 
@@ -303,108 +329,19 @@
             color: var(--dash-gold);
         }
 
+        /* Gold rail pinned to the sidebar's inner edge, so the active section reads
+           as part of the frame rather than a floating pill. */
         .nav-tab.active::before {
             content: '';
             position: absolute;
-            left: -9px;
-            top: 22%;
-            bottom: 22%;
-            width: 2px;
+            left: -12px;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
             background: var(--dash-gold);
-            border-radius: 1px;
+            border-radius: 0 3px 3px 0;
         }
 
-        .sidebar-footer {
-            margin-top: auto;
-            padding: 12px 4px 0;
-            border-top: 1px solid var(--dash-line);
-        }
-
-        .sidebar-user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0 4px 12px;
-            min-width: 0;
-        }
-
-        .sidebar-avatar-wrap {
-            position: relative;
-            flex: none;
-        }
-
-        .sidebar-avatar {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            object-fit: cover;
-            background: rgba(255, 255, 255, .05);
-            font-size: 12px;
-            font-weight: 800;
-            color: rgba(255, 255, 255, .5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .sidebar-user-info {
-            min-width: 0;
-        }
-
-        .sidebar-user-name {
-            font-size: 12px;
-            font-weight: 700;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.25;
-        }
-
-        .sidebar-user-sub {
-            font-size: 10.5px;
-            font-weight: 600;
-            color: var(--dash-dim);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.25;
-        }
-
-        .sidebar-user-balance {
-            font-size: 10.5px;
-            font-weight: 800;
-            color: var(--dash-gold);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.25;
-        }
-
-        .sidebar-collapse-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            border: 1px solid var(--dash-line-2);
-            background: rgba(255, 255, 255, .03);
-            color: var(--dash-mut);
-            cursor: pointer;
-            transition: color .15s, border-color .15s, background .15s;
-        }
-
-        .sidebar-collapse-btn:hover {
-            color: #fff;
-            border-color: rgba(255, 255, 255, .25);
-            background: rgba(255, 255, 255, .06);
-        }
-
-        .sidebar-collapse-btn svg {
-            width: 18px;
-            height: 18px;
-        }
 
         .sidebar-backdrop {
             position: fixed;
@@ -440,12 +377,20 @@
             max-width: none;
         }
 
+        /* Tab panels stack their blocks on the same 16px rhythm as the reader,
+           otherwise the cards render flush against each other. */
+        .dash-tab {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
         .page-head {
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
             gap: 1rem;
-            margin-bottom: .3rem;
             flex-wrap: wrap;
         }
 
@@ -483,14 +428,6 @@
             margin: .25rem 0 0;
         }
 
-        .title-count {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--dash-mut);
-            font-family: 'JetBrains Mono', monospace;
-            margin-left: .4rem;
-        }
-
         /* ---------- panels ---------- */
         .panel {
             background: var(--dash-panel);
@@ -509,7 +446,7 @@
             align-items: baseline;
             justify-content: space-between;
             gap: .75rem;
-            margin-bottom: .9rem;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
 
@@ -607,8 +544,8 @@
         /* ---------- stat cards ---------- */
         .dash-stats {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
         }
 
         .dash-stat {
@@ -663,6 +600,27 @@
             color: rgba(255, 255, 255, .35);
         }
 
+        /* Two facts in one card, split by the same hairline the panels use
+           (mirrors /admin's .now-strip). align-content centres the pair as a
+           block, so both labels share a baseline even when one cell is taller. */
+        .dash-stat--split {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-content: center;
+            padding: 0;
+        }
+
+        .dash-stat-cell {
+            display: flex;
+            flex-direction: column;
+            padding: .85rem 1rem;
+            min-width: 0;
+        }
+
+        .dash-stat-cell + .dash-stat-cell {
+            border-left: 1px solid var(--dash-line);
+        }
+
         .dash-spark {
             display: block;
             width: 100%;
@@ -680,30 +638,133 @@
             letter-spacing: .03em;
         }
 
-        .dash-delta.up { color: var(--dash-ok); }
-        .dash-delta.down { color: var(--dash-bad); }
+        /* More usage is the goal here, so "up" gets the brand gold and a drop stays
+           quiet instead of raising a false red alarm. */
+        .dash-delta.up { color: var(--dash-gold); }
+        .dash-delta.down { color: rgba(255, 255, 255, .3); }
         .dash-delta.flat { color: rgba(255, 255, 255, .35); }
 
-        /* ---------- weekly usage ---------- */
-        .usage-track {
-            height: 6px;
-            background: rgba(255, 255, 255, .06);
-            border-radius: 3px;
+        /* ---------- weekly goal (leads the page) ---------- */
+        .usage-card {
+            position: relative;
             overflow: hidden;
+            border-color: rgba(199, 177, 143, .28);
+            background:
+                linear-gradient(180deg, rgba(199, 177, 143, .09) 0%, rgba(199, 177, 143, 0) 70%),
+                var(--dash-panel);
+            padding: 1.15rem 1.3rem 1.3rem;
+        }
+
+        /* Gold rail on the leading edge, matching the sidebar's active marker. */
+        .usage-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--dash-gold);
+        }
+
+        .usage-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .usage-card-copy {
+            min-width: 0;
+            flex: 1 1 22rem;
+        }
+
+        .usage-ratio {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: -.01em;
+            color: var(--dash-gold);
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+
+        /* Doubles as the runner's lane, so it needs real height and a target. */
+        .usage-track {
+            position: relative;
+            height: 64px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--dash-line);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4);
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .usage-track:hover {
+            border-color: rgba(199, 177, 143, .3);
+        }
+
+        .usage-track:focus-visible {
+            outline: 2px solid var(--dash-focus);
+            outline-offset: 2px;
         }
 
         .usage-fill {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, var(--dash-gold), #e2c9a1);
-            border-radius: 3px;
-            transition: width .45s var(--dash-ease);
+            background: linear-gradient(90deg, #ab9673 0%, var(--dash-gold) 60%, #d5c39f 100%);
+            border-radius: 12px 0 0 12px;
+            box-shadow: 0 0 14px rgba(199, 177, 143, .45);
+            transition: width .55s var(--dash-ease);
+        }
+
+        .usage-runner-canvas {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
 
         .usage-caption {
-            font-size: 12px;
-            color: var(--dash-dim);
-            margin: .65rem 0 0;
+            font-size: 12.5px;
+            color: var(--dash-mut);
+            margin: .7rem 0 0;
+            line-height: 1.5;
+        }
+
+        /* ---------- sparkline tooltip ---------- */
+        .dash-spark-wrap {
+            display: block;
+            margin-top: .55rem;
+            border-radius: 6px;
+        }
+
+        .dash-spark-wrap:hover {
+            background: rgba(255, 255, 255, .03);
+        }
+
+        .dash-spark-hint {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: .45rem;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            color: rgba(255, 255, 255, .3);
+            cursor: help;
+        }
+
+        .dash-spark-hint svg {
+            width: 11px;
+            height: 11px;
+            flex: none;
         }
 
         /* ---------- activity ---------- */
@@ -740,7 +801,7 @@
             font-size: 19px;
             font-weight: 700;
             letter-spacing: -.01em;
-            margin-top: .15rem;
+            margin-top: 4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -755,7 +816,7 @@
             font-size: 10.5px;
             color: var(--dash-dim);
             font-family: 'JetBrains Mono', monospace;
-            margin-top: .1rem;
+            margin-top: 3px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -765,7 +826,7 @@
             display: flex;
             gap: .25rem;
             border-bottom: 1px solid var(--dash-line);
-            margin: 1rem 0 .9rem;
+            margin: 16px 0;
             overflow-x: auto;
         }
 
@@ -973,6 +1034,34 @@
             max-height: calc(100vh - 260px);
         }
 
+        /* Fullscreen table mode: the licenses panel owns the rest of the viewport,
+           sticky header up top, the row list scrolls inside it (same trick as the
+           admin panel's license table). */
+        .panel--fullscreen {
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 220px);
+        }
+
+        .panel--fullscreen .dash-table-wrap {
+            flex: 1;
+            min-height: 300px;
+            max-height: none;
+        }
+
+        .page-head-actions {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            flex-wrap: wrap;
+        }
+
+        /* `.page-head-actions { display: flex }` outranks the UA `[hidden]` rule, so
+           state this explicitly instead of relying on Tailwind's preflight. */
+        .page-head-actions[hidden] {
+            display: none;
+        }
+
         .dash-table {
             width: 100%;
             border-collapse: collapse;
@@ -1000,6 +1089,11 @@
             position: sticky;
             top: 0;
             z-index: 2;
+        }
+
+        /* beats `.dash-table th { text-align: left }` on specificity */
+        .dash-table th.td-num {
+            text-align: right;
         }
 
         .dash-table th .col-resizer {
@@ -1271,6 +1365,11 @@
             background: rgba(199, 177, 143, .1);
         }
 
+        .cmdp-body {
+            flex: 1;
+            min-width: 0;
+        }
+
         .cmdp-icon {
             width: 30px;
             height: 30px;
@@ -1350,8 +1449,7 @@
             .dash-sidebar.collapsed .sidebar-brand-text,
             .dash-sidebar.collapsed .sidebar-search,
             .dash-sidebar.collapsed .sidebar-group-label,
-            .dash-sidebar.collapsed .nav-label,
-            .dash-sidebar.collapsed .sidebar-user-info {
+            .dash-sidebar.collapsed .nav-label {
                 display: none !important;
             }
 
@@ -1366,10 +1464,26 @@
                 padding: .5rem;
             }
 
-            .dash-sidebar.collapsed .sidebar-user {
-                justify-content: center;
-                padding-left: 0;
-                padding-right: 0;
+            /* the rail is narrower, so the active marker tracks its own padding */
+            .dash-sidebar.collapsed .nav-tab.active::before {
+                left: -8.8px;
+            }
+
+            .dash-sidebar.collapsed .sidebar-nav {
+                margin-inline: -.55rem;
+                padding-inline: .55rem;
+            }
+
+            /* auto margins split the rail's leftover half pixel, so the gaps match */
+            /* auto margins split the rail's leftover half pixel so the gaps match;
+               the footer's negative right margin hands back the pixel the sidebar's
+               1px border takes, the same trick the nav uses to reach the edge. */
+            .dash-sidebar.collapsed .sidebar-footer {
+                margin-right: -1px;
+            }
+
+            .dash-sidebar.collapsed .sidebar-collapse-btn {
+                margin-inline: auto;
             }
 
             .dash-sidebar.collapsed .sidebar-collapse-btn svg {
@@ -1384,10 +1498,6 @@
         @media (prefers-reduced-motion: reduce) {
             .bar-col .bar { transition: none; }
             .hourly-wrap { animation: none; }
-        }
-
-        @media (max-width: 1180px) {
-            .dash-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
 
         @media (max-width: 900px) {
@@ -1407,6 +1517,14 @@
                 padding: 84px 16px 40px;
             }
 
+            .panel--fullscreen {
+                min-height: 0;
+            }
+
+            .panel--fullscreen .dash-table-wrap {
+                min-height: 0;
+            }
+
             .site-footer {
                 margin-left: 0;
             }
@@ -1414,8 +1532,6 @@
             .dash-drawer-btn {
                 display: inline-flex;
             }
-
-            .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
             .dash-table-wrap {
                 max-height: none;
@@ -1451,11 +1567,11 @@
             <img src="/favicon/favicon.ico" alt="Sheldon">
             <span class="sidebar-brand-text">SHELDON</span>
         </div>
-        <div class="sidebar-search">
+        <button type="button" id="dash-cmdp-btn" class="sidebar-search" title="Search actions and license keys (Ctrl+K)" aria-label="Search actions and license keys">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input id="dashSidebarFilter" type="text" placeholder="Filter…" aria-label="Filter navigation" autocomplete="off" spellcheck="false">
-            <button id="dash-cmdp-btn" title="Command palette (Ctrl+K)" aria-label="Open command palette"><kbd>Ctrl K</kbd></button>
-        </div>
+            <span class="sidebar-search-label">Search</span>
+            <kbd>Ctrl K</kbd>
+        </button>
         <nav id="dashSidebarNav" class="sidebar-nav">
             <div class="sidebar-group-label">General</div>
             <div class="sidebar-group" data-sidebar-group>
@@ -1481,22 +1597,11 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.32 4.37a19.8 19.8 0 00-4.89-1.52.07.07 0 00-.08.04c-.21.37-.44.85-.6 1.23a18.27 18.27 0 00-5.5 0 12.6 12.6 0 00-.6-1.23.08.08 0 00-.08-.04 19.74 19.74 0 00-4.88 1.52.07.07 0 00-.04.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 00.03.05 19.9 19.9 0 006 3.03.08.08 0 00.08-.03c.46-.63.87-1.3 1.23-2a.08.08 0 00-.04-.11 13.1 13.1 0 01-1.87-.9.08.08 0 010-.13c.13-.09.25-.19.37-.29a.07.07 0 01.08-.01 14.2 14.2 0 0012.1 0 .07.07 0 01.08.01c.12.1.25.2.37.29a.08.08 0 010 .13 13.2 13.2 0 01-1.87.9.08.08 0 00-.04.11c.36.7.77 1.37 1.23 2a.08.08 0 00.08.03 19.83 19.83 0 006-3.03.08.08 0 00.03-.05c.5-5.18-.84-9.68-3.55-13.66a.06.06 0 00-.03-.03zM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.95-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.34-.95 2.42-2.16 2.42zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.95-2.42 2.15-2.42 1.22 0 2.18 1.1 2.16 2.42 0 1.34-.94 2.42-2.16 2.42z"/></svg>
                     <span class="nav-label">Discord</span>
                 </a>
-            </div>
+                            </div>
         </nav>
         <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <div class="sidebar-avatar-wrap">
-                    <img id="dash-side-avatar" class="sidebar-avatar" src="" alt="Avatar" style="display:none;">
-                    <div id="dash-side-avatar-fallback" class="sidebar-avatar" style="display:flex;">?</div>
-                </div>
-                <div class="sidebar-user-info">
-                    <div id="dash-side-name" class="sidebar-user-name">Loading…</div>
-                    <div id="dash-side-handle" class="sidebar-user-sub">Loading…</div>
-                    <div id="dash-side-balance" class="sidebar-user-balance"></div>
-                </div>
-            </div>
             <button type="button" id="dash-sidebar-toggle" class="sidebar-collapse-btn" title="Collapse sidebar" aria-label="Collapse sidebar" aria-controls="dash-sidebar" aria-expanded="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
             </button>
         </div>
     </aside>
@@ -1516,46 +1621,54 @@
                         <p id="dash-page-sub" class="page-sub">Your usage, stats and licenses</p>
                     </div>
                 </div>
+                <div class="page-head-actions">
+                    <span id="dash-license-tools" hidden>
+                        <div class="dash-filter" role="tablist" aria-label="License filter">
+                            <button class="dash-filter-btn active" data-filter="all" role="tab" aria-selected="true">All</button>
+                            <button class="dash-filter-btn" data-filter="active" role="tab" aria-selected="false">Active</button>
+                            <button class="dash-filter-btn" data-filter="inactive" role="tab" aria-selected="false">Inactive</button>
+                        </div>
+                    </span>
+                </div>
             </header>
 
             <!-- Overview tab -->
             <div id="tab-overview" class="dash-tab">
 
-                <div class="dash-stats" id="dash-stats">
-                    <div class="dash-stat">
-                        <div class="skel" style="width:60%;height:10px;"></div>
-                        <div class="skel" style="width:80%;height:22px;margin-top:10px;"></div>
+                <!-- Weekly goal: the one action worth surfacing, so it leads the page. -->
+                <div class="panel usage-card" id="dash-usage-card" style="display:none;">
+                    <div class="usage-card-top">
+                        <div class="usage-card-copy">
+                            <p class="panel-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                Free license goal
+                            </p>
+                            <p class="usage-caption" id="dash-usage-caption"></p>
+                        </div>
+                        <p class="usage-ratio"><span id="dash-usage-ratio">0 / 10 hours</span></p>
                     </div>
-                    <div class="dash-stat">
-                        <div class="skel" style="width:55%;height:10px;"></div>
-                        <div class="skel" style="width:70%;height:22px;margin-top:10px;"></div>
-                    </div>
-                    <div class="dash-stat">
-                        <div class="skel" style="width:58%;height:10px;"></div>
-                        <div class="skel" style="width:75%;height:22px;margin-top:10px;"></div>
-                    </div>
-                    <div class="dash-stat">
-                        <div class="skel" style="width:50%;height:10px;"></div>
-                        <div class="skel" style="width:65%;height:22px;margin-top:10px;"></div>
-                    </div>
-                    <div class="dash-stat">
-                        <div class="skel" style="width:62%;height:10px;"></div>
-                        <div class="skel" style="width:78%;height:22px;margin-top:10px;"></div>
+                    <div class="usage-track" id="dash-usage-track" tabindex="0" aria-describedby="dash-usage-caption" title="Click or press space to jump">
+                        <div class="usage-fill" id="dash-usage-fill"></div>
+                        <canvas class="usage-runner-canvas" id="dash-usage-canvas" aria-hidden="true"></canvas>
                     </div>
                 </div>
 
-                <div class="panel" id="dash-usage-card" style="display:none;">
-                    <div class="panel-head">
-                        <h3 class="panel-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Weekly usage
-                        </h3>
-                        <span class="panel-meta" id="dash-usage-ratio">0 / 12 hours</span>
+                <div class="dash-stats" id="dash-stats">
+                    <div class="dash-stat">
+                        <div class="skel" style="width:58%;height:10px;"></div>
+                        <div class="skel" style="width:75%;height:22px;margin-top:10px;"></div>
+                        <div class="skel" style="width:100%;height:26px;margin-top:8px;"></div>
                     </div>
-                    <div class="usage-track">
-                        <div class="usage-fill" id="dash-usage-fill"></div>
+                    <div class="dash-stat dash-stat--split">
+                        <div class="dash-stat-cell">
+                            <div class="skel" style="width:55%;height:10px;"></div>
+                            <div class="skel" style="width:70%;height:22px;margin-top:10px;"></div>
+                        </div>
+                        <div class="dash-stat-cell">
+                            <div class="skel" style="width:62%;height:10px;"></div>
+                            <div class="skel" style="width:78%;height:22px;margin-top:10px;"></div>
+                        </div>
                     </div>
-                    <p class="usage-caption" id="dash-usage-caption"></p>
                 </div>
 
                 <div class="panel">
@@ -1597,23 +1710,12 @@
 
             <!-- Licenses tab -->
             <div id="tab-licenses" class="dash-tab hidden">
-                <div class="page-head">
-                    <div style="min-width:0;">
-                        <h2 class="ta-page-title">All licenses <span class="title-count" id="dash-license-count"></span></h2>
-                        <p class="page-sub" id="dash-license-summary">Loading…</p>
-                    </div>
-                    <div class="dash-filter" role="tablist" aria-label="License filter">
-                        <button class="dash-filter-btn active" data-filter="all" role="tab" aria-selected="true">All</button>
-                        <button class="dash-filter-btn" data-filter="active" role="tab" aria-selected="false">Active</button>
-                        <button class="dash-filter-btn" data-filter="inactive" role="tab" aria-selected="false">Inactive</button>
-                    </div>
-                </div>
-                <div class="panel panel--flush">
+                <div class="panel panel--flush panel--fullscreen">
                     <div id="dash-license-list" class="dash-table-wrap">
                         <table class="dash-table" style="min-width:760px;">
                             <thead>
                                 <tr>
-                                    <th>Key</th><th>Product</th><th>Status</th><th>Expires</th><th>Created</th><th>Last activity</th><th></th>
+                                    <th class="is-sticky">Key</th><th class="is-sticky">Product</th><th class="is-sticky">Status</th><th class="is-sticky td-num">Expires</th><th class="is-sticky td-num">Created</th><th class="is-sticky td-num">Last activity</th><th class="is-sticky"></th>
                                 </tr>
                             </thead>
                             <tbody>
