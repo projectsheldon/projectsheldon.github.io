@@ -114,7 +114,7 @@
             .mobile-menu.show { display: flex; }
             .mobile-menu .nav-tab { text-align: center; padding: 1rem; }
             .mobile-menu .nav-tab.active { background: rgba(199,177,143,0.1); color: #c7b18f; }
-            .main-content { margin-left: 0; padding: 1rem; }
+            .main-content { margin-left: 0; padding: 1rem; padding-top: calc(64px + 1rem); }
 
             nav {
                 padding: 0.5rem !important;
@@ -284,6 +284,8 @@
         .main-content {
             margin-left: 280px;
             padding: 2rem;
+            /* Fixed 64px topbar overlaps content without its own offset. */
+            padding-top: calc(64px + 2rem);
             min-height: calc(100vh - 64px);
         }
 

@@ -352,12 +352,23 @@
 
 /* lg: 1024px */
 @media (min-width: 1024px) {
+  .lg\:flex { display: flex; }
+  .lg\:inline-flex { display: inline-flex; }
+  .lg\:inline { display: inline; }
+  .lg\:block { display: block; }
+  .lg\:hidden { display: none; }
   .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .lg\:gap-8 { gap: 2rem; }
   .lg\:gap-12 { gap: 3rem; }
   .lg\:text-\[10rem\] { font-size: 10rem; }
 }
+
+/* Topbar spacers / offsets used without the CDN */
+.pt-20 { padding-top: 5rem; }
+.top-0 { top: 0; }
+.w-full { width: 100%; }
+.max-w-\[1400px\] { max-width: 1400px; }
 
 /* =========================================================
    HOVER STATES

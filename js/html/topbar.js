@@ -179,12 +179,44 @@
     {
         if(document.getElementById('sheldon-topbar-styles')) return;
         // Everything the injected topbar needs to look right, so it never depends
-        // on the host page shipping its own copy of these rules.
+        // on the host page shipping its own copy of these rules – or on the
+        // Tailwind CDN (adblock often blocks it, and one page shipped a global
+        // `.hidden !important` that blanked the desktop nav). Own layout here,
+        // Tailwind classes in the markup stay as progressive enhancement.
         const css =
-            '.top-link{display:flex;align-items:center;gap:.35rem;padding:.5rem .75rem;font-size:14px;font-weight:600;color:rgba(255,255,255,.7);transition:color .2s;white-space:nowrap;background:none;border:none;cursor:pointer}' +
-            '.top-link:hover{color:#fff}' +
-            '.logo-box{transition:transform .3s ease}' +
+            // Fixed bar shell – no Tailwind needed.
+            'nav.fixed.top-0{position:fixed;top:0;left:0;right:0;width:100%;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.1)}' +
+            '.nav-shell{max-width:1400px;margin:0 auto;padding:0 1rem;height:64px;display:flex;align-items:center;justify-content:space-between;gap:1rem}' +
+            '@media(min-width:768px){.nav-shell{padding:0 2rem}}' +
+            '.nav-shell>div{display:flex;align-items:center;gap:.5rem;min-width:0}' +
+            '.nav-shell>div:first-child{gap:1.5rem}' +
+            '.logo-link{display:flex;align-items:center;flex:none;text-decoration:none}' +
+            '.logo-box{width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;transition:transform .3s ease}' +
             '.logo-box:hover{transform:rotate(10deg) scale(1.05)}' +
+            '.logo-box img{width:1.75rem;height:1.75rem;display:block}' +
+            // Desktop dropdown tabs – visible on desktop even if a page defines
+            // `.hidden !important` (that rule beat Tailwind's `lg:flex` before).
+            '.nav-tabs-desktop{display:flex!important;align-items:center;gap:.125rem}' +
+            '.top-link{display:flex;align-items:center;gap:.35rem;padding:.5rem .75rem;font-size:14px;font-weight:600;color:rgba(255,255,255,.7);transition:color .2s;white-space:nowrap;background:none;border:none;cursor:pointer;font-family:inherit}' +
+            '.top-link:hover{color:#fff}' +
+            // Dropdown panel positioning without Tailwind's absolute/opacity utils.
+            '.relative.group{position:relative}' +
+            '.relative.group>div.absolute{position:absolute;top:100%;left:0;padding-top:.5rem;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .2s,visibility .2s,transform .2s}' +
+            '.relative.group:hover>div.absolute,.relative.group:focus-within>div.absolute{opacity:1;visibility:visible;transform:none}' +
+            // Hamburger hidden on desktop by default.
+            '.mobile-menu-btn{display:none!important;background:none;border:0;color:#fff;cursor:pointer;padding:8px}' +
+            '.mobile-menu-btn svg{width:1.5rem;height:1.5rem;display:block}' +
+            // Language label + chevron: icon-only on mobile, labeled on desktop.
+            // Beats both Tailwind's `hidden lg:inline` and any page global.
+            '[data-lang-current]{display:none}' +
+            '[data-lang-btn]>svg:last-child{display:none}' +
+            '@media(min-width:1024px){[data-lang-current]{display:inline!important}[data-lang-btn]>svg:last-child{display:inline-block!important}}' +
+            // Sign-in label: icon-only on small screens.
+            '#discord-login-txt{display:none}' +
+            '@media(min-width:640px){#discord-login-txt{display:inline!important}}' +
+            // Account trigger: flex when shown, none when `hidden` – beats page globals.
+            '#user-profile-trigger{display:flex!important;align-items:center;gap:.5rem;cursor:pointer;position:relative}' +
+            '#user-profile-trigger.hidden{display:none!important}' +
             '#discord-login-btn.btn-discord{background:#5865F2;color:#fff;display:inline-flex;align-items:center;gap:.5rem;transition:all .3s ease;border:0;cursor:pointer;font-family:inherit}' +
             // The ID selector above outranks Tailwind's `.hidden`, so auth.js could
             // never hide the button when signed in – both buttons showed at once.
@@ -200,7 +232,7 @@
             '#discord-login-btn.is-loading .discord-login-spinner{display:inline-block;animation:discordSpin .7s linear infinite}' +
             '@keyframes discordSpin{to{transform:rotate(360deg)}}' +
             '.mobile-section-label{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.2em;color:#525252;padding:0 .25rem}' +
-            '.mobile-link{display:block;padding:.65rem .75rem;border-radius:.75rem;font-size:.9rem;font-weight:600;color:#d4d4d4;transition:all .2s}' +
+            '.mobile-link{display:block;padding:.65rem .75rem;border-radius:.75rem;font-size:.9rem;font-weight:600;color:#d4d4d4;transition:all .2s;text-decoration:none}' +
             '.mobile-link:hover{background:rgba(255,255,255,.06);color:#fff}' +
             // The whole mobile-menu box, not just its spacing. Host pages carry
             // their own copy of `.mobile-menu{display:none}` / `.show{display:flex}`,

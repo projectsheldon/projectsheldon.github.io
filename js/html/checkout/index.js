@@ -302,18 +302,11 @@ function TogglePaymentForm(enabled) {
 }
 
 function UpdateLicensePerksNote() {
+    // Perks note removed from checkout by request – hide any stale element
+    // (e.g. cached HTML) so no watermark / Discord-role copy renders here.
+    // Frontpage pricing cards still document the differences.
     const noteEl = document.getElementById('license-perks-note');
-    if (!noteEl) return;
-    const isFree = (window.productKey || productKey) === 'free';
-    if (isFree) {
-        noteEl.innerHTML = '<span style="color:#fbbf24;font-weight:800;">FREE LICENSE:</span> includes an in-app watermark and no Discord role.';
-        noteEl.style.borderColor = 'rgba(251,191,36,0.25)';
-        noteEl.style.background = 'rgba(251,191,36,0.06)';
-    } else {
-        noteEl.innerHTML = '<span style="color:#c7b18f;font-weight:800;">PAID LICENSE:</span> no watermark + Discord buyer role included.';
-        noteEl.style.borderColor = 'rgba(199,177,143,0.3)';
-        noteEl.style.background = 'rgba(199,177,143,0.07)';
-    }
+    if (noteEl) noteEl.remove();
 }
 
 async function LoadProductInfo() {
@@ -644,6 +637,25 @@ async function ShowBalanceCheckout() {
 
         const workinkLink = await Api.GetLink('workink');
 
+        // Weekly usage goal (dashboard "Free license goal"). When reached, the next
+        // ad grants a free key directly (usage_reward) – no balance needed. Checkout
+        // must know this, otherwise a 12/12 user with 0 balance only sees
+        // "Insufficient Balance" and thinks the goal is broken.
+        let usageSeconds = 0;
+        let usageThresholdSeconds = 12 * 60 * 60;
+        try {
+            const usageRes = await fetch(`${apiUrl}/workink/usage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionToken: authToken })
+            });
+            const usageData = await usageRes.json().catch(() => null);
+            if (usageData && usageData.ok) {
+                usageSeconds = Number(usageData.seconds) || 0;
+                if (Number(usageData.threshold_seconds) > 0) usageThresholdSeconds = Number(usageData.threshold_seconds);
+            }
+        } catch (e) {}
+
         let cooldownTimer = null;
         let rateLimitTimer = null;
 
@@ -667,10 +679,25 @@ async function ShowBalanceCheckout() {
             const cooldownRemaining = isOnCooldown ? freeKeyCooldownUntil - now : 0;
             const rateLimitRemaining = (isRateLimited && rateLimitedUntil > now) ? rateLimitedUntil - now : 0;
 
+            // Goal state mirrors the dashboard card: hours completed vs threshold.
+            const usageThresholdHours = Math.max(1, Math.round(usageThresholdSeconds / 3600));
+            const usageDoneHours = Math.min(usageThresholdHours, Math.floor(usageSeconds / 3600));
+            const goalReached = usageThresholdSeconds > 0 && usageSeconds >= usageThresholdSeconds;
+
             const paymentForm = document.getElementById('payment-form');
             if (!paymentForm) return;
 
             if (rateLimitTimer) { clearInterval(rateLimitTimer); rateLimitTimer = null; }
+
+            const goalBanner = goalReached
+                ? `<div style="font-size: 12px; color: #34d399; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); border-radius: 10px; padding: 10px 14px; max-width: 85%; line-height: 1.5; margin-top: -12px; font-weight: 700;">
+                        Goal reached (${usageDoneHours}/${usageThresholdHours} hours) – your next ad grants a free key directly. No balance needed.
+                       </div>`
+                : (usageThresholdSeconds > 0
+                    ? `<div style="font-size: 11px; color: rgba(255,255,255,0.5); max-width: 85%; line-height: 1.5; margin-top: -12px;">
+                        Progress: ${usageDoneHours}/${usageThresholdHours} hours – reach ${usageThresholdHours} hours and your next ad grants a key directly, or earn balance below.
+                       </div>`
+                    : '');
 
             paymentForm.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; width: 100%; text-align: center; gap: 24px;">
@@ -680,30 +707,34 @@ async function ShowBalanceCheckout() {
                         Redeem your balance for ${qty} x ${durationHours} hours key${qty > 1 ? 's' : ''}
                     </div>
 
-                    <div style="font-size: 11px; color: rgba(251,191,36,0.9); background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.2); border-radius: 10px; padding: 8px 14px; max-width: 85%; line-height: 1.5; margin-top: -12px;">
-                        Free keys show an in-app watermark and don't include a Discord role. Paid licenses have no watermark + buyer role.
-                    </div>
+                    ${goalBanner}
 
-                    ${isOnCooldown
+                    ${goalReached
+                        ? `<a href="${workinkLink}" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px; text-decoration: none; display: block; text-align: center;">
+                             WATCH 1 AD TO CLAIM
+                            </a>`
+                        : (isOnCooldown
                         ? `<button id="purchase-balance-btn" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px; opacity: 0.4; cursor: not-allowed;" disabled>
-                            COOLDOWN – ${formatCooldown(cooldownRemaining)}
-                           </button>`
+                             COOLDOWN – ${formatCooldown(cooldownRemaining)}
+                            </button>`
                         : `<button id="purchase-balance-btn" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px; ${canAfford ? '' : 'opacity: 0.5; cursor: not-allowed;'}" ${canAfford ? '' : 'disabled'}>
-                            ${canAfford ? `PURCHASE KEY${qty > 1 ? 'S' : ''}` : 'Insufficient Balance'}
-                           </button>`
+                             ${canAfford ? `PURCHASE KEY${qty > 1 ? 'S' : ''}` : 'Insufficient Balance'}
+                            </button>`)
                     }
 
-                    ${isRateLimited
+                    ${goalReached
+                        ? `<span style="font-size: 12px; color: rgba(255,255,255,0.5);">No balance needed – the ad claims the goal reward.${isOnCooldown ? ' Balance purchases are on cooldown, but the goal claim still works.' : ''}</span>`
+                        : (isRateLimited
                         ? `<span id="rate-limit-msg" style="font-size: 12px; color: #ef4444; font-weight: 700;">Rate limited – max balance reached.${rateLimitRemaining > 0 ? ` Try again in ${formatCooldown(rateLimitRemaining)}.` : ' Come back later.'}</span>`
                         : (isOnCooldown ? '' : `<a href="${workinkLink}" style="font-size: 13px; color: #c7b18f; text-decoration: underline;">
-                            ${noCooldown ? 'Watch Ads for 1 Free Key' : (firstAdBoosted ? 'Watch 1 Ad for your First Key' : `Watch Ads for +${adRewardBalance} balance`)}
-                           </a>`)
+                             ${noCooldown ? 'Watch Ads for 1 Free Key' : (firstAdBoosted ? 'Watch 1 Ad for your First Key' : `Watch Ads for +${adRewardBalance} balance`)}
+                            </a>`))
                     }
 
-                    ${firstAdBoosted && !noCooldown && !isOnCooldown
+                    ${!goalReached && firstAdBoosted && !noCooldown && !isOnCooldown
                         ? `<div style="font-size: 12px; color: #22c55e; font-weight: 700; max-width: 80%; line-height: 1.45;">
-                            Your first ad grants +${firstAdBoostBalance.toFixed(1)} – only 1 stage of work for your first free key. After that it's 3 stages per key.
-                           </div>`
+                             Your first ad grants +${firstAdBoostBalance.toFixed(1)} – only 1 stage of work for your first free key. After that it's 3 stages per key.
+                            </div>`
                         : ''}
                 </div>
             `;
@@ -725,7 +756,7 @@ async function ShowBalanceCheckout() {
                 }, 1000);
             }
 
-            if (isOnCooldown) {
+            if (isOnCooldown && !goalReached) {
                 if (cooldownTimer) clearInterval(cooldownTimer);
                 cooldownTimer = setInterval(() => {
                     const remaining = freeKeyCooldownUntil - Date.now();

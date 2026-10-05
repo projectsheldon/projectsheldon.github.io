@@ -510,10 +510,11 @@ function renderUsageProgress() {
 
     // Say what the bar is for, then the exact progress, in one sentence.
     let caption;
+    const goalReached = !rewarded && doneHours >= totalHours;
     if (rewarded) {
         caption = `Free key claimed. Your counter has reset – reach ${totalHours} hours again this week for the next one. (${doneHours}/${totalHours} hours completed)`;
     } else if (doneHours >= totalHours) {
-        caption = `Goal reached. Watch an ad now to claim your free license. (${doneHours}/${totalHours} hours completed)`;
+        caption = `Goal reached. Watch an ad now to claim your free license – no balance needed. Checkout shows your claim button, not "Insufficient Balance". (${doneHours}/${totalHours} hours completed)`;
     } else {
         caption = `Use Sheldon for ${totalHours} hours this week to earn a free license, no ad required. (${doneHours}/${totalHours} hours completed)`;
     }
@@ -522,6 +523,22 @@ function renderUsageProgress() {
     document.getElementById('dash-usage-fill').style.width = pct + '%';
     RUNNER.setProgress(pct);
     document.getElementById('dash-usage-caption').textContent = caption;
+    // Direct CTA so "watch an ad" is one click, not a hunt through checkout.
+    const actionEl = document.getElementById('dash-usage-action');
+    if (actionEl) {
+        if (goalReached) {
+            actionEl.style.display = '';
+            actionEl.innerHTML = '';
+            const btn = document.createElement('a');
+            btn.href = '/checkout/?product=free';
+            btn.textContent = 'Claim – watch 1 ad';
+            btn.style.cssText = 'display:inline-block;background:#c7b18f;color:#050505;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;border-radius:10px;padding:10px 18px;text-decoration:none;';
+            actionEl.appendChild(btn);
+        } else {
+            actionEl.style.display = 'none';
+            actionEl.innerHTML = '';
+        }
+    }
     card.style.display = '';
 }
 
