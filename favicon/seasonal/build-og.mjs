@@ -32,6 +32,41 @@ const BASE_TAGLINE = "Undetected · Feature-rich · Actively maintained";
 
 const n = v => Number(v).toFixed(1);
 
+// One vertical stack, measured in one place. Every number here is derived, not
+// eyeballed, so the lockup stays centred when a value changes.
+//
+// The mark is drawn at its own pixel size with no resampling, and the source
+// `logo.png` has transparent padding: the ink occupies y 17..238 of its 256px
+// canvas (86% of the height, measured by the same alpha scan build-logo.mjs
+// does), so a `mark.size` box shows MARK_INK tall of actual artwork, inset
+// MARK_INK_TOP from the top of the box.
+//
+// The wordmark metrics come from Segoe UI 900 at `word.size`: 150px gives a
+// 685px advance and a 107px cap height, so the S starts at x 257.
+const MARK_SIZE = 176;
+const MARK_INK = 152;                                   // 176 * 221/256
+const MARK_INK_TOP = 12;                                // 176 * 17/256
+const WORD_CAP = 107;                                   // measured cap height
+const WORD_BLOCK = 211;                                 // cap top -> label baseline + descent
+const STACK_GAP = 72;                                   // mark ink bottom -> cap top
+const STACK_TOP = Math.round((H - (MARK_INK + STACK_GAP + WORD_BLOCK)) / 2);
+const CAP_TOP = STACK_TOP + MARK_INK + STACK_GAP;
+const EMBLEM_DROP = 20;                                   // how far the glyph sits below the cap line
+
+const LAYOUT = {
+    mark: { size: MARK_SIZE, cx: 600, y: STACK_TOP - MARK_INK_TOP },
+    word: { size: 150, ls: -5, y: CAP_TOP + WORD_CAP, width: 685 },
+    tag: { size: 26, y: CAP_TOP + 150 },
+    rule: { y: CAP_TOP + 172, width: 420 },
+    label: { size: 14, y: CAP_TOP + 208, ls: 8 },
+    // The seasonal glyph perches on the left shoulder of the wordmark: it hangs
+    // over the empty space to the left of the S and drops EMBLEM_DROP past the
+    // cap line, so it reads as tucked into the corner of the wordmark rather
+    // than floating beside it. Painted before the wordmark, so where the two do
+    // touch it is the glyph that gets covered, never the letter.
+    emblem: { size: 150, x: 196, y: CAP_TOP - 150 + EMBLEM_DROP }
+};
+
 function rng(seed) {
     let a = seed >>> 0;
     return () => {
@@ -43,20 +78,40 @@ function rng(seed) {
 }
 
 // ---------------------------------------------------------------- emoji vectors
+// The viewBox is read out of the file rather than assumed, so an emoji from
+// another set (OpenMoji, Noto, Fluent) drops in beside the Twemoji ones.
 const emojiCache = new Map();
 function emoji(code, x, y, size, opacity = 1, transform = "") {
     if (!emojiCache.has(code)) {
         const raw = fs.readFileSync(path.join(EMOJI_DIR, `${code}.svg`), "utf-8");
-        const inner = raw.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
-        emojiCache.set(code, inner);
+        const open = raw.match(/<svg[^>]*>/);
+        const view = open && open[0].match(/viewBox="([^"]+)"/);
+        emojiCache.set(code, {
+            inner: raw.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, ""),
+            viewBox: view ? view[1] : "0 0 36 36"
+        });
     }
-    return `<svg x="${n(x)}" y="${n(y)}" width="${n(size)}" height="${n(size)}" viewBox="0 0 36 36"` +
-        ` opacity="${opacity}"${transform ? ` transform="${transform}"` : ""}>${emojiCache.get(code)}</svg>`;
+    const { inner, viewBox } = emojiCache.get(code);
+    return `<svg x="${n(x)}" y="${n(y)}" width="${n(size)}" height="${n(size)}" viewBox="${viewBox}"` +
+        ` opacity="${opacity}"${transform ? ` transform="${transform}"` : ""}>${inner}</svg>`;
 }
 
+// ---------------------------------------------------------------- mark slots
+// The supporting glyphs never get hand-placed: each one names a slot and the
+// slot decides where it sits. Every slot is chosen to reach an edge of the
+// canvas, so the seasonal art fills the frame instead of huddling in the middle.
+const SLOTS = {
+    topLeft: { x: 40, y: 36, size: 136, opacity: 0.95 },
+    topRight: { x: 1022, y: 40, size: 128, opacity: 0.95 },
+    botRight: { x: 1040, y: 392, size: 116, opacity: 0.78 },
+    // Deliberately off-canvas: the canvas crops it, which is what makes the
+    // artwork read as a window onto something bigger rather than a framed card.
+    bleed: { x: -128, y: 396, size: 300, opacity: 0.14 }
+};
+
 // ---------------------------------------------------------------- season table
-// emblem  – the big seasonal glyph, hung on the left edge of the wordmark
-// marks   – supporting glyphs placed in the quiet corners
+// emblem – the big seasonal glyph, tucked on the left shoulder of the wordmark
+// marks  – supporting glyphs, one per slot in SLOTS
 const SEASONS = [
     {
         id: "default", label: "PROJECT SHELDON", accent: "#e8b767", soft: "#f7e3ba",
@@ -64,56 +119,62 @@ const SEASONS = [
     },
     {
         id: "newyear", label: "NEW YEAR", accent: "#ffd478", soft: "#d8e8ff",
-        emblem: { code: "1f389", size: 132, x: 222, y: 330 },
+        emblem: { code: "1f389" },
         marks: [
-            { code: "1f942", x: 236, y: 112, size: 82, opacity: 0.95 },
-            { code: "1f38a", x: 1012, y: 168, size: 88, opacity: 0.95 },
-            { code: "2728", x: 1082, y: 424, size: 62, opacity: 0.8 }
+            { code: "1f942", slot: "topLeft" },
+            { code: "1f38a", slot: "topRight" },
+            { code: "2728", slot: "botRight", rot: 12 },
+            { code: "1f389", slot: "bleed" }
         ]
     },
     {
         id: "valentine", label: "VALENTINE", accent: "#ff5a76", soft: "#ffd2dc",
-        emblem: { code: "1f49d", size: 126, x: 226, y: 332 },
+        emblem: { code: "1f49d" },
         marks: [
-            { code: "1f339", x: 236, y: 118, size: 88, opacity: 0.95 },
-            { code: "1f494", x: 1024, y: 186, size: 66, opacity: 0.85 },
-            { code: "2728", x: 1074, y: 430, size: 58, opacity: 0.75 }
+            { code: "1f339", slot: "topLeft" },
+            { code: "1f494", slot: "topRight" },
+            { code: "2728", slot: "botRight", rot: 12 },
+            { code: "1f49d", slot: "bleed" }
         ]
     },
     {
         id: "april", label: "APRIL FOOLS", accent: "#9ee84a", soft: "#ff6fd8",
-        emblem: { code: "1f921", size: 126, x: 226, y: 332 },
+        emblem: { code: "1f921" },
         marks: [
-            { code: "1f3b2", x: 234, y: 116, size: 84, opacity: 0.95 },
-            { code: "1f3b2", x: 1022, y: 184, size: 72, opacity: 0.85, rot: -14 },
-            { code: "1f3b2", x: 1086, y: 424, size: 56, opacity: 0.7, rot: 22 }
+            { code: "1f3b2", slot: "topLeft" },
+            { code: "1f3b2", slot: "topRight", rot: -14 },
+            { code: "1f3b2", slot: "botRight", rot: 22 },
+            { code: "1f921", slot: "bleed" }
         ]
     },
     {
         id: "easter", label: "SPRING BLOOM", accent: "#63e0bd", soft: "#ffb2ce",
-        emblem: { code: "1f95a", size: 128, x: 224, y: 330 },
+        emblem: { code: "1f95a" },
         marks: [
-            { code: "1f338", x: 232, y: 110, size: 84, opacity: 0.95 },
-            { code: "1f423", x: 1006, y: 166, size: 92, opacity: 0.95 },
-            { code: "1f338", x: 1080, y: 424, size: 64, opacity: 0.8, rot: 18 }
+            { code: "1f338", slot: "topLeft" },
+            { code: "1f423", slot: "topRight" },
+            { code: "1f338", slot: "botRight", rot: 18 },
+            { code: "1f95a", slot: "bleed" }
         ]
     },
     {
         id: "halloween", label: "SPOOKY SEASON", accent: "#ff8a1f", soft: "#b07bff",
-        emblem: { code: "1f383", size: 134, x: 220, y: 330 },
+        emblem: { code: "1f383" },
         marks: [
-            { code: "1f577", x: 122, y: 118, size: 58, opacity: 0.9 },
-            { code: "1f987", x: 1006, y: 168, size: 86, opacity: 0.95, rot: -12 },
-            { code: "1f987", x: 1084, y: 428, size: 58, opacity: 0.75, rot: 14 }
+            { code: "1f577", slot: "topLeft", size: 120 },
+            { code: "1f987", slot: "topRight", rot: -12 },
+            { code: "1f987", slot: "botRight", rot: 14 },
+            { code: "1f383", slot: "bleed" }
         ]
     },
     {
         id: "christmas", label: "HOLIDAYS", accent: "#e63c52", soft: "#3fae77",
-        emblem: { code: "1f384", size: 134, x: 220, y: 330 },
+        emblem: { code: "1f384" },
         marks: [
-            { code: "2744", x: 236, y: 112, size: 74, opacity: 0.95 },
-            { code: "1f381", x: 1004, y: 174, size: 86, opacity: 0.95 },
-            { code: "2744", x: 1082, y: 430, size: 60, opacity: 0.8, rot: 16 }
+            { code: "2744", slot: "topLeft" },
+            { code: "1f381", slot: "topRight" },
+            { code: "2744", slot: "botRight", rot: 16 },
+            { code: "1f384", slot: "bleed" }
         ]
     }
 ];
@@ -186,25 +247,29 @@ function buildSvg(season) {
         // corners so they read as wallpaper, not as something in the wordmark
         art = `
     <g stroke="${accent}" stroke-width="1.6" fill="none" stroke-linecap="round">
-      <path d="M151 0v122" opacity="0.55"/>
-      ${spiderWeb(6, 6, 246, 11, [40, 74, 110, 148, 188, 228, 264], false, 0.42)}
-      ${spiderWeb(1178, 6, 184, 9, [36, 66, 98, 132, 168], true, 0.32)}
+      <path d="M100 0v46" opacity="0.55"/>
+      ${spiderWeb(6, 6, 300, 11, [48, 88, 132, 178, 226, 276, 322], false, 0.42)}
+      ${spiderWeb(1194, 6, 240, 9, [46, 84, 126, 170, 216], true, 0.32)}
     </g>`;
     } else {
-        art = `<g stroke="none" transform="translate(0 0)">${sparkField(id.length * 17, 24, 720, 70, 440, 470)}</g>`;
+        art = `<g stroke="none">${sparkField(id.length * 17, 34, 40, 60, 1120, 500)}</g>`;
     }
 
+    // Painted before the wordmark on purpose: the emblem may disappear behind the
+    // S, the S never disappears behind the emblem.
     const emblemMarkup = emblem
         ? `<g>
-      <circle cx="${n(emblem.x + emblem.size / 2)}" cy="${n(emblem.y + emblem.size / 2)}" r="${n(emblem.size * 0.72)}" fill="url(#markGlow)"/>
-      ${emoji(emblem.code, emblem.x, emblem.y, emblem.size, 1, emblem.rot ? `rotate(${emblem.rot} ${n(emblem.x + emblem.size / 2)} ${n(emblem.y + emblem.size / 2)})` : "")}
+      <circle cx="${n(LAYOUT.emblem.x + LAYOUT.emblem.size / 2)}" cy="${n(LAYOUT.emblem.y + LAYOUT.emblem.size / 2)}" r="${n(LAYOUT.emblem.size * 0.72)}" fill="url(#markGlow)"/>
+      ${emoji(emblem.code, LAYOUT.emblem.x, LAYOUT.emblem.y, LAYOUT.emblem.size, 1)}
     </g>`
         : "";
 
-    const marksMarkup = marks.map(m =>
-        emoji(m.code, m.x, m.y, m.size, m.opacity,
-            m.rot ? `rotate(${m.rot} ${n(m.x + m.size / 2)} ${n(m.y + m.size / 2)})` : "")
-    ).join("\n    ");
+    const marksMarkup = marks.map(m => {
+        const s = SLOTS[m.slot];
+        const size = m.size || s.size;
+        return emoji(m.code, s.x, s.y, size, m.opacity ?? s.opacity,
+            m.rot ? `rotate(${m.rot} ${n(s.x + size / 2)} ${n(s.y + size / 2)})` : "");
+    }).join("\n    ");
 
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
   <defs>
@@ -237,9 +302,7 @@ function buildSvg(season) {
   </defs>
 
   <rect width="${W}" height="${H}" fill="url(#bg)"/>
-  <circle cx="600" cy="222" r="230" fill="url(#halo)"/>
-  <circle cx="110" cy="546" r="220" fill="url(#halo)" opacity="0.18"/>
-  <circle cx="1100" cy="72" r="200" fill="url(#halo)" opacity="0.14"/>
+  <circle cx="600" cy="230" r="300" fill="url(#halo)"/>
 
   <g>
     ${watermark(accent)}
@@ -247,20 +310,18 @@ function buildSvg(season) {
 
   ${art}
 
-  <rect x="22" y="22" width="${W - 44}" height="${H - 44}" rx="20" fill="none" stroke="#ffffff" stroke-opacity="0.07"/>
-
   ${emblemMarkup}
   <g>
     ${marksMarkup}
   </g>
 
-  <image href="data:image/png;base64,${logo}" x="528" y="146" width="144" height="144"/>
+  <image href="data:image/png;base64,${logo}" x="${n(LAYOUT.mark.cx - LAYOUT.mark.size / 2)}" y="${LAYOUT.mark.y}" width="${LAYOUT.mark.size}" height="${LAYOUT.mark.size}"/>
 
-  <rect x="410" y="504" width="380" height="2" rx="1" fill="url(#rule)"/>
+  <rect x="${n(600 - LAYOUT.rule.width / 2)}" y="${LAYOUT.rule.y}" width="${LAYOUT.rule.width}" height="2" rx="1" fill="url(#rule)"/>
 
-  <text x="600" y="452" font-family='${FONT}' font-size="120" font-weight="900" fill="url(#word)" text-anchor="middle" letter-spacing="-4">SHELDON</text>
-  <text x="600" y="492" font-family='${FONT}' font-size="23" font-weight="500" fill="#b6b6bb" text-anchor="middle" letter-spacing="0.4">${BASE_TAGLINE}</text>
-  <text x="600" y="538" font-family='${FONT}' font-size="13" font-weight="700" fill="${accent}" text-anchor="middle" letter-spacing="7" opacity="0.6">${label}</text>
+  <text x="600" y="${LAYOUT.word.y}" font-family='${FONT}' font-size="${LAYOUT.word.size}" font-weight="900" fill="url(#word)" text-anchor="middle" letter-spacing="${LAYOUT.word.ls}">SHELDON</text>
+  <text x="600" y="${LAYOUT.tag.y}" font-family='${FONT}' font-size="${LAYOUT.tag.size}" font-weight="500" fill="#b6b6bb" text-anchor="middle" letter-spacing="0.4">${BASE_TAGLINE}</text>
+  <text x="600" y="${LAYOUT.label.y}" font-family='${FONT}' font-size="${LAYOUT.label.size}" font-weight="700" fill="${accent}" text-anchor="middle" letter-spacing="${LAYOUT.label.ls}" opacity="0.6">${label}</text>
 </svg>`;
 }
 

@@ -3,8 +3,9 @@
 //
 // Discord caches an embed image by URL. Serve the right bytes at the same URL and
 // an embed that already exists still shows the old picture, so the query string is
-// stamped with <season>-<iso week>: each flip hands every cache a URL it has never
-// fetched, and the weekly component is a safety net for windows retuned later.
+// stamped with <season>-<iso week>r<rev>: each flip hands every cache a URL it has
+// never fetched, the weekly component is a safety net for windows retuned later,
+// and the revision busts the cache when the art is redrawn inside one season.
 //
 // The icon and the in-page logo are not in this table. They are the bare mark in
 // every season, so they are committed once and never swapped.
@@ -39,7 +40,13 @@ function isoWeek(d) {
     return Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
 }
 
-const stamp = `${season}-${date.getFullYear()}w${String(isoWeek(date)).padStart(2, "0")}`;
+// Art revision. The season and the week only change when the calendar moves, so
+// redrawing the OG art inside the same season would keep serving the URL every
+// cache already has, and Discord would go on showing the old picture. Bump this
+// whenever build-og.mjs output changes and the stamps follow.
+const ART_REV = 3;
+
+const stamp = `${season}-${date.getFullYear()}w${String(isoWeek(date)).padStart(2, "0")}r${ART_REV}`;
 const variants = path.join(HERE, "variants");
 
 // ---------------------------------------------------------------- assets

@@ -16,14 +16,14 @@
     <meta property="og:title" content="Project Sheldon – Advanced Roblox Development">
     <meta property="og:description" content="A feature-rich, actively maintained developer tool for Roblox.">
     <meta property="og:url" content="https://www.projectsheldon.me/dashboard/">
-    <meta property="og:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=halloween-2026w41">
+    <meta property="og:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=halloween-2026w41r3">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Project Sheldon – Advanced Roblox Development">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Project Sheldon – Advanced Roblox Development">
     <meta name="twitter:description" content="A feature-rich, actively maintained developer tool for Roblox.">
-    <meta name="twitter:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=halloween-2026w41">
+    <meta name="twitter:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=halloween-2026w41r3">
     <script src="https://cdn.tailwindcss.com?warn=false" onerror="var f=document.createElement('link');f.rel='stylesheet';f.href='../tailwind-fallback.css';document.head.appendChild(f)"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap"
@@ -463,46 +463,52 @@
             flex-wrap: wrap;
         }
 
-        /* Native select / date input: kept native (data-native) so the control
-           matches the admin toolbar instead of the 140px enhanced-select widget. */
-        .stats-select {
-            appearance: none;
-            -webkit-appearance: none;
+        /* Dropdowns use the admin-panel widget (enhanced-select.js): native
+           selects are upgraded to the custom trigger + menu, so only the date
+           input keeps native styling here – same toolbar look as /admin. */
+        .esel .esel-menu {
+            width: max-content !important;
+            min-width: 0;
+            max-width: min(340px, 92vw);
+        }
+
+        .esel-option > span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .esel .esel-trigger {
+            font-size: .8rem;
+        }
+
+        #dash-activity-range + .esel .esel-menu {
+            min-width: 190px;
+        }
+
+        input[type="date"].stats-select {
             background: rgba(255, 255, 255, .04);
             color: #dcdcdc;
             border: 1px solid var(--dash-line-2);
             border-radius: 9px;
             height: 34px;
-            padding: 0 1.8rem 0 .7rem;
+            padding: 0 .55rem 0 .7rem;
             font-family: 'Inter', sans-serif;
             font-size: .8rem;
             font-weight: 600;
             line-height: 1;
             cursor: pointer;
             outline: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c7b18f' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right .5rem center;
-            background-size: 12px;
+            color-scheme: dark;
             transition: border-color .15s, background-color .15s;
         }
 
-        .stats-select:hover {
+        input[type="date"].stats-select:hover {
             border-color: rgba(255, 255, 255, .25);
         }
 
-        .stats-select:focus {
+        input[type="date"].stats-select:focus {
             border-color: var(--dash-gold);
-        }
-
-        .stats-select option {
-            background: #161618;
-            color: #dcdcdc;
-        }
-
-        input[type="date"].stats-select {
-            color-scheme: dark;
-            padding-right: .55rem;
         }
 
         input[type="date"].stats-select::-webkit-calendar-picker-indicator {
@@ -661,27 +667,24 @@
             white-space: nowrap;
         }
 
-        /* Doubles as the runner's lane, so it needs real height and a target. */
+        /* Doubles as the runner's lane, so it needs real height and a target.
+           Borderless lane on purpose: no outline, no inset shadow, no hover
+           ring – just the surface the runner lives on. */
         .usage-track {
             position: relative;
             height: 64px;
             background: rgba(255, 255, 255, .05);
-            border: 1px solid var(--dash-line);
+            border: 0;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4);
+            box-shadow: none;
             cursor: pointer;
             touch-action: manipulation;
-            transition: border-color .15s, box-shadow .15s;
         }
 
-        .usage-track:hover {
-            border-color: rgba(199, 177, 143, .3);
-        }
-
+        .usage-track:focus,
         .usage-track:focus-visible {
-            outline: 2px solid var(--dash-focus);
-            outline-offset: 2px;
+            outline: none;
         }
 
         .usage-fill {
@@ -1607,7 +1610,7 @@
                         </div>
                         <p class="usage-ratio"><span id="dash-usage-ratio">0 / 10 hours</span></p>
                     </div>
-                    <div class="usage-track" id="dash-usage-track" tabindex="0" aria-describedby="dash-usage-caption" title="Click or press space to jump">
+                    <div class="usage-track" id="dash-usage-track" tabindex="0" aria-describedby="dash-usage-caption" title="Click or press space to jump, hold or press down to duck">
                         <div class="usage-fill" id="dash-usage-fill"></div>
                         <canvas class="usage-runner-canvas" id="dash-usage-canvas" aria-hidden="true"></canvas>
                     </div>
@@ -1642,7 +1645,7 @@
                             <p class="panel-meta" id="dash-activity-date-range" style="margin-top:.35rem;">No data yet.</p>
                         </div>
                         <div class="panel-tools">
-                            <select id="dash-activity-range" class="stats-select" data-native aria-label="Activity range">
+                            <select id="dash-activity-range" class="stats-select" aria-label="Activity range">
                                 <option value="1">1 day</option>
                                 <option value="3">3 days</option>
                                 <option value="7">1 week</option>

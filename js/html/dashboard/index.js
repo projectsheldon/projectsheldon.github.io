@@ -178,33 +178,53 @@ function renderStatCell(host, card) {
 }
 
 // ---------- progress-bar runner ----------
-// An endless-runner easter egg inside the weekly-goal bar. The dino's position
-// along the track is the real progress, so the bar literally is the run. It is
-// deliberately not a game you can lose: a cactus only makes it blink and hop
-// again, and nothing is stored.
+// A chrome-dino easter egg inside the weekly-goal bar. The dino's position
+// along the track is the real progress, so the bar literally is the run.
+// Jumps are manual only (click / tap / space, down-arrow or hold to duck) –
+// hovering never jumps. Hitting anything plays a chrome-style game over and
+// the run restarts on its own after 2 seconds. Progress itself is untouched:
+// only the obstacles and score reset, never the bar. HI score persists in
+// localStorage; nothing else is stored.
+//
+// Sprites are the exact Chrome offline-game sheet (BSD, (c) The Chromium
+// Authors, extracted by wayou/t-rex-runner), vendored at
+// /js/html/dashboard/dino-sprite-2x.png (2x art, smoothly downscaled) and
+// recolored at load so the dark art reads on the dark lane. All source rects
+// below are Chrome's own HDPI coords, as are the multi-box hitboxes, the
+// cactus group layout, the bird bands and the gap formula – only scaled to
+// the lane (SCALE) with real seconds.
 //
 // Canvas rather than CSS animation because the dino, the obstacles and the
 // scroll have to share one clock, and a canvas costs nothing while paused.
 const RUNNER = (() => {
     const TRACK_H = 64;
     const GROUND_PAD = 9;
-    const SPRITE = 1.6;     // the sprite is authored at 16 units
-    const DINO_W = Math.round(16 * SPRITE);
-    const DINO_H = Math.round(16 * SPRITE);
     const MARGIN = 8;
 
-    // Collision box around a cactus, relative to its x.
-    const CACTUS_L = -5;
-    const CACTUS_R = 9;
-    const CACTUS_H = 14;
+    // Lane scale for Chrome's art (dino stands ~26px tall here).
+    const SCALE = 0.55;
+
+    // Exact 2x source rects in dino-sprite-2x.png (Chrome's HDPI coords).
+    // Game units (hitboxes, dest sizes) stay in 1x space – only the blits
+    // read double-resolution art, so edges stay clean instead of pixelated.
+    const SX = { TREX: 1678, SMALL: 446, LARGE: 652, BIRD: 260, SY: 2 };
+    const FR = { JUMP: 0, RUN_A: 176, RUN_B: 264, DEAD: 440, DUCK_A: 528, DUCK_B: 646 };
+    const SRC = { DINO_W: 88, DINO_H: 94, DUCK_W: 118, SMALL_W: 34, SMALL_H: 70, LARGE_W: 50, LARGE_H: 100, BIRD_W: 92, BIRD_H: 80 };
+    const DINO_W = 44, DINO_H = 47, DUCK_W = 59;
+    const SMALL_W = 17, SMALL_H = 35, LARGE_W = 25, LARGE_H = 50;
+    const BIRD_W = 46, BIRD_H = 40;
+    // Bird lanes (dest top edge): high clears standing, mid + low need a duck.
+    const BIRD_BANDS = [8, 19, 22];
 
     const SPEED = 300;      // logical px per second
     const GRAVITY = 2000;
-    const JUMP_V = -310;    // apex 24px at t=0.155s, back down at t=0.31s
-    const JUMP_REACH = 55;  // hop distance that puts the cactus inside the air window
-    const HIT_FLASH = 520;  // ms of red tint after a hit
+    const JUMP_V = -341;    // apex 29px: clears the tall cactus, head stays in lane
+    const FAST_DROP_V = 1050; // down-while-airborne slam, like Chrome's speed drop
+    const DEATH_MS = 2000;  // game-over pause before the run restarts
+    const DEATH_FLASH_MS = 500; // red tint at the start of game over
     const PHYSICS_STEP = 1 / 120;
     const SPRINT_AT = 0.985;
+    const HI_KEY = 'sheldon.dino.hi';
 
     function roundRect(ctx, x, y, w, h, r) {
         const rr = Math.max(0, Math.min(r, w / 2, h / 2));
@@ -218,59 +238,112 @@ const RUNNER = (() => {
         ctx.fill();
     }
 
-    const BODY_INK = '#f2e7cd';
-    const BODY_INK_GOLD = '#1d1913';
-    const BODY_INK_HURT = '#ff9d8a';
-    const CACTUS_INK = 'rgba(242, 231, 205, .34)';
-    const CACTUS_INK_GOLD = 'rgba(29, 25, 19, .3)';
     const ROAD_INK = 'rgba(255, 255, 255, .05)';
     const ROAD_FILLED_INK = 'rgba(0, 0, 0, .07)';
     const DASH_INK = 'rgba(255, 255, 255, .13)';
     const DASH_FILLED_INK = 'rgba(0, 0, 0, .18)';
+    const SCORE_INK = 'rgba(255, 255, 255, .55)';
+    const SCORE_INK_DARK = 'rgba(29, 25, 19, .75)';
 
-    // Two frames only - the legs swap. Proportioned so the head, snout, arm
-    // and stride all survive the 1.6x downscale.
-    function drawDino(ctx, x, y, frame, ink) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(SPRITE, SPRITE);
-        ctx.fillStyle = ink;
+    // Chrome's own hitboxes (1x units), scaled to the lane at draw time.
+    // Forgiving on purpose: the boxes hug the art, never the full sprite.
+    const BX = b => [b[0] * SCALE, b[1] * SCALE, b[2] * SCALE, b[3] * SCALE];
+    const DINO_RUN_BOXES = [[22, 0, 17, 16], [1, 18, 30, 9], [10, 35, 14, 8], [1, 24, 29, 5], [5, 30, 21, 4], [9, 34, 15, 4]].map(BX);
+    const DINO_DUCK_BOXES = [[1, 18, 55, 25]].map(BX);
+    const SMALL_BOXES = [[0, 7, 5, 27], [4, 0, 6, 34], [10, 4, 7, 14]];
+    const LARGE_BOXES = [[0, 12, 7, 38], [8, 0, 7, 49], [13, 10, 10, 38]];
+    const BIRD_BOXES = [[15, 15, 16, 5], [18, 21, 24, 6], [2, 14, 4, 3], [6, 10, 4, 7], [10, 8, 6, 9]].map(BX);
 
-        ctx.beginPath();                         // tail
-        ctx.moveTo(3.4, 9);
-        ctx.lineTo(0, 6.8);
-        ctx.lineTo(3.4, 12.4);
-        ctx.closePath();
-        ctx.fill();
-
-        const stride = frame ? 5.2 : 2.8;
-        roundRect(ctx, 4.2, 10.8, 2.4, frame ? 2.8 : 5.2, 1.2);   // back leg
-        roundRect(ctx, 8.6, 10.8, 2.4, stride, 1.2);               // front leg
-        roundRect(ctx, 3, 6.4, 8.6, 5.4, 2.2);                     // body
-        roundRect(ctx, 9.4, 5.8, 3, 2.4, 1.1);                    // neck
-        roundRect(ctx, 12.2, 8.2, 2.6, 1.9, 0.9);                  // arm
-        roundRect(ctx, 8.2, 1, 6.2, 5.6, 2.1);                     // head
-        roundRect(ctx, 13.2, 3.2, 3.4, 2.4, 1.1);                  // snout
-
-        ctx.save();                             // eye punched out so it reads at 1x
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.beginPath();
-        ctx.arc(11.7, 2.7, 1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.restore();
+    // Cactus groups share Chrome's rule: the middle box stretches across the
+    // joined units, the last box pins to the right edge (ASCII art in the
+    // original: 1-wide, 2-wide, 3-wide central boxes).
+    function groupBoxes(base, unitW, size) {
+        const boxes = base.map(b => b.slice());
+        if (size > 1) {
+            const full = unitW * size;
+            boxes[1][2] = full - boxes[0][2] - boxes[2][2];
+            boxes[2][0] = full - boxes[2][2];
+        }
+        return boxes.map(BX);
     }
 
-    function drawCactus(ctx, x, ground, ink) {
-        ctx.save();
-        ctx.translate(x, ground);
-        ctx.scale(SPRITE, SPRITE);
-        ctx.fillStyle = ink;
-        roundRect(ctx, 0.5, -9, 2.2, 9, 1.1);
-        roundRect(ctx, -2.6, -6.8, 2.4, 1.7, 0.85);
-        roundRect(ctx, 2.9, -4.8, 2.4, 1.7, 0.85);
-        ctx.restore();
+    // ---- Chrome sprite sheet (recolored tints of dino-sprite.png) ----
+    // The dark sheet art is recolored once at load so it reads on the dark
+    // lane; gold for the finished sprint, red for the death flash.
+    const SPR_URL = '/js/html/dashboard/dino-sprite-2x.png';
+    const SPR_IMG = new Image();
+    const TINTS = { light: '#f2e7cd', gold: '#1d1913', red: '#ff9d8a' };
+    const tintSheets = {};
+    let sheetReady = false;
+
+    function buildTints() {
+        if (!SPR_IMG.complete || !SPR_IMG.naturalWidth || sheetReady) return;
+        for (const key of Object.keys(TINTS)) {
+            const c = document.createElement('canvas');
+            c.width = SPR_IMG.naturalWidth;
+            c.height = SPR_IMG.naturalHeight;
+            const g = c.getContext('2d');
+            g.drawImage(SPR_IMG, 0, 0);
+            g.globalCompositeOperation = 'source-in';
+            g.fillStyle = TINTS[key];
+            g.fillRect(0, 0, c.width, c.height);
+            tintSheets[key] = c;
+        }
+        sheetReady = true;
+    }
+
+    SPR_IMG.onload = buildTints;
+    SPR_IMG.src = SPR_URL;
+    buildTints();
+
+    // Blit one sheet cell, or a silhouette rect while the sheet loads so the
+    // game stays playable on a slow first paint.
+    function blit(ctx, tint, sx, sy, sw, sh, dx, dy, dw, dh) {
+        const sheet = sheetReady ? tintSheets[tint] : null;
+        if (!sheet) {
+            ctx.save();
+            ctx.fillStyle = tint === 'gold' ? 'rgba(29, 25, 19, .8)' : 'rgba(242, 231, 205, .8)';
+            ctx.fillRect(dx, dy, dw, dh);
+            ctx.restore();
+            return;
+        }
+        ctx.drawImage(sheet, sx, sy, sw, sh, dx, dy, dw, dh);
+    }
+
+    function drawDinoSprite(ctx, tint, dx, dy, dead, ducking, grounded, now) {
+        let ox, w1x;
+        if (dead) {
+            ox = FR.DEAD;
+            w1x = DINO_W;
+        } else if (!grounded) {
+            ox = FR.JUMP;
+            w1x = DINO_W;
+        } else if (ducking) {
+            const alt = Math.floor(now / 125) % 2;
+            ox = alt ? FR.DUCK_B : FR.DUCK_A;
+            w1x = DUCK_W;
+        } else {
+            ox = Math.floor(now / 83) % 2 ? FR.RUN_B : FR.RUN_A;
+            w1x = DINO_W;
+        }
+        const srcW = w1x === DUCK_W ? SRC.DUCK_W : SRC.DINO_W;
+        blit(ctx, tint, SX.TREX + ox, SX.SY, srcW, SRC.DINO_H, dx, dy, w1x * SCALE, DINO_H * SCALE);
+    }
+
+    // Cactus groups share Chrome's source layout: [1x][2x][3x] contiguous
+    // (in sheet pixels here, game units everywhere else).
+    function drawCactusSprite(ctx, tint, o) {
+        const unitW = o.large ? LARGE_W : SMALL_W;
+        const unitH = o.large ? LARGE_H : SMALL_H;
+        const base = o.large ? SX.LARGE : SX.SMALL;
+        const srcUnit = unitW * 2;
+        const sx = base + (srcUnit * o.size) * (0.5 * (o.size - 1));
+        blit(ctx, tint, sx, SX.SY, srcUnit * o.size, unitH * 2, o.x, o.y, o.w, o.h);
+    }
+
+    function drawBirdSprite(ctx, tint, o, now) {
+        const frame = Math.floor(now / (1000 / 6)) % 2;
+        blit(ctx, tint, SX.BIRD + SRC.BIRD_W * frame, SX.SY, SRC.BIRD_W, SRC.BIRD_H, o.x, o.y, o.w, o.h);
     }
 
     function drawFlag(ctx, x, ground, ink) {
@@ -286,9 +359,74 @@ const RUNNER = (() => {
         ctx.restore();
     }
 
+    function fmtScore(n) {
+        n = Math.max(0, Math.floor(n));
+        const s = String(n);
+        return s.length > 5 ? s : s.padStart(5, '0');
+    }
+
+    function drawScore(ctx, w, fillRight, score, hi) {
+        const label = hi > 0 ? 'HI ' + fmtScore(hi) + ' ' + fmtScore(score) : fmtScore(score);
+        ctx.save();
+        ctx.font = '700 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = fillRight > w - tw - 10 ? SCORE_INK_DARK : SCORE_INK;
+        ctx.fillText(label, w - 8, 6);
+        ctx.restore();
+    }
+
+    function drawGameOverPanel(ctx, w, score, hi) {
+        const title = 'GAME OVER';
+        const mid = fmtScore(score) + ' PTS · HI ' + fmtScore(hi);
+        const sub = 'restarting…';
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '800 13px Inter, sans-serif';
+        const bw = Math.min(w - 4, Math.max(
+            ctx.measureText(title).width,
+            (ctx.font = '700 11px "JetBrains Mono", monospace', ctx.measureText(mid).width)
+        ) + 40);
+        const bh = 62;
+        const bx = Math.max(2, (w - bw) / 2);
+        const by = Math.max(1, (TRACK_H - bh) / 2);
+        ctx.fillStyle = 'rgba(8, 9, 13, .92)';
+        roundRect(ctx, bx, by, bw, bh, 10);
+        const cx = bx + bw / 2;
+        ctx.fillStyle = '#c7b18f';
+        ctx.font = '800 13px Inter, sans-serif';
+        ctx.fillText(title, cx, by + 15);
+        ctx.fillStyle = '#fff';
+        ctx.font = '700 11px "JetBrains Mono", monospace';
+        ctx.fillText(mid, cx, by + 33);
+        ctx.fillStyle = 'rgba(255, 255, 255, .45)';
+        ctx.font = '600 10px Inter, sans-serif';
+        ctx.fillText(sub, cx, by + 50);
+        ctx.restore();
+    }
+
+    function loadHi() {
+        try {
+            return Math.max(0, parseInt(localStorage.getItem(HI_KEY), 10) || 0);
+        } catch (e) {
+            return 0;
+        }
+    }
+
+    function saveHi(v) {
+        try {
+            localStorage.setItem(HI_KEY, String(v));
+        } catch (e) {}
+    }
+
     function create(canvas) {
         const track = canvas.parentElement;
         const ctx = canvas.getContext('2d');
+        // Smooth downscale of the 2x art: clean edges, no pixelation.
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
         const s = {
@@ -299,10 +437,18 @@ const RUNNER = (() => {
             vy: 0,
             acc: 0,
             grounded: true,
+            keyDuck: false,
+            touchDuck: false,
+            ducking: false,
             obstacles: [],
             spawnIn: 0.9,
             scroll: 0,
-            hitUntil: 0,
+            dist: 0,
+            hi: loadHi(),
+            lastScore: 0,
+            dead: false,
+            deathAt: 0,
+            deadUntil: 0,
             last: 0,
             raf: 0,
             running: false,
@@ -311,9 +457,12 @@ const RUNNER = (() => {
 
         const ground = () => TRACK_H - GROUND_PAD;
         const filled = () => s.progress * s.w;
-        // Just ahead of the fill edge, so the light sprite always has the dark
+        // Dino footprint follows the sprite: wide when ducking.
+        const dinoCellW = () => (s.ducking ? DUCK_W : DINO_W) * SCALE;
+        // Just ahead of the fill edge, so the sprite always has the dark
         // lane behind it instead of straddling the gold.
-        const dinoX = () => Math.min(filled() + 3, s.w - DINO_W - MARGIN);
+        const dinoX = () => Math.min(filled() + 3, s.w - dinoCellW() - MARGIN);
+        const dinoTopY = () => ground() - DINO_H * SCALE + s.y;
 
         function resize() {
             const w = track.getBoundingClientRect().width;
@@ -323,12 +472,16 @@ const RUNNER = (() => {
             canvas.width = Math.round(w * dpr);
             canvas.height = Math.round(TRACK_H * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            // Resizing resets context state – keep the smooth downscale.
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             paint(0);
         }
 
         function paint(now) {
             const gy = ground();
             const finished = s.target > SPRINT_AT;
+            const dead = s.dead;
 
             ctx.clearRect(0, 0, s.w, TRACK_H);
 
@@ -343,72 +496,163 @@ const RUNNER = (() => {
                 ctx.fillRect(x, gy, 13, 1.5);
             }
 
+            const tint = finished ? 'gold' : (dead && (now - s.deathAt) < DEATH_FLASH_MS ? 'red' : 'light');
             for (const o of s.obstacles) {
-                drawCactus(ctx, o.x, gy, o.x < f ? CACTUS_INK_GOLD : CACTUS_INK);
+                if (o.kind === 'bird') drawBirdSprite(ctx, tint, o, now);
+                else drawCactusSprite(ctx, tint, o);
             }
 
-            // Finished: the bar is all gold, so the runner inverts with it.
-            // A hit tints it red for a beat rather than blinking it out of existence.
-            const hurt = now < s.hitUntil;
             if (finished) drawFlag(ctx, s.w - MARGIN - 2, gy, 'rgba(29, 25, 19, .6)');
 
-            if (!finished) {
-                ctx.shadowColor = 'rgba(0, 0, 0, .8)';
-                ctx.shadowBlur = 2;
-                ctx.shadowOffsetY = 1;
-            }
-            const ink = finished ? BODY_INK_GOLD : (hurt ? BODY_INK_HURT : BODY_INK);
-            drawDino(ctx, dinoX(), gy - DINO_H + s.y, Math.floor(performance.now() / 110) % 2, ink);
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetY = 0;
+            drawDinoSprite(ctx, tint, dinoX(), dinoTopY(), dead, s.ducking, s.grounded, now);
+            drawScore(ctx, s.w, f, score(), s.hi);
+            if (dead && !finished) drawGameOverPanel(ctx, s.w, s.lastScore, s.hi);
+        }
+
+        function score() {
+            return Math.floor(s.dist * 0.025);
         }
 
         function hop() {
-            if (!s.grounded) return;
+            if (s.dead || !s.grounded) return;
+            // Jumping stands back up, like the real game.
+            s.keyDuck = false;
+            s.touchDuck = false;
+            s.ducking = false;
             s.grounded = false;
             s.vy = JUMP_V;
             s.y = -0.01;
         }
 
+        function pressDuck() {
+            if (s.dead) return;
+            if (!s.grounded) {
+                // Down mid-air slams down, like Chrome's speed drop.
+                s.vy = Math.max(s.vy, FAST_DROP_V);
+            }
+            s.keyDuck = true;
+        }
+
+        // A lost run freezes for the death beat, then only the obstacles
+        // and score reset – progress is data-driven and never touched here.
+        function die(now) {
+            if (s.dead) return;
+            s.dead = true;
+            s.deathAt = now;
+            s.deadUntil = now + DEATH_MS;
+            s.lastScore = score();
+            if (s.lastScore > s.hi) {
+                s.hi = s.lastScore;
+                saveHi(s.hi);
+            }
+        }
+
+        function revive() {
+            s.dead = false;
+            s.deathAt = 0;
+            s.deadUntil = 0;
+            s.lastScore = 0;
+            s.dist = 0;
+            s.obstacles.length = 0;
+            s.spawnIn = 1.1;
+            s.y = 0;
+            s.vy = 0;
+            s.acc = 0;
+            s.grounded = true;
+            s.ducking = false;
+        }
+
+        // Chrome-style hit test: cheap outer boxes first, then the forgiving
+        // per-sprite boxes. Origins carry Chrome's 1px inset, scaled down.
+        function boxHit(a, b) {
+            return a[0] < b[0] + b[2] && a[0] + a[2] > b[0] &&
+                a[1] < b[1] + b[3] && a[1] + a[3] > b[1];
+        }
+
+        function checkCollision() {
+            const dw = (s.ducking ? DUCK_W : DINO_W) * SCALE;
+            const dh = DINO_H * SCALE;
+            const dx = dinoX();
+            const dy = dinoTopY();
+            const outer = [dx + 0.5, dy + 0.5, dw - 1, dh - 1];
+            const dBoxes = s.ducking ? DINO_DUCK_BOXES : DINO_RUN_BOXES;
+            for (const o of s.obstacles) {
+                if (o.x > dx + dw || o.x + o.w < dx) continue;
+                if (!boxHit(outer, [o.x + 0.5, o.y + 0.5, o.w - 1, o.h - 1])) continue;
+                for (const t of dBoxes) {
+                    const tb = [t[0] + dx + 0.5, t[1] + dy + 0.5, t[2], t[3]];
+                    for (const c of o.boxes) {
+                        if (boxHit(tb, [c[0] + o.x + 0.5, c[1] + o.y + 0.5, c[2], c[3]])) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function spawnObstacle() {
+            let w, minGapCfg;
+            if (Math.random() < 0.32) {
+                const band = BIRD_BANDS[(Math.random() * BIRD_BANDS.length) | 0];
+                w = BIRD_W * SCALE;
+                minGapCfg = 150;
+                s.obstacles.push({
+                    kind: 'bird',
+                    x: s.w + 12,
+                    y: band,
+                    w, h: BIRD_H * SCALE,
+                    boxes: BIRD_BOXES,
+                    speed: Math.round(SPEED * 1.15)
+                });
+            } else {
+                const large = Math.random() < 0.45;
+                const r = Math.random();
+                const size = r < 0.5 ? 1 : (r < 0.8 ? 2 : 3);
+                const unitW = large ? LARGE_W : SMALL_W;
+                const unitH = large ? LARGE_H : SMALL_H;
+                w = unitW * size * SCALE;
+                minGapCfg = 120;
+                s.obstacles.push({
+                    kind: 'cactus',
+                    large, size,
+                    x: s.w + 12,
+                    y: ground() - unitH * SCALE,
+                    w, h: unitH * SCALE,
+                    boxes: groupBoxes(large ? LARGE_BOXES : SMALL_BOXES, unitW, size)
+                });
+            }
+            // Chrome's gap formula at our px/frame pace: room scales with width.
+            const perFrame = SPEED / 60;
+            const minGap = Math.round(w * perFrame + minGapCfg * 0.6);
+            const maxGap = Math.round(minGap * 1.5);
+            s.spawnIn = (minGap + Math.random() * (maxGap - minGap)) / SPEED;
+        }
+
         function step(dt, now) {
             s.progress += (s.target - s.progress) * Math.min(1, dt * 1000 / 260);
 
-            if (s.target > SPRINT_AT) {
-                s.obstacles.length = 0;
-            } else {
-                s.scroll += SPEED * dt;
-                s.spawnIn -= dt;
-                if (s.spawnIn <= 0) {
-                    s.spawnIn = 0.7 + Math.random() * 0.8;
-                    s.obstacles.push({ x: s.w + 12 });
-                }
+            // Ducking is held-down + grounded, like the real game.
+            s.ducking = (s.keyDuck || s.touchDuck) && s.grounded && !s.dead;
 
-                const dx = dinoX();
-                let nearest = Infinity;
-                for (const o of s.obstacles) {
-                    o.x -= SPEED * dt;
-                    const gap = o.x - dx;
-                    if (gap > -8 && gap < nearest) nearest = gap;
-                }
-                if (nearest < JUMP_REACH && s.grounded) hop();
-
-                // a cactus still standing where the dino's feet are is a hit
-                const feet = ground() + s.y;
-                s.obstacles = s.obstacles.filter(o => {
-                    if (o.x + CACTUS_R < dx || o.x - CACTUS_L > dx + DINO_W) return o.x > -30;
-                    if (feet > ground() - CACTUS_H) {
-                        s.hitUntil = now + HIT_FLASH;
-                        hop();
-                        return false;
+            if (!s.dead) {
+                s.dist += SPEED * dt;
+                if (s.target > SPRINT_AT) {
+                    s.obstacles.length = 0;
+                } else {
+                    s.scroll += SPEED * dt;
+                    s.spawnIn -= dt;
+                    if (s.spawnIn <= 0) spawnObstacle();
+                    for (const o of s.obstacles) {
+                        o.x -= (o.speed || SPEED) * dt;
                     }
-                    return true;
-                });
+                    if (checkCollision()) die(now);
+                    s.obstacles = s.obstacles.filter(o => o.x + o.w > -30);
+                }
             }
 
             // Fixed substeps: plain Euler at frame dt undershot the apex by ~10%,
-            // which is exactly the margin the hop needs.
+            // which is exactly the margin the hop needs. Frozen while dead.
             s.acc += dt;
-            while (s.acc >= PHYSICS_STEP) {
+            while (!s.dead && s.acc >= PHYSICS_STEP) {
                 if (!s.grounded || s.y < 0) {
                     s.vy += GRAVITY * PHYSICS_STEP;
                     s.y += s.vy * PHYSICS_STEP;
@@ -425,7 +669,10 @@ const RUNNER = (() => {
         function frame(now) {
             const dt = Math.min(0.05, (now - s.last) / 1000) || 0;
             s.last = now;
-            step(dt, now);
+            // Dead: the world stays frozen behind the panel; after 2s the
+            // obstacles reset and the run continues with progress intact.
+            if (s.dead && now >= s.deadUntil) revive();
+            if (!s.dead) step(dt, now);
             paint(now);
             s.raf = requestAnimationFrame(frame);
         }
@@ -443,12 +690,52 @@ const RUNNER = (() => {
             cancelAnimationFrame(s.raf);
         }
 
-        track.addEventListener('pointerdown', e => { e.preventDefault(); hop(); });
+        // Mouse clicks jump at once. Touch is tap-to-jump, hold-to-duck:
+        // a quick tap jumps on release, holding past 180ms ducks instead.
+        let holdTimer = 0;
+        track.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            if (s.dead) return;
+            if (e.pointerType === 'mouse') {
+                hop();
+                return;
+            }
+            const pid = e.pointerId;
+            holdTimer = setTimeout(() => {
+                holdTimer = 0;
+                if (s.dead) return;
+                if (!s.grounded) s.vy = Math.max(s.vy, FAST_DROP_V);
+                s.touchDuck = true;
+            }, 180);
+            const up = ev => {
+                if (ev.pointerId !== pid) return;
+                track.removeEventListener('pointerup', up);
+                track.removeEventListener('pointercancel', up);
+                if (holdTimer) {
+                    clearTimeout(holdTimer);
+                    holdTimer = 0;
+                    hop();
+                }
+                s.touchDuck = false;
+            };
+            track.addEventListener('pointerup', up);
+            track.addEventListener('pointercancel', up);
+        });
         track.addEventListener('keydown', e => {
             if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'ArrowUp' || e.key === 'Enter') {
                 e.preventDefault();
                 hop();
+            } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                e.preventDefault();
+                if (!e.repeat) pressDuck();
             }
+        });
+        track.addEventListener('keyup', e => {
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') s.keyDuck = false;
+        });
+        window.addEventListener('blur', () => {
+            s.keyDuck = false;
+            s.touchDuck = false;
         });
 
         new ResizeObserver(resize).observe(track);

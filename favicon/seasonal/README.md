@@ -77,6 +77,25 @@ longer swapped by `pick.mjs`.
 `_contact-sheet.png` here, which is the fastest way to eyeball a change across
 every season at once.
 
+## Embed art construction
+
+The OG art fills the whole 1200x630 canvas. There is no frame and no rounded
+border: an inner stroke made Discord show a picture inside a picture, and the
+seasonal art is meant to reach the edges, not sit in a box inside them. The
+supporting glyphs live in four named slots (`SLOTS` in `build-og.mjs`) rather
+than hand-placed coordinates, so a new season picks slots instead of doing
+arithmetic. One of the slots, `bleed`, is deliberately positioned off-canvas and
+is cropped by the canvas edge, which is what stops the corners reading as empty.
+
+The seasonal emblem perches on the left shoulder of the wordmark: its foot lands
+on the cap line and it hangs over the space to the left of the S. It is painted
+*before* the wordmark, so if the two overlap it is the glyph that gets covered,
+never the letter. The layout numbers in `LAYOUT` are the single source of truth –
+wordmark metrics were measured (150 px Segoe UI 900 gives a 685 px advance and a
+107 px cap height), so the S starts at x 257 and the caps top out at y 359. If
+the wordmark size changes, re-measure and update `word.width` and `word.capTop`,
+and check the contact sheet.
+
 ## Icon construction
 
 The icon is the mark on transparency and nothing else: no tile, no glow, no
