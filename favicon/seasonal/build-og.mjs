@@ -41,30 +41,50 @@ const n = v => Number(v).toFixed(1);
 // does), so a `mark.size` box shows MARK_INK tall of actual artwork, inset
 // MARK_INK_TOP from the top of the box.
 //
-// The wordmark metrics come from Segoe UI 900 at `word.size`: 150px gives a
-// 685px advance and a 107px cap height, so the S starts at x 257.
+// The wordmark metrics come from Segoe UI 900 at `word.size`, measured per glyph
+// so a perch can be pinned to the S itself rather than to a guess: "SHELDON" is
+// 720px wide starting at x 255, and the S is 86px of that. The caps top out at
+// CAP_TOP and the baseline is 107px below it.
 const MARK_SIZE = 176;
 const MARK_INK = 152;                                   // 176 * 221/256
 const MARK_INK_TOP = 12;                                // 176 * 17/256
 const WORD_CAP = 107;                                   // measured cap height
 const WORD_BLOCK = 211;                                 // cap top -> label baseline + descent
-const STACK_GAP = 72;                                   // mark ink bottom -> cap top
+const STACK_GAP = 24;                                   // mark ink bottom -> cap top
 const STACK_TOP = Math.round((H - (MARK_INK + STACK_GAP + WORD_BLOCK)) / 2);
 const CAP_TOP = STACK_TOP + MARK_INK + STACK_GAP;
-const EMBLEM_DROP = 20;                                   // how far the glyph sits below the cap line
+const S_LEFT = 255;                                       // left edge of the S
+const S_WIDTH = 86;                                       // advance width of the S
+const EMBLEM_DROP = 20;                                   // shoulder perch: how far below the cap line
+
+// ---------------------------------------------------------------- emblem perches
+// The seasonal glyph is pinned to the letter, not to the canvas, so each season
+// can hang its own thing off the S in a way that suits the glyph. Anchors are
+// fractions of the S box, which is S_LEFT..S_LEFT+S_WIDTH by CAP_TOP..baseline.
+//
+//   shoulder   above and left of the S, dropping past the cap line
+//   topLeft    perched on the top-left corner of the S
+//   botLeft    tucked against the bottom-left of the S
+//   botRight   tucked against the bottom-right of the S
+//
+// `lift` pulls the glyph up off the anchor, `over` pushes it into the letter.
+// Both are in px, and a negative `over` leaves a deliberate gap.
+const PERCH = {
+    shoulder: { x: S_LEFT - 59, y: CAP_TOP - 150 + EMBLEM_DROP, size: 150, over: 0 },
+    topLeft: { x: S_LEFT - 26, y: CAP_TOP - 104, size: 132, over: 12 },
+    // botLeft and botRight straddle the baseline: the glyph's foot lands on it, so
+    // it must not reach past the descender line (CAP_TOP + 140) or it collides
+    // with the tagline.
+    botLeft: { x: S_LEFT - 30, y: CAP_TOP - 26, size: 128 },
+    botRight: { x: S_LEFT + 30, y: CAP_TOP - 26, size: 128 }
+};
 
 const LAYOUT = {
     mark: { size: MARK_SIZE, cx: 600, y: STACK_TOP - MARK_INK_TOP },
-    word: { size: 150, ls: -5, y: CAP_TOP + WORD_CAP, width: 685 },
+    word: { size: 150, ls: -5, y: CAP_TOP + WORD_CAP, width: 720, left: S_LEFT },
     tag: { size: 26, y: CAP_TOP + 150 },
     rule: { y: CAP_TOP + 172, width: 420 },
-    label: { size: 14, y: CAP_TOP + 208, ls: 8 },
-    // The seasonal glyph perches on the left shoulder of the wordmark: it hangs
-    // over the empty space to the left of the S and drops EMBLEM_DROP past the
-    // cap line, so it reads as tucked into the corner of the wordmark rather
-    // than floating beside it. Painted before the wordmark, so where the two do
-    // touch it is the glyph that gets covered, never the letter.
-    emblem: { size: 150, x: 196, y: CAP_TOP - 150 + EMBLEM_DROP }
+    label: { size: 14, y: CAP_TOP + 208, ls: 8 }
 };
 
 function rng(seed) {
@@ -98,19 +118,35 @@ function emoji(code, x, y, size, opacity = 1, transform = "") {
 
 // ---------------------------------------------------------------- mark slots
 // The supporting glyphs never get hand-placed: each one names a slot and the
-// slot decides where it sits. Every slot is chosen to reach an edge of the
-// canvas, so the seasonal art fills the frame instead of huddling in the middle.
+// slot decides where it sits.
+//
+// Two rules from the research, both now enforced here:
+//
+// 1. Safe zone. Platforms crop OG images unpredictably, and the accepted keep-zone
+//    is a centred 1080x600 inside the 1200x630 canvas. Every slot is placed so
+//    its glyph fits *inside* that box - the artwork can touch the canvas edge,
+//    but nothing that carries meaning may. An earlier version ran the corner
+//    glyphs to x 40 and x 1156, which is 80px outside the keep-zone on one side.
+// 2. Clear space. Brand lockup guidance (Android, JHU) asks for a margin of one
+//    lowercase 'o' between the mark and the wordmark. The wordmark spans
+//    x 255..945 at y 298..405, so botRight starts at 1024 - 79px of air, wider
+//    than an 'o' at this size. The two top slots clear it vertically: the
+//    wordmark's cap line is y 298 and they end at 167, so no slot can crowd it.
+//
+// There is deliberately no fourth slot. An earlier version had an off-canvas
+// "bleed" slot, but it carried the same glyph as the emblem and landed on the
+// same left-hand diagonal, so the embed showed two of the same picture - one
+// solid, one ghosted - and read as a mistake. The lower left is left empty.
+const SAFE = { x: 60, y: 15, w: 1080, h: 600 };           // centred 1080x600 keep-zone
+
 const SLOTS = {
-    topLeft: { x: 40, y: 36, size: 136, opacity: 0.95 },
-    topRight: { x: 1022, y: 40, size: 128, opacity: 0.95 },
-    botRight: { x: 1040, y: 392, size: 116, opacity: 0.78 },
-    // Deliberately off-canvas: the canvas crops it, which is what makes the
-    // artwork read as a window onto something bigger rather than a framed card.
-    bleed: { x: -128, y: 396, size: 300, opacity: 0.14 }
+    topLeft: { x: SAFE.x, y: SAFE.y + 20, size: 132, opacity: 0.95 },
+    topRight: { x: SAFE.x + SAFE.w - 128, y: SAFE.y + 24, size: 128, opacity: 0.95 },
+    botRight: { x: SAFE.x + SAFE.w - 116, y: 392, size: 116, opacity: 0.78 }
 };
 
 // ---------------------------------------------------------------- season table
-// emblem – the big seasonal glyph, tucked on the left shoulder of the wordmark
+// emblem – the big seasonal glyph, pinned to the S via a PERCH anchor
 // marks  – supporting glyphs, one per slot in SLOTS
 const SEASONS = [
     {
@@ -119,62 +155,62 @@ const SEASONS = [
     },
     {
         id: "newyear", label: "NEW YEAR", accent: "#ffd478", soft: "#d8e8ff",
-        emblem: { code: "1f389" },
+        // the popper bursts up and out of the top of the S
+        emblem: { code: "1f389", perch: "topLeft", at: { size: 128, dx: -6, dy: 6 }, rot: -18 },
         marks: [
             { code: "1f942", slot: "topLeft" },
             { code: "1f38a", slot: "topRight" },
-            { code: "2728", slot: "botRight", rot: 12 },
-            { code: "1f389", slot: "bleed" }
+            { code: "2728", slot: "botRight", rot: 12 }
         ]
     },
     {
         id: "valentine", label: "VALENTINE", accent: "#ff5a76", soft: "#ffd2dc",
-        emblem: { code: "1f49d" },
+        // the heart sits on the S's top-left shoulder, tipped toward the letter
+        emblem: { code: "1f49d", perch: "topLeft", at: { size: 122, dx: -4 }, rot: 12 },
         marks: [
             { code: "1f339", slot: "topLeft" },
             { code: "1f494", slot: "topRight" },
-            { code: "2728", slot: "botRight", rot: 12 },
-            { code: "1f49d", slot: "bleed" }
+            { code: "2728", slot: "botRight", rot: 12 }
         ]
     },
     {
         id: "april", label: "APRIL FOOLS", accent: "#9ee84a", soft: "#ff6fd8",
-        emblem: { code: "1f921" },
+        // the clown peeks out from behind the S's left leg
+        emblem: { code: "1f921", perch: "botLeft", at: { size: 118, dx: -16, dy: 8 } },
         marks: [
             { code: "1f3b2", slot: "topLeft" },
             { code: "1f3b2", slot: "topRight", rot: -14 },
-            { code: "1f3b2", slot: "botRight", rot: 22 },
-            { code: "1f921", slot: "bleed" }
+            { code: "1f3b2", slot: "botRight", rot: 22 }
         ]
     },
     {
         id: "easter", label: "SPRING BLOOM", accent: "#63e0bd", soft: "#ffb2ce",
-        emblem: { code: "1f95a" },
+        // the egg balances against the S's left leg, tipped over
+        emblem: { code: "1f95a", perch: "botLeft", at: { size: 112, dx: -14, dy: 6 }, rot: -14 },
         marks: [
             { code: "1f338", slot: "topLeft" },
             { code: "1f423", slot: "topRight" },
-            { code: "1f338", slot: "botRight", rot: 18 },
-            { code: "1f95a", slot: "bleed" }
+            { code: "1f338", slot: "botRight", rot: 18 }
         ]
     },
     {
         id: "halloween", label: "SPOOKY SEASON", accent: "#ff8a1f", soft: "#b07bff",
-        emblem: { code: "1f383" },
+        // the pumpkin stands on the baseline, tucked against the S's left leg
+        emblem: { code: "1f383", perch: "botLeft", at: { size: 124, dx: -22, dy: 6 } },
         marks: [
             { code: "1f577", slot: "topLeft", size: 120 },
             { code: "1f987", slot: "topRight", rot: -12 },
-            { code: "1f987", slot: "botRight", rot: 14 },
-            { code: "1f383", slot: "bleed" }
+            { code: "1f987", slot: "botRight", rot: 14 }
         ]
     },
     {
         id: "christmas", label: "HOLIDAYS", accent: "#e63c52", soft: "#3fae77",
-        emblem: { code: "1f384" },
+        // the tree stands on the S's top-left corner, like it grew there
+        emblem: { code: "1f384", perch: "topLeft", at: { size: 138, dx: -14, dy: 4 } },
         marks: [
             { code: "2744", slot: "topLeft" },
             { code: "1f381", slot: "topRight" },
-            { code: "2744", slot: "botRight", rot: 16 },
-            { code: "1f384", slot: "bleed" }
+            { code: "2744", slot: "botRight", rot: 16 }
         ]
     }
 ];
@@ -258,10 +294,19 @@ function buildSvg(season) {
     // Painted before the wordmark on purpose: the emblem may disappear behind the
     // S, the S never disappears behind the emblem.
     const emblemMarkup = emblem
-        ? `<g>
-      <circle cx="${n(LAYOUT.emblem.x + LAYOUT.emblem.size / 2)}" cy="${n(LAYOUT.emblem.y + LAYOUT.emblem.size / 2)}" r="${n(LAYOUT.emblem.size * 0.72)}" fill="url(#markGlow)"/>
-      ${emoji(emblem.code, LAYOUT.emblem.x, LAYOUT.emblem.y, LAYOUT.emblem.size, 1)}
-    </g>`
+        ? (() => {
+            const p = { ...PERCH[emblem.perch || "shoulder"], ...(emblem.at || {}) };
+            const size = p.size;
+            const x = p.x + (p.dx || 0);
+            const y = p.y + (p.dy || 0);
+            const spin = emblem.rot
+                ? `rotate(${emblem.rot} ${n(x + size / 2)} ${n(y + size / 2)})`
+                : "";
+            return `<g>
+      <circle cx="${n(x + size / 2)}" cy="${n(y + size / 2)}" r="${n(size * 0.72)}" fill="url(#markGlow)"/>
+      ${emoji(emblem.code, x, y, size, 1, spin)}
+    </g>`;
+        })()
         : "";
 
     const marksMarkup = marks.map(m => {

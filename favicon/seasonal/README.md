@@ -84,17 +84,26 @@ border: an inner stroke made Discord show a picture inside a picture, and the
 seasonal art is meant to reach the edges, not sit in a box inside them. The
 supporting glyphs live in four named slots (`SLOTS` in `build-og.mjs`) rather
 than hand-placed coordinates, so a new season picks slots instead of doing
-arithmetic. One of the slots, `bleed`, is deliberately positioned off-canvas and
-is cropped by the canvas edge, which is what stops the corners reading as empty.
+arithmetic. There is no off-canvas "bleed" slot: one existed, and because it
+carried the same glyph as the emblem and sat on the same left-hand diagonal, the
+embed showed two of the same picture - one solid, one ghosted - and read as a
+mistake. The lower left is left empty instead.
 
-The seasonal emblem perches on the left shoulder of the wordmark: its foot lands
-on the cap line and it hangs over the space to the left of the S. It is painted
-*before* the wordmark, so if the two overlap it is the glyph that gets covered,
-never the letter. The layout numbers in `LAYOUT` are the single source of truth –
-wordmark metrics were measured (150 px Segoe UI 900 gives a 685 px advance and a
-107 px cap height), so the S starts at x 257 and the caps top out at y 359. If
-the wordmark size changes, re-measure and update `word.width` and `word.capTop`,
-and check the contact sheet.
+The seasonal emblem is pinned to the **letter**, not the canvas, so each season can
+hang its own thing off the S in a way that suits the glyph. `PERCH` holds the
+anchors – `shoulder`, `topLeft`, `botLeft`, `botRight` – measured against the S
+box, and each season's `emblem` entry picks one and nudges it with `dx`/`dy`/
+`size`/`rot`. The wordmark is measured per glyph for exactly this reason:
+"SHELDON" is 720px wide starting at x 255, the S alone is 86px of that, and the
+caps run 107px from `CAP_TOP` to the baseline. If the wordmark size changes,
+re-measure with the same canvas `measureText` call and update `S_LEFT` and
+`S_WIDTH`.
+
+The `botLeft` / `botRight` anchors straddle the baseline: the glyph's foot lands on
+it, so it must not reach past `CAP_TOP + 140` or it collides with the tagline.
+
+Every emblem is painted *before* the wordmark, so where a glyph and the S overlap
+it is the glyph that gets covered, never the letter.
 
 ## Icon construction
 

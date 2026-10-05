@@ -1,0 +1,140 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sheldon OG preview</title>
+<style>
+  body{background:#07070a;color:#ddd;font-family:'Segoe UI',Arial;margin:0;padding:24px}
+  h1{font-size:18px;letter-spacing:3px;text-transform:uppercase;color:#e8b767;margin:0 0 6px}
+  p.sub{color:#7a7a84;font-size:13px;margin:0 0 18px;max-width:900px;line-height:1.5}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .tab{background:#141317;border:1px solid #2c2c33;color:#9a9aa4;padding:8px 14px;border-radius:8px;
+       font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+  .tab.on{background:#e8b767;color:#0a0a0c;border-color:#e8b767}
+  /* the real thing: 1200x630, scaled to fit */
+  .stage{width:1200px;height:630px;position:relative;overflow:hidden;border-radius:10px;
+         background:radial-gradient(circle at 50% 46%,#141317 0%,#0a0a0c 55%,#040405 100%);
+         transform-origin:top left;margin-bottom:22px}
+  .halo{position:absolute;border-radius:50%;filter:blur(0px)}
+  .wm{position:absolute;inset:0;font-family:'Cascadia Mono',Consolas,monospace;font-weight:600;
+      color:#fff;opacity:.05;overflow:hidden}
+  .mark{position:absolute;left:512px;top:56px;width:176px;height:176px}
+  .word{position:absolute;left:0;top:0;width:100%;text-align:center;
+        font-family:'Segoe UI','Inter','Poppins',Arial,sans-serif;font-weight:900;
+        font-size:150px;letter-spacing:-5px;line-height:107px;color:transparent;
+        background:linear-gradient(180deg,#fff 0%,#fdf7ec 58%,var(--accent) 100%);
+        -webkit-background-clip:text;background-clip:text}
+  .tag{position:absolute;left:0;width:100%;text-align:center;font-family:'Segoe UI',Arial;
+       font-weight:500;font-size:26px;color:#b6b6bb;letter-spacing:.4px}
+  .rule{position:absolute;left:390px;height:2px;border-radius:1px;
+        background:linear-gradient(90deg,transparent,var(--accent) 24%,var(--soft) 76%,transparent)}
+  .lbl{position:absolute;left:0;width:100%;text-align:center;font-family:'Segoe UI',Arial;
+       font-weight:700;font-size:14px;letter-spacing:8px;color:var(--accent);opacity:.6}
+  .emblem{position:absolute}
+  .emblem img{width:100%;height:100%;display:block}
+  .slot{position:absolute}
+  .slot img{width:100%;height:100%;display:block}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px;max-width:1200px}
+  .opt{background:#141317;border:1px solid #2c2c33;border-radius:8px;padding:8px 10px;
+       display:flex;align-items:center;gap:9px;cursor:pointer;min-width:186px}
+  .opt.on{border-color:#e8b767;background:#1c1a15}
+  .opt img{width:34px;height:34px;flex:0 0 34px}
+  .opt .m{font-size:12px;color:#ddd;line-height:1.3}
+  .opt .c{font-size:10px;color:#6a6a74;font-family:Consolas,monospace}
+  .cur .m{color:#e8b767;font-weight:700}
+  a{color:#6fa8ff}
+</style></head><body>
+<h1>OG preview</h1>
+<p class="sub">The real lockup at true geometry - 1200x630, Segoe UI 900 at 150px, cap line at y 298, S at x 255. Swap emblems to judge them on the actual background instead of a white sheet. Wordmark is always painted last, so a glyph may vanish behind the S but the S never does.</p>
+<div class="tabs" id="tabs"></div>
+<div class="bar" id="opts"></div>
+<div class="stage" id="stage">
+  <div class="wm" id="wm"></div>
+  <img class="mark" src="logo.png">
+  <div class="slot" id="s1"></div><div class="slot" id="s2"></div><div class="slot" id="s3"></div>
+  <div class="emblem" id="emb"></div>
+  <div class="word" id="word">SHELDON</div>
+  <div class="rule" id="rule"></div>
+  <div class="tag" id="tag">Undetected · Feature-rich · Actively maintained</div>
+  <div class="lbl" id="lbl"></div>
+</div>
+<script>
+const ICON = c => "https://api.iconify.design/twemoji/" + c + ".svg";
+const W = 1200, H = 630, CAP = 298, BASE = CAP + 107;
+const SEASONS = {
+  newyear:   { accent:"#ffd478", soft:"#d8e8ff", label:"NEW YEAR",
+    cur:["1f389","party popper"], perch:{x:229,y:198,size:128,rot:-18},
+    marks:[["1f942",0,0.95],["1f38a",1,0.95],["2728",2,0.78]],
+    opts:[["1f386","fireworks"],["1f387","sparkler"],["1f37e","cork pop"],["1f31f","glowing star"]] },
+  valentine: { accent:"#ff5a76", soft:"#ffd2dc", label:"VALENTINE",
+    cur:["1f49d","heart w/ ribbon"], perch:{x:225,y:198,size:122,rot:12},
+    marks:[["1f339",0,0.95],["1f494",1,0.95],["2728",2,0.78]],
+    opts:[["1f48d","ring"],["1f5d3","heart deco"],["1f498","cupid"],["1f48c","love letter"]] },
+  april:     { accent:"#9ee84a", soft:"#ff6fd8", label:"APRIL FOOLS",
+    cur:["1f921","clown face"], perch:{x:209,y:280,size:118,rot:0},
+    marks:[["1f3b2",0,0.95],["1f3b2",1,0.95],["1f3b2",2,0.78]],
+    opts:[["1f0cf","joker card"],["1f978","disguised"],["1f61c","tongue out"],["1f608","wink"]] },
+  easter:    { accent:"#63e0bd", soft:"#ffb2ce", label:"SPRING BLOOM",
+    cur:["1f95a","egg"], perch:{x:211,y:278,size:112,rot:-14},
+    marks:[["1f338",0,0.95],["1f423",1,0.95],["1f338",2,0.78]],
+    opts:[["1f98b","butterfly"],["1f430","rabbit"],["1f989","owl"],["1f337","tulip"]] },
+  halloween: { accent:"#ff8a1f", soft:"#b07bff", label:"SPOOKY SEASON",
+    cur:["1f383","jack-o-lantern"], perch:{x:199,y:278,size:124,rot:0},
+    marks:[["1f577",0,0.95],["1f987",1,0.95],["1f987",2,0.78]],
+    opts:[["1f47b","ghost"],["1f480","skull"],["1f52f","crystal ball"],["1f483","vampire"]] },
+  christmas: { accent:"#e63c52", soft:"#3fae77", label:"HOLIDAYS",
+    cur:["1f384","christmas tree"], perch:{x:215,y:198,size:138,rot:0},
+    marks:[["2744",0,0.95],["1f381",1,0.95],["2744",2,0.78]],
+    opts:[["1f385","santa"],["1f32d","hot choc"],["1f366","socks"],["1f965","pine tree"]] }
+};
+// safe zone 1080x600 centred, per OG platform guidance
+const SAFE = {x:60, y:15};
+const SLOTS = [ {x:60,y:35,s:132}, {x:1012,y:39,s:128}, {x:1024,y:392,s:116} ];
+
+const GLY = ["{ }","()","#","@","::","end","local","~=","=>","print","[ ]","*","+",";","%","do","if","#!"];
+let seed = 0x5eed;
+const rnd = () => { seed=(seed+0x6d2b79f5)>>>0; let t=Math.imul(seed^(seed>>>15),1|seed); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; };
+let wm = "";
+for (let i=0;i<86;i++){ const x=rnd()*W,y=rnd()*H,s=12+rnd()*17,r=Math.round((rnd()-.5)*60),o=(.026+rnd()*.042);
+  wm += '<span style="position:absolute;left:'+x+'px;top:'+y+'px;font-size:'+s+'px;transform:rotate('+r+'deg);opacity:'+o+'">'+GLY[Math.floor(rnd()*GLY.length)]+'</span>'; }
+document.getElementById("wm").innerHTML = wm;
+
+let cur = (location.hash || "").replace("#", "") || "halloween", code = null;
+function draw() {
+  const d = SEASONS[cur];
+  const st = document.getElementById("stage");
+  st.style.setProperty("--accent", d.accent);
+  st.style.setProperty("--soft", d.soft);
+  const p = d.perch;
+  const c = code || d.cur[0];
+  const e = document.getElementById("emb");
+  e.style.cssText = "left:"+p.x+"px;top:"+p.y+"px;width:"+p.size+"px;height:"+p.size+"px;transform:rotate("+(p.rot||0)+"deg)";
+  e.innerHTML = '<img src="'+ICON(c)+'">';
+  document.getElementById("word").style.top = CAP + "px";
+  document.getElementById("tag").style.top = (CAP+124) + "px";
+  document.getElementById("rule").style.top = (CAP+172) + "px";
+  document.getElementById("lbl").style.top = (CAP+208) + "px";
+  document.getElementById("lbl").textContent = d.label;
+  d.marks.forEach(([c,i,op]) => {
+    const s = SLOTS[i], el = document.getElementById("s" + (i+1));
+    el.style.cssText = "left:"+s.x+"px;top:"+s.y+"px;width:"+s.s+"px;height:"+s.s+"px;opacity:"+op;
+    el.innerHTML = '<img src="'+ICON(c)+'">';
+  });
+  buildOpts();
+}
+function buildOpts() {
+  const d = SEASONS[cur], box = document.getElementById("opts");
+  // cur is [code, name]; the candidates are also [code, name]
+  const all = [{ c: d.cur[0], n: d.cur[1], cur: true }].concat(d.opts.map(([c, n]) => ({ c, n })));
+  box.innerHTML = all.map(o =>
+    '<div class="opt '+(o.cur?"cur":"")+(code===o.c||(!code&&o.cur)?" on":"")+'" data-c="'+o.c+'">'+
+    '<img src="'+ICON(o.c)+'"><div><div class="m">'+o.n+'</div><div class="c">U+'+o.c.toUpperCase()+'</div></div></div>').join("");
+  box.querySelectorAll(".opt").forEach(o => o.onclick = () => { code = o.dataset.c; draw(); });
+}
+document.getElementById("tabs").innerHTML = Object.keys(SEASONS).map(k =>
+  '<div class="tab '+(k===cur?"on":"")+'" data-k="'+k+'">'+k+'</div>').join("");
+document.getElementById("tabs").querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  cur = t.dataset.k; code = null;
+  document.getElementById("tabs").querySelectorAll(".tab").forEach(x=>x.classList.toggle("on", x.dataset.k===cur));
+  draw();
+});
+function fit(){ const s = Math.min(1, (window.innerWidth-60)/W); document.getElementById("stage").style.transform = "scale("+s+")"; }
+window.addEventListener("resize", fit); fit(); draw();
+</script></body></html>

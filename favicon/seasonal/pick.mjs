@@ -44,7 +44,7 @@ function isoWeek(d) {
 // redrawing the OG art inside the same season would keep serving the URL every
 // cache already has, and Discord would go on showing the old picture. Bump this
 // whenever build-og.mjs output changes and the stamps follow.
-const ART_REV = 3;
+const ART_REV = 7;
 
 const stamp = `${season}-${date.getFullYear()}w${String(isoWeek(date)).padStart(2, "0")}r${ART_REV}`;
 const variants = path.join(HERE, "variants");
