@@ -514,7 +514,7 @@ function renderUsageProgress() {
     if (rewarded) {
         caption = `Free key claimed. Your counter has reset – reach ${totalHours} hours again this week for the next one. (${doneHours}/${totalHours} hours completed)`;
     } else if (doneHours >= totalHours) {
-        caption = `Goal reached. Watch an ad now to claim your free license – no balance needed. Checkout shows your claim button, not "Insufficient Balance". (${doneHours}/${totalHours} hours completed)`;
+        caption = `Goal reached. Claim your free license now – no ad needed. (${doneHours}/${totalHours} hours completed)`;
     } else {
         caption = `Use Sheldon for ${totalHours} hours this week to earn a free license, no ad required. (${doneHours}/${totalHours} hours completed)`;
     }
@@ -523,16 +523,49 @@ function renderUsageProgress() {
     document.getElementById('dash-usage-fill').style.width = pct + '%';
     RUNNER.setProgress(pct);
     document.getElementById('dash-usage-caption').textContent = caption;
-    // Direct CTA so "watch an ad" is one click, not a hunt through checkout.
+    // Direct claim – no ad, no checkout hunt. Calls POST /workink/claim-usage.
     const actionEl = document.getElementById('dash-usage-action');
     if (actionEl) {
         if (goalReached) {
             actionEl.style.display = '';
             actionEl.innerHTML = '';
-            const btn = document.createElement('a');
-            btn.href = '/checkout/?product=free';
-            btn.textContent = 'Claim – watch 1 ad';
-            btn.style.cssText = 'display:inline-block;background:#c7b18f;color:#050505;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;border-radius:10px;padding:10px 18px;text-decoration:none;';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Claim free license';
+            btn.style.cssText = 'display:inline-block;background:#c7b18f;color:#050505;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;border:0;cursor:pointer;border-radius:10px;padding:10px 18px;';
+            btn.addEventListener('click', async () => {
+                btn.disabled = true;
+                const original = btn.textContent;
+                btn.textContent = 'Claiming…';
+                try {
+                    const token = DiscordAuth.GetSessionToken();
+                    if (!token) {
+                        window.location.href = '/';
+                        return;
+                    }
+                    const apiUrl = await Api.GetApiUrl();
+                    const res = await fetch(`${apiUrl}/workink/claim-usage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionToken: token })
+                    });
+                    const data = await res.json().catch(() => null);
+                    if (data && data.ok && data.license) {
+                        try { sessionStorage.setItem('usage_reward', '1'); } catch (e) {}
+                        const params = `${encodeURIComponent(data.license.key)}:${encodeURIComponent(data.license.product || 'License')}`;
+                        window.location.href = `/license/?showKeys=${params}`;
+                        return;
+                    }
+                    const reason = (data && data.message) || 'Could not claim your free key. Please try again.';
+                    document.getElementById('dash-usage-caption').textContent = reason;
+                    btn.disabled = false;
+                    btn.textContent = original;
+                } catch (e) {
+                    document.getElementById('dash-usage-caption').textContent = 'Could not claim your free key. Please try again.';
+                    btn.disabled = false;
+                    btn.textContent = original;
+                }
+            });
             actionEl.appendChild(btn);
         } else {
             actionEl.style.display = 'none';

@@ -297,7 +297,7 @@ function renderUsageProgress()
             <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c7b18f,#e2c9a1);border-radius:3px;transition:width 0.5s ease"></div>
         </div>
         <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px;text-align:center">
-            ${rewarded ? 'Free key claimed. Counter reset – use Sheldon another ' + thresholdHours + ' hours this week for the next.' : (remaining > 0 ? 'Use Sheldon ' + remaining + ' more hour' + (remaining === 1 ? '' : 's') + ' this week to earn a free key without watching an ad.' : 'Threshold met! Your next ad grants a free key.')}
+            ${rewarded ? 'Free key claimed. Counter reset – use Sheldon another ' + thresholdHours + ' hours this week for the next.' : (remaining > 0 ? 'Use Sheldon ' + remaining + ' more hour' + (remaining === 1 ? '' : 's') + ' this week to earn a free key without watching an ad.' : 'Threshold met! Claim it free from your dashboard or checkout – no ad needed.')}
         </div>
     `;
     list.appendChild(wrap);

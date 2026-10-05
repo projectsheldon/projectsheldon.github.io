@@ -691,11 +691,11 @@ async function ShowBalanceCheckout() {
 
             const goalBanner = goalReached
                 ? `<div style="font-size: 12px; color: #34d399; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); border-radius: 10px; padding: 10px 14px; max-width: 85%; line-height: 1.5; margin-top: -12px; font-weight: 700;">
-                        Goal reached (${usageDoneHours}/${usageThresholdHours} hours) – your next ad grants a free key directly. No balance needed.
+                        Goal reached (${usageDoneHours}/${usageThresholdHours} hours) – claim your free key now. No ad, no balance needed.
                        </div>`
                 : (usageThresholdSeconds > 0
                     ? `<div style="font-size: 11px; color: rgba(255,255,255,0.5); max-width: 85%; line-height: 1.5; margin-top: -12px;">
-                        Progress: ${usageDoneHours}/${usageThresholdHours} hours – reach ${usageThresholdHours} hours and your next ad grants a key directly, or earn balance below.
+                        Progress: ${usageDoneHours}/${usageThresholdHours} hours – reach ${usageThresholdHours} hours and claim directly here, no ad needed, or earn balance below.
                        </div>`
                     : '');
 
@@ -710,9 +710,9 @@ async function ShowBalanceCheckout() {
                     ${goalBanner}
 
                     ${goalReached
-                        ? `<a href="${workinkLink}" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px; text-decoration: none; display: block; text-align: center;">
-                             WATCH 1 AD TO CLAIM
-                            </a>`
+                        ? `<button id="claim-usage-btn" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px;">
+                             CLAIM FREE KEY
+                            </button>`
                         : (isOnCooldown
                         ? `<button id="purchase-balance-btn" class="btn-action" style="max-width: 300px; padding-top: 17px; padding-bottom: 17px; opacity: 0.4; cursor: not-allowed;" disabled>
                              COOLDOWN – ${formatCooldown(cooldownRemaining)}
@@ -723,7 +723,7 @@ async function ShowBalanceCheckout() {
                     }
 
                     ${goalReached
-                        ? `<span style="font-size: 12px; color: rgba(255,255,255,0.5);">No balance needed – the ad claims the goal reward.${isOnCooldown ? ' Balance purchases are on cooldown, but the goal claim still works.' : ''}</span>`
+                        ? `<span id="claim-usage-msg" style="font-size: 12px; color: rgba(255,255,255,0.5);">No ad needed – the key is yours for reaching the goal.${isOnCooldown ? ' Balance purchases are on cooldown, but the goal claim still works.' : ''}</span>`
                         : (isRateLimited
                         ? `<span id="rate-limit-msg" style="font-size: 12px; color: #ef4444; font-weight: 700;">Rate limited – max balance reached.${rateLimitRemaining > 0 ? ` Try again in ${formatCooldown(rateLimitRemaining)}.` : ' Come back later.'}</span>`
                         : (isOnCooldown ? '' : `<a href="${workinkLink}" style="font-size: 13px; color: #c7b18f; text-decoration: underline;">
@@ -778,6 +778,69 @@ async function ShowBalanceCheckout() {
                 }
 
                 const purchaseBtn = document.getElementById('purchase-balance-btn');
+                const claimBtn = document.getElementById('claim-usage-btn');
+                if (claimBtn) {
+                    claimBtn.addEventListener('click', async () => {
+                        claimBtn.disabled = true;
+                        claimBtn.textContent = 'Claiming...';
+                        const msgEl = document.getElementById('claim-usage-msg');
+
+                        try
+                        {
+                            // Fingerprint is best-effort here (audit + deal bookkeeping):
+                            // the claim must still work when the checks are blocked.
+                            let deviceId = null;
+                            let browserFp = null;
+                            try {
+                                const identity = await loadIdentityPayloadSafe();
+                                deviceId = identity.get('fingerprint') || identity.get('deviceId') || null;
+                                browserFp = identity.get('browserFp') || null;
+                            } catch (e) {}
+
+                            const claimRes = await fetch(`${apiUrl}/workink/claim-usage`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    sessionToken: authToken,
+                                    fingerprint: deviceId,
+                                    browserFp: browserFp
+                                }),
+                                credentials: 'include'
+                            });
+                            const claimData = await claimRes.json().catch(() => null);
+
+                            if (claimData && claimData.ok && claimData.license)
+                            {
+                                try { localStorage.removeItem('cache_licenses'); } catch (e) {}
+                                try { sessionStorage.setItem('usage_reward', '1'); } catch (e) {}
+                                const params = `${encodeURIComponent(claimData.license.key)}:${encodeURIComponent(claimData.license.product || 'License')}`;
+                                window.location.href = `/license/?showKeys=${params}`;
+                                return;
+                            }
+
+                            const reason = (claimData && claimData.message) || 'Could not claim your free key. Please try again.';
+                            if (msgEl) {
+                                msgEl.textContent = reason;
+                                msgEl.style.color = '#ef4444';
+                            } else {
+                                alert(reason);
+                            }
+                            claimBtn.disabled = false;
+                            claimBtn.textContent = 'CLAIM FREE KEY';
+                        }
+                        catch (err)
+                        {
+                            if (msgEl) {
+                                msgEl.textContent = 'Could not claim your free key. Please try again.';
+                                msgEl.style.color = '#ef4444';
+                            } else {
+                                alert('Claim failed');
+                            }
+                            claimBtn.disabled = false;
+                            claimBtn.textContent = 'CLAIM FREE KEY';
+                        }
+                    });
+                }
                 if (purchaseBtn && canAfford) {
                     purchaseBtn.addEventListener('click', async () => {
                         purchaseBtn.disabled = true;
