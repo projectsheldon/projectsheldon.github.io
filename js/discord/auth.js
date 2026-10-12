@@ -1019,7 +1019,7 @@ const DiscordAuth = {
         const boundRow = !!start.bound;
         sub.textContent = linkMode
             ? (boundRow
-                ? 'On the new device, scan the code and type the PIN – it signs in as you.'
+                ? 'On the new device, scan the code – the PIN fills in by itself, one tap signs it in as you.'
                 : 'Session check failed – this code needs phone approval instead.')
             : 'Scan with your phone, then approve on it.';
         modal.appendChild(sub);
@@ -1042,7 +1042,9 @@ const DiscordAuth = {
         modal.appendChild(code);
         const codeHint = document.createElement('p');
         codeHint.style.cssText = 'color:rgba(255,255,255,0.45);font-size:12px;margin:0 0 10px;';
-        codeHint.textContent = 'Type this on your phone after scanning.';
+        codeHint.textContent = linkMode
+            ? 'Scan this on the new device – the PIN fills in by itself.'
+            : 'Scan this with your phone – the PIN fills in by itself.';
         modal.appendChild(codeHint);
 
         const count = document.createElement('p');

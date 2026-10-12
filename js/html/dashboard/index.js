@@ -1619,6 +1619,71 @@ if (linkDeviceBtn) {
     });
 }
 
+// Settings – Connections subtab bar (same tokens as the license filter).
+document.querySelectorAll('[data-connsub-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-connsub-btn]').forEach(b => {
+            const on = b === btn;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('[data-connsub-panel]').forEach(p => {
+            p.style.display = p.dataset.connsubPanel === btn.dataset.connsubBtn ? 'flex' : 'none';
+        });
+    });
+});
+
+// Settings – "Link a device": approve the logged-OUT device's PIN with this
+// browser's session, so the other screen signs in through its own poll.
+const linkPinInput = document.getElementById('dash-link-pin');
+const linkPinBtn = document.getElementById('dash-link-pin-btn');
+const linkPinMsg = document.getElementById('dash-link-pin-msg');
+if (linkPinInput) {
+    linkPinInput.addEventListener('input', () => {
+        linkPinInput.value = linkPinInput.value.toUpperCase().replace(/[^0-9A-Z-]/g, '').slice(0, 9);
+    });
+}
+if (linkPinBtn) {
+    linkPinBtn.addEventListener('click', async () => {
+        const say = (msg, ok) => {
+            if (linkPinMsg) {
+                linkPinMsg.textContent = msg;
+                linkPinMsg.style.color = ok ? 'var(--dash-ok)' : '';
+            }
+        };
+        const pin = (linkPinInput ? linkPinInput.value : '').replace(/[^0-9A-Z]/g, '');
+        if (pin.length !== 8) {
+            say('Enter the 8-character PIN from the other screen.');
+            return;
+        }
+        linkPinBtn.disabled = true;
+        try {
+            const apiUrl = await Api.GetApiUrl();
+            const t = DiscordAuth.GetSessionToken();
+            const res = await fetch(`${apiUrl}/discord/quick-approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+                body: JSON.stringify({ user_code: pin, sessionToken: t })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (data && data.ok) {
+                say('Approved – the other device is signing in now.', true);
+                if (linkPinInput) linkPinInput.value = '';
+            } else if (data && data.error === 'wrong_code') {
+                say(`Wrong PIN – ${data.remaining || 0} tries left. Check the other screen.`);
+            } else if (data && data.error === 'too_many_attempts') {
+                say('Too many wrong PINs – that code is burned. Make a new one.');
+            } else {
+                say('That PIN is not valid any more – start a new quick login.');
+            }
+        } catch (e) {
+            say('Could not reach the login server. Check your connection and try again.');
+        } finally {
+            linkPinBtn.disabled = false;
+        }
+    });
+}
+
 // The injected topbar is 64px of content plus its own 1px bottom border, so the
 // hand-written --dash-topbar-h was always a pixel short and the sidebar's top
 // edge sat under that border. Measure it instead and publish it back.
