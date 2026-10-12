@@ -1605,19 +1605,171 @@ if (endInput) {
     });
 }
 
-// Settings tab: reuse the same QR+PIN modal as the topbar menu entry.
-const linkDeviceBtn = document.getElementById('dash-link-device-btn');
-if (linkDeviceBtn) {
-    linkDeviceBtn.addEventListener('click', () => {
-        try {
-            if (DiscordAuth && typeof DiscordAuth.LinkNewDevice === 'function') {
-                DiscordAuth.LinkNewDevice().catch(() => {});
-            } else if (typeof Notify !== 'undefined') {
-                Notify('Login module still loading – try again in a moment.', 'warning', 2500);
+// Settings – Connections: one gold card that mints a real QR + PIN. Minting
+// goes through DiscordAuth.MintLinkRow (the same call the quick-login modal
+// uses) and the QR is drawn with the vendored js/util/qrcode.js lib.
+(function initLinkCard() {
+    const btn = document.getElementById('dash-link-device-btn');
+    if (!btn) return;
+    const idle = document.getElementById('dash-link-idle');
+    const live = document.getElementById('dash-link-live');
+    const done = document.getElementById('dash-link-done');
+    const qr = document.getElementById('dash-link-qr');
+    const codeEl = document.getElementById('dash-link-code');
+    const countEl = document.getElementById('dash-link-count');
+    const msg = document.getElementById('dash-link-card-msg');
+    const refreshBtn = document.getElementById('dash-link-refresh');
+    const hideBtn = document.getElementById('dash-link-hide');
+    const doneHideBtn = document.getElementById('dash-link-hide-done');
+    if (!idle || !live || !done || !qr || !codeEl) return;
+
+    let row = null;
+    let pollTimer = null;
+    let countTimer = null;
+    let busy = false;
+
+    function say(text, type) {
+        if (msg) msg.textContent = text || '';
+        if (text && type && typeof Notify !== 'undefined') Notify(text, type, 3500);
+    }
+
+    function stopTimers() {
+        if (pollTimer) clearTimeout(pollTimer);
+        if (countTimer) clearInterval(countTimer);
+        pollTimer = null;
+        countTimer = null;
+    }
+
+    function showIdle() {
+        idle.hidden = false;
+        live.hidden = true;
+        done.hidden = true;
+    }
+
+    function showLive() {
+        idle.hidden = true;
+        live.hidden = false;
+        done.hidden = true;
+    }
+
+    function showDone() {
+        idle.hidden = true;
+        live.hidden = true;
+        done.hidden = false;
+    }
+
+    function fmtLeft() {
+        const s = Math.max(0, Math.ceil((row.expires_at - Date.now()) / 1000));
+        return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    function tickCount() {
+        if (countEl && row) countEl.textContent = 'Code expires in ' + fmtLeft();
+    }
+
+    function watchCountdown() {
+        if (countTimer) clearInterval(countTimer);
+        tickCount();
+        countTimer = setInterval(() => {
+            if (!row) { stopTimers(); return; }
+            if (Date.now() >= row.expires_at) {
+                stopTimers();
+                row = null;
+                showIdle();
+                say('That code expired – generate a new one.');
+                return;
             }
-        } catch (e) {}
+            tickCount();
+        }, 1000);
+    }
+
+    function watchClaim(apiUrl) {
+        if (pollTimer) clearTimeout(pollTimer);
+        pollTimer = setTimeout(async () => {
+            if (!row) return;
+            try {
+                const res = await fetch(`${apiUrl}/discord/quick-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_token: row.device_token })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!row) return;
+                // The new device claimed the row, so the minter sees consumed.
+                if (data && data.ok && data.status === 'consumed') {
+                    stopTimers();
+                    row = null;
+                    showDone();
+                    say('New device linked.', 'success');
+                    return;
+                }
+                if (data && data.ok && (data.status === 'expired' || data.status === 'denied')) {
+                    stopTimers();
+                    row = null;
+                    showIdle();
+                    say(data.status === 'denied' ? 'The approval was declined.' : 'That code expired – generate a new one.');
+                    return;
+                }
+            } catch (e) { /* network hiccup – keep polling until the countdown ends */ }
+            if (row) watchClaim(apiUrl);
+        }, 2000);
+    }
+
+    async function mint() {
+        if (busy) return;
+        busy = true;
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = 'Preparing…';
+        say('');
+        try {
+            const apiUrl = await Api.GetApiUrl();
+            const minted = await DiscordAuth.MintLinkRow(apiUrl, true);
+            const start = minted.start;
+            if (minted.status === 429) {
+                say('Too many codes – wait a while and try again.', 'warning');
+                return;
+            }
+            if (!start || !start.ok || typeof start.qr_url !== 'string' ||
+                typeof start.user_code !== 'string' || typeof start.device_token !== 'string') {
+                say('Could not reach the login server. Check your connection and try again.', 'error');
+                return;
+            }
+            stopTimers();
+            row = { device_token: start.device_token, expires_at: Number(start.expires_at) };
+            const pin = String(start.user_code).toUpperCase().replace(/[^0-9A-Z]/g, '');
+            codeEl.textContent = pin.replace(/(.{4})(.{4})/, '$1–$2');
+            qr.style.display = '';
+            try {
+                const qrLib = await import('../../util/qrcode.js');
+                qrLib.drawQRCode(qr, start.qr_url, { scale: 3, dark: '#141210', light: '#e8d9bd' });
+            } catch (e) { qr.style.display = 'none'; }
+            showLive();
+            watchCountdown();
+            watchClaim(apiUrl);
+            if (start.bound === false) say('Session check failed – this code needs approval instead.', 'warning');
+        } catch (e) {
+            say('Could not reach the login server. Check your connection and try again.', 'error');
+        } finally {
+            busy = false;
+            btn.disabled = false;
+            btn.textContent = original;
+        }
+    }
+
+    btn.addEventListener('click', () => { mint().catch(() => {}); });
+    if (refreshBtn) refreshBtn.addEventListener('click', () => { mint().catch(() => {}); });
+    if (hideBtn) hideBtn.addEventListener('click', () => {
+        stopTimers();
+        row = null;
+        showIdle();
+        say('Hidden – the code stays valid until it expires.');
     });
-}
+    if (doneHideBtn) doneHideBtn.addEventListener('click', () => {
+        showIdle();
+        say('');
+    });
+})();
 
 // Settings – Connections subtab bar (same tokens as the license filter).
 document.querySelectorAll('[data-connsub-btn]').forEach(btn => {

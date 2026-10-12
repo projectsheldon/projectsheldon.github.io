@@ -871,6 +871,38 @@ const DiscordAuth = {
         }
         return DiscordAuth._QuickLogin(apiUrl, true);
     },
+    // Single mint path for quick-login rows. Both the modal flow (_QuickLogin)
+    // and the dashboard link card call this – the server is the only minter,
+    // there is no forked copy. Link mode pre-binds the row to this browser's
+    // session so the new device claims straight in.
+    async MintLinkRow(apiUrl, linkMode)
+    {
+        let fp = null;
+        try { fp = localStorage.getItem('sheldon_fp'); } catch(e) {}
+        const startBody = fp ? { device_id: fp } : {};
+        const startHeaders = { 'Content-Type': 'application/json' };
+        // Link mode proves the minter at mint time – without this the row
+        // stays an approval-type row and the new device cannot claim it.
+        if(linkMode)
+        {
+            try
+            {
+                const t = DiscordAuth.GetSessionToken();
+                if(t)
+                {
+                    startBody.sessionToken = t;
+                    startHeaders.Authorization = 'Bearer ' + t;
+                }
+            } catch(e) {}
+        }
+        const res = await fetch(`${apiUrl}/discord/quick-start`, {
+            method: 'POST',
+            headers: startHeaders,
+            body: JSON.stringify(startBody)
+        });
+        const start = await res.json().catch(() => ({}));
+        return { status: res.status, start };
+    },
     async _QuickLogin(apiUrl, linkMode)
     {
         window._quickLoginCancelled = false;
@@ -973,31 +1005,9 @@ const DiscordAuth = {
         let start = null;
         try
         {
-            let fp = null;
-            try { fp = localStorage.getItem('sheldon_fp'); } catch(e) {}
-            const startBody = fp ? { device_id: fp } : {};
-            const startHeaders = { 'Content-Type': 'application/json' };
-            // Link mode proves the minter at mint time – without this the row
-            // stays an approval-type row and the new device cannot claim it.
-            if(linkMode)
-            {
-                try
-                {
-                    const t = DiscordAuth.GetSessionToken();
-                    if(t)
-                    {
-                        startBody.sessionToken = t;
-                        startHeaders.Authorization = 'Bearer ' + t;
-                    }
-                } catch(e) {}
-            }
-            const res = await fetch(`${apiUrl}/discord/quick-start`, {
-                method: 'POST',
-                headers: startHeaders,
-                body: JSON.stringify(startBody)
-            });
-            start = await res.json().catch(() => ({}));
-            if(res.status === 429) { paintError('Too many quick logins – wait a while and try again.'); return; }
+            const minted = await DiscordAuth.MintLinkRow(apiUrl, linkMode);
+            start = minted.start;
+            if(minted.status === 429) { paintError('Too many quick logins – wait a while and try again.'); return; }
         }
         catch(e) { start = null; }
         if(!alive()) return;
