@@ -16,14 +16,22 @@ A scripting environment made for letting users have more customizability over th
 
 Paste a script; get back the same code, unreadable.
 
-source.lua
-raw input
-
 0 chars · 0 lines · 0 B
 sign in to obfuscate
 
 virtualize
-Obfuscate →
+Obfuscate
+
+obfuscated.lua
+awaiting input
+
+No output yet
+submit a script and the scrambled result lands here
+
+–
+
+Copy cheat.SObfus(…)
+Copy output
 
 Signed-in users only – the scrambled output lands on its own page. Rate limits are enforced by the server.
 

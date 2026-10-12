@@ -136,9 +136,9 @@
   @keyframes discordSpin { to { transform: rotate(360deg); } }
 
   .layout {
-    max-width: 80rem; margin: 104px auto 0; padding: 1.5rem 1.5rem 1rem;
+    max-width: 80rem; margin: 76px auto 0; padding: 1rem 1.5rem 1rem;
     display: flex; gap: 2rem; align-items: stretch;
-    height: calc(100vh - 104px); height: calc(100dvh - 104px);
+    height: calc(100vh - 76px); height: calc(100dvh - 76px);
   }
   aside {
     width: 16rem; flex-shrink: 0; height: 100%; overflow-y: auto;
@@ -275,7 +275,7 @@
     color: var(--muted-2);
     font-weight: 400;
   }
-  article .body { margin-top: 2rem; }
+  article .body { margin-top: 1.25rem; }
   article h2 {
     font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;
     margin: 1.5rem 0 0.75rem; color: var(--fg);
@@ -644,11 +644,39 @@
     border-radius: 0.5rem;
   }
   .obf-error[hidden] { display: none; }
-  .obf-toggle {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    font-size: 0.72rem; color: var(--muted); cursor: pointer; user-select: none;
+  .obf-chk {
+    --cb-bg: transparent;
+    --cb-border: rgba(255,255,255,0.2);
+    --cb-tick: #050505;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    font-size: 0.78rem; color: var(--muted); cursor: pointer; user-select: none;
   }
-  .obf-toggle input { accent-color: #c7b18f; cursor: pointer; }
+  .obf-chk:hover { color: #d4d4d4; }
+  .obf-chk input {
+    appearance: none; -webkit-appearance: none;
+    width: 16px; height: 16px; margin: 0; flex-shrink: 0;
+    border-radius: 5px; border: 1px solid var(--cb-border);
+    background: var(--cb-bg);
+    display: inline-grid; place-content: center;
+    cursor: pointer; transition: background .15s, border-color .15s, transform .1s;
+  }
+  .obf-chk input::before {
+    content: ""; width: 10px; height: 10px;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    background: var(--cb-tick);
+    transform: scale(0); transition: transform .12s ease;
+  }
+  .obf-chk input:checked { background: var(--gold); border-color: var(--gold); }
+  .obf-chk input:checked::before { transform: scale(1); }
+  .obf-chk input:hover { border-color: var(--gold); }
+  .obf-chk input:active { transform: scale(0.92); }
+  .obf-chk input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .obf-chk input:disabled { opacity: 0.45; cursor: not-allowed; }
+  .obf-chk:has(input:disabled) { opacity: 0.6; cursor: not-allowed; }
+  @media (forced-colors: active) {
+    .obf-chk input { appearance: auto; }
+    .obf-chk input::before { display: none; }
+  }
   .obf-btn-secondary { background: transparent; color: var(--gold); }
   .obf-btn-secondary:not(:disabled):hover { background: rgba(199,177,143,0.12); }
   .obf-garble-ready {
@@ -661,7 +689,7 @@
     flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; margin-top: 1.25rem;
   }
   article.stretch .obf-workbench {
-    flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; margin-bottom: 0;
+    flex: 1 1 auto; display: flex; flex-direction: column; gap: 1rem; min-height: 0; margin-bottom: 0;
   }
   article.stretch .obf-panel { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
   article.stretch .obf-body { flex: 1 1 auto; min-height: 0; }
@@ -710,9 +738,9 @@
     aside { display: none; }
     .layout {
       padding: 1rem;
-      margin-top: 88px;
+      margin-top: 72px;
       flex-direction: column;
-      height: calc(100vh - 88px); height: calc(100dvh - 88px);
+      height: calc(100vh - 72px); height: calc(100dvh - 72px);
     }
     main { flex: 1; min-height: 0; }
     article h1 { font-size: 1.75rem; }
@@ -757,10 +785,6 @@
       <p class="intro">Paste a script; get back the same code, unreadable.</p>
       <div class="body"><div class="obf-workbench">
         <div class="obf-panel">
-          <div class="obf-bar">
-            <span class="obf-file">source.lua</span>
-            <span class="obf-mode"><span class="obf-dot obf-dot-on" aria-hidden="true"></span>raw input</span>
-          </div>
           <div class="obf-body">
             <pre id="obf-code" class="obf-code" aria-hidden="true"></pre>
             <textarea id="obf-source" class="obf-input" spellcheck="false" placeholder="-- paste your script here..."></textarea>
@@ -770,12 +794,33 @@
             <span class="obf-stats" id="obf-stats">0 chars · 0 lines · 0 B</span>
             <span class="obf-budget" id="obf-budget">sign in to obfuscate</span>
             <span class="obf-actions">
-              <label class="obf-toggle" title="Toggle VM virtualization for the output"><input type="checkbox" id="obf-virtualize" checked> virtualize</label>
-              <button class="obf-btn" type="button" id="obf-submit">Obfuscate →</button>
+              <label class="obf-chk" title="Toggle VM virtualization for the output"><input type="checkbox" id="obf-virtualize" checked> virtualize</label>
+              <button class="obf-btn" type="button" id="obf-submit">Obfuscate</button>
+            </span>
+          </div>
+        </div>
+        <div class="obf-panel obf-result">
+          <div class="obf-bar">
+            <span class="obf-file">obfuscated.lua</span>
+            <span class="obf-mode" id="obf-inline-mode"><span class="obf-dot obf-dot-off" id="obf-inline-dot" aria-hidden="true"></span><span id="obf-inline-label">awaiting input</span></span>
+          </div>
+          <div class="obf-body">
+            <pre id="obf-inline-garble" class="obf-garble" aria-hidden="true"></pre>
+            <div class="obf-empty" id="obf-inline-empty">
+              <span class="obf-empty-title">No output yet</span>
+              <span class="obf-empty-sub">submit a script and the scrambled result lands here</span>
+            </div>
+          </div>
+          <div class="obf-footer">
+            <span class="obf-stats" id="obf-inline-stats">–</span>
+            <span class="obf-actions">
+              <button class="obf-btn obf-btn-secondary" type="button" id="obf-inline-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
+              <button class="obf-btn" type="button" id="obf-inline-copy">Copy output</button>
             </span>
           </div>
         </div>
         <p class="obf-error" id="obf-error" role="alert" hidden></p>
+        <p class="obf-error" id="obf-inline-error" role="alert" hidden></p>
         <p class="obf-hint">Signed-in users only – the scrambled output lands on its own page. Rate limits are enforced by the server.</p>
       </div></div>
     </section>
@@ -1893,10 +1938,6 @@ const PAGES = {
     body: `
       <div class="obf-workbench">
         <div class="obf-panel">
-          <div class="obf-bar">
-            <span class="obf-file">source.lua</span>
-            <span class="obf-mode"><span class="obf-dot obf-dot-on" aria-hidden="true"></span>raw input</span>
-          </div>
           <div class="obf-body">
             <pre id="obf-code" class="obf-code" aria-hidden="true"></pre>
             <textarea id="obf-source" class="obf-input" spellcheck="false" placeholder="-- paste your script here..."></textarea>
@@ -1906,12 +1947,33 @@ const PAGES = {
             <span class="obf-stats" id="obf-stats">0 chars · 0 lines · 0 B</span>
             <span class="obf-budget" id="obf-budget">sign in to obfuscate</span>
             <span class="obf-actions">
-              <label class="obf-toggle" title="Toggle VM virtualization for the output"><input type="checkbox" id="obf-virtualize" checked> virtualize</label>
-              <button class="obf-btn" type="button" id="obf-submit">Obfuscate →</button>
+              <label class="obf-chk" title="Toggle VM virtualization for the output"><input type="checkbox" id="obf-virtualize" checked> virtualize</label>
+              <button class="obf-btn" type="button" id="obf-submit">Obfuscate</button>
+            </span>
+          </div>
+        </div>
+        <div class="obf-panel obf-result">
+          <div class="obf-bar">
+            <span class="obf-file">obfuscated.lua</span>
+            <span class="obf-mode" id="obf-inline-mode"><span class="obf-dot obf-dot-off" id="obf-inline-dot" aria-hidden="true"></span><span id="obf-inline-label">awaiting input</span></span>
+          </div>
+          <div class="obf-body">
+            <pre id="obf-inline-garble" class="obf-garble" aria-hidden="true"></pre>
+            <div class="obf-empty" id="obf-inline-empty">
+              <span class="obf-empty-title">No output yet</span>
+              <span class="obf-empty-sub">submit a script and the scrambled result lands here</span>
+            </div>
+          </div>
+          <div class="obf-footer">
+            <span class="obf-stats" id="obf-inline-stats">–</span>
+            <span class="obf-actions">
+              <button class="obf-btn obf-btn-secondary" type="button" id="obf-inline-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
+              <button class="obf-btn" type="button" id="obf-inline-copy">Copy output</button>
             </span>
           </div>
         </div>
         <p class="obf-error" id="obf-error" role="alert" hidden></p>
+        <p class="obf-error" id="obf-inline-error" role="alert" hidden></p>
         <p class="obf-hint">Signed-in users only – the scrambled output lands on its own page. Rate limits are enforced by the server.</p>
       </div>
     `,
@@ -4029,12 +4091,49 @@ async function obfSubmit() {
     if (!obfuscated) { obfShowError("Obfuscation failed – empty response. Try again in a moment."); return; }
     try { sessionStorage.setItem(OBF_RESULT_KEY, JSON.stringify({ obfuscated: obfuscated, at: Date.now() })); }
     catch (e) { obfShowError("Obfuscated, but this browser blocked the handoff (storage unavailable)."); return; }
+    try { obfRenderInline(obfuscated); } catch (e) {}
     location.hash = "#/obfuscate-result";
   } catch (e) {
     obfShowError("Network error – could not reach the obfuscation server.");
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Obfuscate →"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Obfuscate"; }
   }
+}
+
+function obfRenderInline(text) {
+  const garble = document.getElementById("obf-inline-garble");
+  if (!garble) return;
+  const empty = document.getElementById("obf-inline-empty");
+  const dot = document.getElementById("obf-inline-dot");
+  const label = document.getElementById("obf-inline-label");
+  const stats = document.getElementById("obf-inline-stats");
+  const errSlot = document.getElementById("obf-inline-error");
+  if (!text) {
+    if (!garble.textContent) garble.textContent = obfNoise(96, 13);
+    return;
+  }
+  if (errSlot) { errSlot.hidden = true; errSlot.textContent = ""; }
+  garble.textContent = text;
+  garble.classList.add("obf-garble-ready");
+  if (empty) empty.style.display = "none";
+  if (dot) { dot.classList.remove("obf-dot-off"); dot.classList.add("obf-dot-on"); }
+  if (label) label.textContent = "obfuscated";
+  if (stats) {
+    let bytes = 0;
+    try { bytes = new TextEncoder().encode(text).length; } catch (e) { bytes = text.length; }
+    stats.textContent = `${text.length} chars · ${bytes} B`;
+  }
+}
+
+function obfInlineText() {
+  try {
+    const raw = sessionStorage.getItem(OBF_RESULT_KEY);
+    if (!raw) return "";
+    const parsed = JSON.parse(raw);
+    const out = parsed && typeof parsed.obfuscated === "string" ? parsed.obfuscated
+      : (parsed && typeof parsed.wrapper === "string" ? parsed.wrapper : "");
+    return out || "";
+  } catch (e) { return ""; }
 }
 
 function initObfuscatePage() {
@@ -4070,6 +4169,36 @@ function initObfuscatePage() {
   if (btn && !btn._obfBound) {
     btn._obfBound = true;
     btn.addEventListener("click", obfSubmit);
+  }
+  const inlineGarble = document.getElementById("obf-inline-garble");
+  if (inlineGarble && !inlineGarble.textContent) inlineGarble.textContent = obfNoise(96, 13);
+  const persisted = obfInlineText();
+  if (persisted) obfRenderInline(persisted);
+  const inlineCopy = document.getElementById("obf-inline-copy");
+  if (inlineCopy && !inlineCopy._obfBound) {
+    inlineCopy._obfBound = true;
+    inlineCopy.addEventListener("click", () => {
+      const text = obfInlineText();
+      const errSlot = document.getElementById("obf-inline-error");
+      if (!text) {
+        if (errSlot) { errSlot.hidden = false; errSlot.textContent = "No output yet – submit a script first."; }
+        return;
+      }
+      obfCopyText(text, inlineCopy, "Copy output");
+    });
+  }
+  const inlineSobfus = document.getElementById("obf-inline-copy-sobfus");
+  if (inlineSobfus && !inlineSobfus._obfBound) {
+    inlineSobfus._obfBound = true;
+    inlineSobfus.addEventListener("click", () => {
+      const text = obfInlineText();
+      const errSlot = document.getElementById("obf-inline-error");
+      if (!text) {
+        if (errSlot) { errSlot.hidden = false; errSlot.textContent = "No output yet – submit a script first."; }
+        return;
+      }
+      obfCopyText("cheat.SObfus(" + obfLuaQuote(text) + ")", inlineSobfus, "Copy cheat.SObfus(…)");
+    });
   }
 }
 
