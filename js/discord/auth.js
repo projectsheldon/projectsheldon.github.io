@@ -804,9 +804,18 @@ const DiscordAuth = {
 
     // Quick login: this device shows a QR + short code, the phone approves,
     // this tab polls /discord/quick-status until it can claim the session.
+    // Link mode (direction B, caller already logged in): the start call carries
+    // this browser's sessionToken so the row is pre-bound to my account, and
+    // the other browser claims straight in – no approval step. The minter's
+    // poll ends when the row flips to consumed (claimed on the new device).
     // Everything rendered here comes from the server, so all of it goes
     // through textContent/createElement – never innerHTML with live data.
-    async _QuickLogin(apiUrl)
+    async LinkNewDevice()
+    {
+        const apiUrl = await Api.GetApiUrl();
+        return DiscordAuth._QuickLogin(apiUrl, true);
+    },
+    async _QuickLogin(apiUrl, linkMode)
     {
         window._quickLoginCancelled = false;
         const modal = document.querySelector('#discord-app-modal');
@@ -871,7 +880,7 @@ const DiscordAuth = {
             close.textContent = 'Close';
             close.style.cssText = 'flex:1;background:rgba(255,255,255,0.08);color:white;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;cursor:pointer;';
             row.appendChild(close);
-            retry.onclick = () => { DiscordAuth._QuickLogin(apiUrl); };
+            retry.onclick = () => { DiscordAuth._QuickLogin(apiUrl, linkMode); };
             close.onclick = () => closeAll();
         }
 
@@ -899,7 +908,7 @@ const DiscordAuth = {
             close.textContent = 'Close';
             close.style.cssText = 'flex:1;background:rgba(255,255,255,0.1);color:white;border:none;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer;';
             row.appendChild(close);
-            retry.onclick = () => { DiscordAuth._QuickLogin(apiUrl); };
+            retry.onclick = () => { DiscordAuth._QuickLogin(apiUrl, linkMode); };
             close.onclick = () => closeAll();
         }
 
@@ -910,10 +919,26 @@ const DiscordAuth = {
         {
             let fp = null;
             try { fp = localStorage.getItem('sheldon_fp'); } catch(e) {}
+            const startBody = fp ? { device_id: fp } : {};
+            const startHeaders = { 'Content-Type': 'application/json' };
+            // Link mode proves the minter at mint time – without this the row
+            // stays an approval-type row and the new device cannot claim it.
+            if(linkMode)
+            {
+                try
+                {
+                    const t = DiscordAuth.GetSessionToken();
+                    if(t)
+                    {
+                        startBody.sessionToken = t;
+                        startHeaders.Authorization = 'Bearer ' + t;
+                    }
+                } catch(e) {}
+            }
             const res = await fetch(`${apiUrl}/discord/quick-start`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(fp ? { device_id: fp } : {})
+                headers: startHeaders,
+                body: JSON.stringify(startBody)
             });
             start = await res.json().catch(() => ({}));
             if(res.status === 429) { paintError('Too many quick logins – wait a while and try again.'); return; }
@@ -929,11 +954,18 @@ const DiscordAuth = {
         modal.innerHTML = '';
         const title = document.createElement('h3');
         title.style.cssText = 'color:white;font-size:18px;margin:0 0 4px;';
-        title.textContent = 'Quick login';
+        title.textContent = linkMode ? 'Link new device' : 'Quick login';
         modal.appendChild(title);
         const sub = document.createElement('p');
         sub.style.cssText = 'color:rgba(255,255,255,0.55);font-size:13px;margin:0 0 14px;';
-        sub.textContent = 'Scan with your phone, then approve on it.';
+        // The bound flag is server-authoritative: when the mint fell back to an
+        // approval row (dead session), say so instead of promising a claim.
+        const boundRow = !!start.bound;
+        sub.textContent = linkMode
+            ? (boundRow
+                ? 'On the new device, scan the code and type the PIN – it signs in as you.'
+                : 'Session check failed – this code needs phone approval instead.')
+            : 'Scan with your phone, then approve on it.';
         modal.appendChild(sub);
 
         const canvas = document.createElement('canvas');
@@ -1016,7 +1048,25 @@ const DiscordAuth = {
                 }
                 if(data && data.ok && data.status === 'denied')
                 {
-                    paintEnd('Login declined', 'The approval was declined on your phone.', false);
+                    paintEnd(linkMode ? 'Link declined' : 'Login declined', 'The approval was declined on your phone.', false);
+                    return;
+                }
+                // Link mode ends here: the new device claimed the row, so the
+                // minter's poll sees consumed – that IS the success signal.
+                if(linkMode && data && data.ok && data.status === 'consumed')
+                {
+                    stopTimers();
+                    modal.innerHTML = '';
+                    const t = document.createElement('h3');
+                    t.style.cssText = 'color:#22c55e;font-size:18px;margin:0 0 8px;';
+                    t.textContent = 'Device linked';
+                    modal.appendChild(t);
+                    const p = document.createElement('p');
+                    p.style.cssText = 'color:rgba(255,255,255,0.6);font-size:13px;margin:0;';
+                    p.textContent = 'The new device is now signed in as you.';
+                    modal.appendChild(p);
+                    if(typeof Notify !== 'undefined') Notify('New device linked.', 'success', 2500);
+                    setTimeout(() => closeAll(), 1600);
                     return;
                 }
                 if(data && data.ok && (data.status === 'expired' || data.status === 'consumed'))
