@@ -33,8 +33,6 @@ submit a script and the scrambled result lands here
 Copy cheat.SObfus(…)
 Copy output
 
-Signed-in users only – the scrambled output lands on its own page. Rate limits are enforced by the server.
-
 ---
 
 ## Obfuscated Script
