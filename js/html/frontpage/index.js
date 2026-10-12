@@ -383,29 +383,63 @@ async function claimWorkinkToken() {
 claimWorkinkToken();
 
 // LootLabs return pattern: checkout stores the click_id at start
-// (sessionStorage sheldon_lootlabs_pending, mirrored to localStorage so the
-// noopener wall tab can hand it back), the wall redirects home to
-// /?lootlabs=done, and the homepage auto-claims with the same
-// balance-gain animation. Server-side anti-bypass is untouched: claim still
-// requires a postback-completed pending row. The modal Claim stays as fallback.
+// (sessionStorage sheldon_lootlabs_pending JSON {click_id, ts}, mirrored to
+// localStorage), the wall returns to the homepage (bare homepage or
+// /?lootlabs=done marker both work), and the homepage auto-claims with the
+// same balance-gain animation. Server-side anti-bypass is untouched: claim
+// still requires a postback-completed pending row. The modal Claim stays as fallback.
 
 const LOOTLABS_PENDING_KEY = 'sheldon_lootlabs_pending';
+const LOOTLABS_PENDING_TTL_MS = 6 * 60 * 60 * 1000;
 
-// sessionStorage is the primary store; localStorage mirrors it because the
-// wall tab (opened with noopener) owns a separate sessionStorage and could
-// never hand the click_id back otherwise. Server ownership checks still apply.
+// sessionStorage is the primary store; localStorage mirrors it for safety.
+// Same-tab navigation keeps sessionStorage alive across the LootLabs
+// round-trip. Server ownership checks still apply.
+function parsePendingLootlabsValue(v) {
+    if (v == null) return null;
+    const raw = String(v).trim();
+    if (!raw) return null;
+    try {
+        const o = JSON.parse(raw);
+        if (o && typeof o.click_id === 'string' && o.click_id.trim()) {
+            const ts = Number(o.ts);
+            return { clickId: o.click_id.trim(), ts: Number.isFinite(ts) ? ts : 0 };
+        }
+    } catch (e) {}
+    return { clickId: raw, ts: 0 };
+}
+
+function getPendingLootlabsInfo() {
+    let parsed = null;
+    try { parsed = parsePendingLootlabsValue(sessionStorage.getItem(LOOTLABS_PENDING_KEY)); } catch (e) {}
+    if (!parsed) {
+        try { parsed = parsePendingLootlabsValue(localStorage.getItem(LOOTLABS_PENDING_KEY)); } catch (e) {}
+    }
+    if (!parsed) return null;
+    if (parsed.ts > 0 && Date.now() - parsed.ts > LOOTLABS_PENDING_TTL_MS) {
+        return { clickId: parsed.clickId, ts: parsed.ts, stale: true };
+    }
+    return { clickId: parsed.clickId, ts: parsed.ts, stale: false };
+}
+
 function getPendingLootlabsClick() {
-    let v = null;
-    try { v = sessionStorage.getItem(LOOTLABS_PENDING_KEY); } catch (e) {}
-    if (v && String(v).trim()) return String(v).trim();
-    try { v = localStorage.getItem(LOOTLABS_PENDING_KEY); } catch (e) {}
-    if (v && String(v).trim()) return String(v).trim();
-    return null;
+    const info = getPendingLootlabsInfo();
+    return info && !info.stale ? info.clickId : (info ? info.clickId : null);
 }
 
 function clearPendingLootlabsClick() {
     try { sessionStorage.removeItem(LOOTLABS_PENDING_KEY); } catch (e) {}
     try { localStorage.removeItem(LOOTLABS_PENDING_KEY); } catch (e) {}
+}
+
+function isTerminalLootlabsMessage(msg) {
+    return /expir|consumed|already[- ]claimed|invalid|unknown|not found/i.test(String(msg || ''));
+}
+
+function isLootlabsCompleted(statusData) {
+    const st = (statusData && typeof statusData.status === 'string') ? statusData.status.toLowerCase() : '';
+    return !!(statusData && statusData.ok &&
+        (st === 'complete' || st === 'completed' || st === 'ready' || st === 'done' || st === 'verified'));
 }
 
 async function loadLootlabsIdentitySafe() {
@@ -430,12 +464,16 @@ function stripLootlabsMarker() {
 async function claimLootlabsReturn() {
     let params = null;
     try { params = new URLSearchParams(location.search); } catch (e) { return; }
-    if (!params || !params.has('lootlabs')) return;
+    const hasMarker = !!(params && params.has('lootlabs'));
+    const pendingInfo = getPendingLootlabsInfo();
+    if (pendingInfo && pendingInfo.stale) clearPendingLootlabsClick();
+    const freshPending = (pendingInfo && !pendingInfo.stale) ? pendingInfo : null;
+    // Trigger rule: marker present OR a fresh stored pending exists.
+    if (!hasMarker && !freshPending) return;
 
-    let clickId = getPendingLootlabsClick();
     // Strip the marker first so a refresh can never re-submit (no infinite loop).
-    // The pending click_id is kept for the modal Claim fallback unless claimed below.
-    stripLootlabsMarker();
+    if (hasMarker) stripLootlabsMarker();
+    const clickId = freshPending ? freshPending.clickId : null;
     if (!clickId) return;
 
     let sessionToken = await waitForLogin(4000);
@@ -446,33 +484,20 @@ async function claimLootlabsReturn() {
         if (!sessionToken) return;
     }
 
-    try {
-        const apiUrl = await Api.GetApiUrl();
+    let apiUrl = null;
+    try { apiUrl = await Api.GetApiUrl(); } catch (e) { return; }
+    if (!apiUrl) return;
 
+    async function fetchLootlabsStatus() {
         const statusBody = new URLSearchParams();
         statusBody.set('sessionToken', sessionToken);
         statusBody.set('click_id', clickId);
         const statusRes = await fetch(`${apiUrl}/lootlabs/status`, { method: 'POST', body: statusBody });
         const statusData = await statusRes.json().catch(() => null);
-        const st = (statusData && typeof statusData.status === 'string') ? statusData.status.toLowerCase() : '';
-        const completed = statusData && statusData.ok &&
-            (st === 'complete' || st === 'completed' || st === 'ready' || st === 'done' || st === 'verified');
-        if (!completed) {
-            if (statusRes.status === 401 || statusRes.status === 403) {
-                if (typeof window.Notify === 'function')
-                    window.Notify((statusData && statusData.message) || 'Session expired – please log in again.', 'error', 5000);
-                return;
-            }
-            if (statusData && statusData.ok === false && /expir|consumed|already claimed|unknown/i.test(String(statusData.message || ''))) {
-                clearPendingLootlabsClick();
-                if (typeof window.Notify === 'function') window.Notify(statusData.message, 'error', 5000);
-                return;
-            }
-            if (typeof window.Notify === 'function')
-                window.Notify('LootLabs step not completed yet – finish the task first.', 'info', 5000);
-            return;
-        }
+        return { statusRes, statusData };
+    }
 
+    async function tryLootlabsClaim() {
         const claimBody = new URLSearchParams();
         claimBody.set('sessionToken', sessionToken);
         claimBody.set('click_id', clickId);
@@ -487,7 +512,9 @@ async function claimLootlabsReturn() {
         if (data && data.ok && data.license) {
             clearPendingLootlabsClick();
             showRewardKey(data.license.key, data.license.product);
-        } else if (data && data.ok && data.new_balance !== undefined) {
+            return true;
+        }
+        if (data && data.ok && data.new_balance !== undefined) {
             clearPendingLootlabsClick();
             const added = (typeof data.added === 'number' && !isNaN(data.added)) ? data.added : 0;
             const oldBalance = Math.max(0, data.new_balance - added);
@@ -496,17 +523,87 @@ async function claimLootlabsReturn() {
                 window.Notify('Daily balance maxed – come back later.', 'info', 5000);
             else if (typeof window.Notify === 'function')
                 window.Notify(added > 0 ? `Reward claimed: +${added} balance.` : 'Balance updated.', 'success', 4000);
-        } else if (res.status === 401 || res.status === 403) {
+            return true;
+        }
+        if (res.status === 401 || res.status === 403) {
             if (typeof window.Notify === 'function')
                 window.Notify((data && data.message) || 'Session expired – please log in again.', 'error', 5000);
-        } else if ((res.status === 429 || (data && data.rate_limited_until))) {
+            return true;
+        }
+        if (res.status === 429 || (data && data.rate_limited_until)) {
             if (typeof window.Notify === 'function')
                 window.Notify((data && data.message) || 'Daily limit reached – try again later.', 'warning', 6000);
-        } else if (data && /already claimed|consumed|expir/i.test(String(data.message || ''))) {
+            return true;
+        }
+        if (data && isTerminalLootlabsMessage(data.message)) {
             clearPendingLootlabsClick();
             if (typeof window.Notify === 'function') window.Notify(data.message, 'info', 5000);
-        } else if (data && data.message) {
+            return true;
+        }
+        if (data && data.message) {
             if (typeof window.Notify === 'function') window.Notify(data.message, 'error', 5000);
+            return true;
+        }
+        return false;
+    }
+
+    // Returns 'completed' | 'terminal' | 'auth-error' | 'rate-limited' | 'pending' | 'transient'.
+    async function checkOnce() {
+        let statusRes = null;
+        let statusData = null;
+        try {
+            ({ statusRes, statusData } = await fetchLootlabsStatus());
+        } catch (e) { return 'transient'; }
+        if (isLootlabsCompleted(statusData)) return 'completed';
+        if (statusRes && (statusRes.status === 401 || statusRes.status === 403)) {
+            if (typeof window.Notify === 'function')
+                window.Notify((statusData && statusData.message) || 'Session expired – please log in again.', 'error', 5000);
+            return 'auth-error';
+        }
+        if (statusRes && (statusRes.status === 429 || (statusData && statusData.rate_limited_until))) {
+            if (typeof window.Notify === 'function')
+                window.Notify((statusData && statusData.message) || 'Daily limit reached – try again later.', 'warning', 6000);
+            return 'rate-limited';
+        }
+        if (statusData && statusData.ok === false && isTerminalLootlabsMessage(statusData.message)) {
+            clearPendingLootlabsClick();
+            if (typeof window.Notify === 'function') window.Notify(statusData.message, 'error', 5000);
+            return 'terminal';
+        }
+        if (statusData && statusData.ok === false && statusData.message) {
+            if (typeof window.Notify === 'function') window.Notify(statusData.message, 'error', 5000);
+            return 'terminal';
+        }
+        return 'pending';
+    }
+
+    try {
+        const first = await checkOnce();
+        if (first === 'completed') {
+            try { await tryLootlabsClaim(); } catch (e) {
+                if (typeof window.Notify === 'function') window.Notify('Could not claim your reward. Please try again.', 'error', 5000);
+            }
+            return;
+        }
+        if (first !== 'pending' && first !== 'transient') return;
+        // Still pending: poll every 3s up to ~90s, then stop silently. Only the
+        // marker return shows one gentle waiting notice; bare-homepage polling
+        // stays silent so abandoned flows never nag on refresh.
+        if (hasMarker && typeof window.Notify === 'function') {
+            try { window.Notify('Waiting for LootLabs confirmation – keep this tab open a moment.', 'info', 6000); } catch (e) {}
+        }
+        const MAX_POLLS = 30;
+        for (let i = 0; i < MAX_POLLS; i++) {
+            await new Promise(r => setTimeout(r, 3000));
+            let outcome = 'transient';
+            try { outcome = await checkOnce(); } catch (e) { outcome = 'transient'; }
+            if (outcome === 'completed') {
+                try { await tryLootlabsClaim(); } catch (e) {
+                    if (typeof window.Notify === 'function') window.Notify('Could not claim your reward. Please try again.', 'error', 5000);
+                }
+                return;
+            }
+            if (outcome !== 'pending' && outcome !== 'transient') return;
         }
     } catch (e) {
         if (typeof window.Notify === 'function') window.Notify('Could not claim your reward. Please try again.', 'error', 5000);

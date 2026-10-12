@@ -716,7 +716,7 @@ function setProviderBtnLabel(btn, name, stateLabel)
 // Ad-provider picker modal. Docs: this is the ad-link slot for renderCheckout()
 // below – the old direct <a href=workinkLink> became the #watch-ads-btn button
 // that opens this modal, so WorkInk keeps its existing link flow and LootLabs
-// runs start -> new-tab task -> poll status -> claim. The LootLabs task URL
+// runs start -> same-tab task -> homepage auto-claim. The LootLabs task URL
 // always comes from POST /lootlabs/start (never hardcoded in JS).
 function openAdProviderModal(opts)
 {
@@ -756,7 +756,8 @@ function openAdProviderModal(opts)
     providers.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-top:20px;';
 
     // Provider logo buttons – WorkInk keeps its existing link flow, LootLabs
-    // runs start -> new-tab task -> poll status -> claim via the row below.
+    // runs start -> same-tab task -> homepage auto-claim. The claim row below
+    // is kept only as an inert fallback and is never shown in the same-tab flow.
     // Fallbacks are borderless square letter tiles (no rect, no border).
     const wiBtn = makeProviderLogoButton('WorkInk', '/checkout/assets/workink-logo.png', 'W',
         'color:#c7b18f;', 'wi');
@@ -801,9 +802,7 @@ function openAdProviderModal(opts)
             notifyAd('Ad link is unavailable right now – please try again later.', 'error');
             return;
         }
-        try { const w = window.open(workinkLink, '_blank', 'noopener'); if(w) w.opener = null; } catch(e) {}
-        notifyAd('WorkInk opened in a new tab – complete the task there to earn balance.', 'info', 6000);
-        close();
+        try { window.location.href = workinkLink; } catch(e) {}
     });
 
     llBtn.addEventListener('click', () => { startLootlabsFlow(adModalCtx); });
@@ -812,7 +811,7 @@ function openAdProviderModal(opts)
     {
         if(adModalCtx && isHttpUrl(adModalCtx.taskUrl))
         {
-            try { const w = window.open(adModalCtx.taskUrl, '_blank', 'noopener'); if(w) w.opener = null; } catch(e) {}
+            try { window.location.href = adModalCtx.taskUrl; } catch(e) {}
         }
     });
 
@@ -876,11 +875,11 @@ async function startLootlabsFlow(ctx)
 
         ctx.taskUrl = String(data.url);
         ctx.clickId = String(data.click_id);
-        // Primary store is sessionStorage (per spec); localStorage mirrors it so
-        // the wall tab (window.open _blank + noopener gets a separate
-        // sessionStorage) can still hand the click_id to the homepage return.
-        try { sessionStorage.setItem('sheldon_lootlabs_pending', String(data.click_id)); } catch(e) {}
-        try { localStorage.setItem('sheldon_lootlabs_pending', String(data.click_id)); } catch(e) {}
+        // Same-tab flow: sessionStorage survives the LootLabs round-trip in the
+        // current tab; localStorage mirrors it for safety. Stored as JSON with
+        // a timestamp so the homepage can expire abandoned flows (6h TTL).
+        try { sessionStorage.setItem('sheldon_lootlabs_pending', JSON.stringify({ click_id: String(data.click_id), ts: Date.now() })); } catch(e) {}
+        try { localStorage.setItem('sheldon_lootlabs_pending', JSON.stringify({ click_id: String(data.click_id), ts: Date.now() })); } catch(e) {}
         if(!isHttpUrl(ctx.taskUrl))
         {
             statusEl.textContent = 'Could not start task. Please try again.';
@@ -891,16 +890,13 @@ async function startLootlabsFlow(ctx)
             setProviderBtnLabel(llBtnEl, 'LootLabs', null);
             return;
         }
-        try { const w = window.open(ctx.taskUrl, '_blank', 'noopener'); if(w) w.opener = null; } catch(e) {}
-
-        statusEl.textContent = 'Complete the task in the new tab, then press Claim. This page checks automatically.';
-        claimRowEl.style.display = 'flex';
-        reopenBtnEl.style.display = 'inline-block';
-        claimBtnEl.disabled = true;
-        claimBtnEl.style.opacity = '0.5';
-        claimBtnEl.textContent = 'Waiting for completion…';
-        setProviderBtnLabel(llBtnEl, 'LootLabs', 'task opened');
-        startLootlabsPoll(ctx);
+        // Same-tab navigation: the LootLabs wall returns to the homepage
+        // (bare homepage or ?lootlabs=* marker both work) where the return
+        // handler auto-claims. No "Waiting for completion" polling here.
+        statusEl.textContent = 'Opening LootLabs task…';
+        setProviderBtnLabel(llBtnEl, 'LootLabs', 'opening');
+        try { window.location.href = ctx.taskUrl; } catch(e) {}
+        return;
     }
     catch(err)
     {
