@@ -618,12 +618,7 @@
     font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
     font-size: 0.7rem; color: var(--muted-2); font-variant-numeric: tabular-nums;
   }
-  .obf-actions { display: inline-flex; align-items: center; gap: 0.6rem; }
-  .obf-soon {
-    font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--gold); background: var(--gold-dim); border: 1px solid rgba(199,177,143,0.25);
-    border-radius: 999px; padding: 0.22rem 0.6rem;
-  }
+  .obf-actions { display: inline-flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
   .obf-btn {
     font-family: 'Inter', sans-serif;
     font-size: 0.8rem; font-weight: 600;
@@ -638,6 +633,28 @@
   .obf-btn:not(:disabled):hover { background: var(--primary); }
   .obf-btn:not(:disabled):active { transform: scale(0.98); }
   .obf-hint { margin-top: 0.85rem; font-size: 0.8rem; color: var(--muted-2); }
+  .obf-budget {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.7rem; color: var(--muted-2); font-variant-numeric: tabular-nums;
+  }
+  .obf-error {
+    margin: 0.6rem 0 0; padding: 0.55rem 0.8rem;
+    font-size: 0.78rem; color: #fca5a5;
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 0.5rem;
+  }
+  .obf-error[hidden] { display: none; }
+  .obf-toggle {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.72rem; color: var(--muted); cursor: pointer; user-select: none;
+  }
+  .obf-toggle input { accent-color: #c7b18f; cursor: pointer; }
+  .obf-btn-secondary { background: transparent; color: var(--gold); }
+  .obf-btn-secondary:not(:disabled):hover { background: rgba(199,177,143,0.12); }
+  .obf-garble-ready {
+    color: #d4d4d4; user-select: text; pointer-events: auto; overflow: auto;
+    mask-image: none; -webkit-mask-image: none;
+  }
 
   article.stretch { display: flex; flex-direction: column; height: 100%; }
   article.stretch > .body {
@@ -751,13 +768,15 @@
           </div>
           <div class="obf-footer">
             <span class="obf-stats" id="obf-stats">0 chars · 0 lines · 0 B</span>
+            <span class="obf-budget" id="obf-budget">sign in to obfuscate</span>
             <span class="obf-actions">
-              <span class="obf-soon">soon</span>
-              <button class="obf-btn" type="button" disabled title="Obfuscation is being wired up">Obfuscate →</button>
+              <label class="obf-toggle" title="Toggle VM virtualization for the output"><input type="checkbox" id="obf-virtualize" checked> virtualize</label>
+              <button class="obf-btn" type="button" id="obf-submit">Obfuscate →</button>
             </span>
           </div>
         </div>
-        <p class="obf-hint">The scrambler isn't wired up yet – this is the shell. The output will land on its own page.</p>
+        <p class="obf-error" id="obf-error" role="alert" hidden></p>
+        <p class="obf-hint">Signed-in users only – the scrambled output lands on its own page. Rate limits are enforced by the server.</p>
       </div></div>
     </section>
     <section id="doc-obfuscate-result" class="doc-section" data-path="/obfuscate-result">
@@ -767,20 +786,24 @@
         <div class="obf-panel obf-result">
           <div class="obf-bar">
             <span class="obf-file">obfuscated.lua</span>
-            <span class="obf-mode"><span class="obf-dot obf-dot-off" aria-hidden="true"></span>awaiting input</span>
+            <span class="obf-mode" id="obf-result-mode"><span class="obf-dot obf-dot-off" id="obf-result-dot" aria-hidden="true"></span><span id="obf-result-label">awaiting input</span></span>
           </div>
           <div class="obf-body">
             <pre id="obf-garble" class="obf-garble" aria-hidden="true"></pre>
-            <div class="obf-empty">
+            <div class="obf-empty" id="obf-empty">
               <span class="obf-empty-title">No output yet</span>
               <span class="obf-empty-sub">submit a script and the scrambled result lands here</span>
             </div>
           </div>
           <div class="obf-footer">
-            <span class="obf-stats">–</span>
-            <button class="obf-btn" type="button" disabled title="Nothing to copy yet">Copy output</button>
+            <span class="obf-stats" id="obf-result-stats">–</span>
+            <span class="obf-actions">
+              <button class="obf-btn obf-btn-secondary" type="button" id="obf-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
+              <button class="obf-btn" type="button" id="obf-copy">Copy output</button>
+            </span>
           </div>
         </div>
+        <p class="obf-error" id="obf-result-error" role="alert" hidden></p>
       </div></div>
     </section>
     <section id="doc-globals" class="doc-section" data-path="/globals">
@@ -898,7 +921,7 @@
       <span class="copy-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></span>
       <span class="copy-label">Copy</span>
     </button>
-    <div id="cb_wjrzzz" class="codeblock language-lua" data-raw="local%20part%20%3D%20workspace.Part%0A%0Alocal%20t%20%3D%20tween.Create(part%2C%20%7B%20time%20%3D%202%2C%20style%20%3D%20%22Bounce%22%20%7D%2C%20%7B%0A%20%20%20%20Position%20%3D%20part.Position%20%2B%20Vector3.new(0%2C%2015%2C%200)%2C%0A%7D)%0A%0At%3APlay(true)%0Aprint(%22Tween%20finished%20%E2%80%94%20running%20follow-up%20code%22)"><div class="cb-line"><span class="cb-linenum">1</span><span class="cb-code-line"><span class="vs-kw">local</span> <span class="vs-var">part</span> <span class="vs-op">=</span> <span class="vs-type">workspace</span><span class="vs-punct">.</span><span class="vs-var">Part</span></span></div><div class="cb-line"><span class="cb-linenum">2</span><span class="cb-code-line">​</span></div><div class="cb-line"><span class="cb-linenum">3</span><span class="cb-code-line"><span class="vs-kw">local</span> <span class="vs-var">t</span> <span class="vs-op">=</span> <span class="vs-type">tween</span><span class="vs-punct">.</span><span class="vs-fn">Create</span><span class="vs-punct">(</span><span class="vs-var">part</span><span class="vs-punct">,</span> <span class="vs-punct">{</span> <span class="vs-var">time</span> <span class="vs-op">=</span> <span class="vs-number">2</span><span class="vs-punct">,</span> <span class="vs-var">style</span> <span class="vs-op">=</span> <span class="vs-string">"Bounce"</span> <span class="vs-punct">}</span><span class="vs-punct">,</span> <span class="vs-punct">{</span></span></div><div class="cb-line"><span class="cb-linenum">4</span><span class="cb-code-line">    <span class="vs-var">Position</span> <span class="vs-op">=</span> <span class="vs-var">part</span><span class="vs-punct">.</span><span class="vs-var">Position</span> <span class="vs-op">+</span> <span class="vs-type">Vector3</span><span class="vs-punct">.</span><span class="vs-fn">new</span><span class="vs-punct">(</span><span class="vs-number">0</span><span class="vs-punct">,</span> <span class="vs-number">15</span><span class="vs-punct">,</span> <span class="vs-number">0</span><span class="vs-punct">)</span><span class="vs-punct">,</span></span></div><div class="cb-line"><span class="cb-linenum">5</span><span class="cb-code-line"><span class="vs-punct">}</span><span class="vs-punct">)</span></span></div><div class="cb-line"><span class="cb-linenum">6</span><span class="cb-code-line">​</span></div><div class="cb-line"><span class="cb-linenum">7</span><span class="cb-code-line"><span class="vs-var">t</span><span class="vs-punct">:</span><span class="vs-fn">Play</span><span class="vs-punct">(</span><span class="vs-const">true</span><span class="vs-punct">)</span></span></div><div class="cb-line"><span class="cb-linenum">8</span><span class="cb-code-line"><span class="vs-fn">print</span><span class="vs-punct">(</span><span class="vs-string">"Tween finished – running follow-up code"</span><span class="vs-punct">)</span></span></div></div>
+    <div id="cb_wjrzzz" class="codeblock language-lua" data-raw="local%20part%20%3D%20workspace.Part%0A%0Alocal%20t%20%3D%20tween.Create(part%2C%20%7B%20time%20%3D%202%2C%20style%20%3D%20%22Bounce%22%20%7D%2C%20%7B%0A%20%20%20%20Position%20%3D%20part.Position%20%2B%20Vector3.new(0%2C%2015%2C%200)%2C%0A%7D)%0A%0At%3APlay(true)%0Aprint(%22Tween%20finished%20%E2%80%93%20running%20follow-up%20code%22)"><div class="cb-line"><span class="cb-linenum">1</span><span class="cb-code-line"><span class="vs-kw">local</span> <span class="vs-var">part</span> <span class="vs-op">=</span> <span class="vs-type">workspace</span><span class="vs-punct">.</span><span class="vs-var">Part</span></span></div><div class="cb-line"><span class="cb-linenum">2</span><span class="cb-code-line">​</span></div><div class="cb-line"><span class="cb-linenum">3</span><span class="cb-code-line"><span class="vs-kw">local</span> <span class="vs-var">t</span> <span class="vs-op">=</span> <span class="vs-type">tween</span><span class="vs-punct">.</span><span class="vs-fn">Create</span><span class="vs-punct">(</span><span class="vs-var">part</span><span class="vs-punct">,</span> <span class="vs-punct">{</span> <span class="vs-var">time</span> <span class="vs-op">=</span> <span class="vs-number">2</span><span class="vs-punct">,</span> <span class="vs-var">style</span> <span class="vs-op">=</span> <span class="vs-string">"Bounce"</span> <span class="vs-punct">}</span><span class="vs-punct">,</span> <span class="vs-punct">{</span></span></div><div class="cb-line"><span class="cb-linenum">4</span><span class="cb-code-line">    <span class="vs-var">Position</span> <span class="vs-op">=</span> <span class="vs-var">part</span><span class="vs-punct">.</span><span class="vs-var">Position</span> <span class="vs-op">+</span> <span class="vs-type">Vector3</span><span class="vs-punct">.</span><span class="vs-fn">new</span><span class="vs-punct">(</span><span class="vs-number">0</span><span class="vs-punct">,</span> <span class="vs-number">15</span><span class="vs-punct">,</span> <span class="vs-number">0</span><span class="vs-punct">)</span><span class="vs-punct">,</span></span></div><div class="cb-line"><span class="cb-linenum">5</span><span class="cb-code-line"><span class="vs-punct">}</span><span class="vs-punct">)</span></span></div><div class="cb-line"><span class="cb-linenum">6</span><span class="cb-code-line">​</span></div><div class="cb-line"><span class="cb-linenum">7</span><span class="cb-code-line"><span class="vs-var">t</span><span class="vs-punct">:</span><span class="vs-fn">Play</span><span class="vs-punct">(</span><span class="vs-const">true</span><span class="vs-punct">)</span></span></div><div class="cb-line"><span class="cb-linenum">8</span><span class="cb-code-line"><span class="vs-fn">print</span><span class="vs-punct">(</span><span class="vs-string">"Tween finished – running follow-up code"</span><span class="vs-punct">)</span></span></div></div>
   </div>
 
       <h3>Example – Chained tweens</h3>
@@ -1881,13 +1904,15 @@ const PAGES = {
           </div>
           <div class="obf-footer">
             <span class="obf-stats" id="obf-stats">0 chars · 0 lines · 0 B</span>
+            <span class="obf-budget" id="obf-budget">sign in to obfuscate</span>
             <span class="obf-actions">
-              <span class="obf-soon">soon</span>
-              <button class="obf-btn" type="button" disabled title="Obfuscation is being wired up">Obfuscate →</button>
+              <label class="obf-toggle" title="Toggle VM virtualization for the output"><input type="checkbox" id="obf-virtualize" checked> virtualize</label>
+              <button class="obf-btn" type="button" id="obf-submit">Obfuscate →</button>
             </span>
           </div>
         </div>
-        <p class="obf-hint">The scrambler isn't wired up yet – this is the shell. The output will land on its own page.</p>
+        <p class="obf-error" id="obf-error" role="alert" hidden></p>
+        <p class="obf-hint">Signed-in users only – the scrambled output lands on its own page. Rate limits are enforced by the server.</p>
       </div>
     `,
   },
@@ -1900,20 +1925,24 @@ const PAGES = {
         <div class="obf-panel obf-result">
           <div class="obf-bar">
             <span class="obf-file">obfuscated.lua</span>
-            <span class="obf-mode"><span class="obf-dot obf-dot-off" aria-hidden="true"></span>awaiting input</span>
+            <span class="obf-mode" id="obf-result-mode"><span class="obf-dot obf-dot-off" id="obf-result-dot" aria-hidden="true"></span><span id="obf-result-label">awaiting input</span></span>
           </div>
           <div class="obf-body">
             <pre id="obf-garble" class="obf-garble" aria-hidden="true"></pre>
-            <div class="obf-empty">
+            <div class="obf-empty" id="obf-empty">
               <span class="obf-empty-title">No output yet</span>
               <span class="obf-empty-sub">submit a script and the scrambled result lands here</span>
             </div>
           </div>
           <div class="obf-footer">
-            <span class="obf-stats">–</span>
-            <button class="obf-btn" type="button" disabled title="Nothing to copy yet">Copy output</button>
+            <span class="obf-stats" id="obf-result-stats">–</span>
+            <span class="obf-actions">
+              <button class="obf-btn obf-btn-secondary" type="button" id="obf-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
+              <button class="obf-btn" type="button" id="obf-copy">Copy output</button>
+            </span>
           </div>
         </div>
+        <p class="obf-error" id="obf-result-error" role="alert" hidden></p>
       </div>
     `,
   },
@@ -3779,11 +3808,238 @@ function renderObfuscateCode() {
   pre.scrollLeft = src.scrollLeft;
 }
 
+// Plain-fetch bridge for the obfuscate tab. This page uses classic script tags,
+// so the backend origin logic from js/util/backend.js is mirrored here instead
+// of imported. Rate limits are server-enforced; the tab only renders budget.
+const OBF_MAX_BYTES = 512 * 1024;
+const OBF_CLIENT_VERSION = 1;
+const OBF_RESULT_KEY = "luavm_obf_result";
+const OBF_DRAFT_KEY = "luavm_obf_draft";
+
+function obfAllowedOrigin(url) {
+  try {
+    const o = new URL(url).origin;
+    return o === "https://backend.projectsheldon.me" ||
+      o === "http://localhost:3350" || o === "http://127.0.0.1:3350";
+  } catch (e) { return false; }
+}
+
+async function obfApiUrl() {
+  try {
+    const raw = localStorage.getItem("cache_backend_url");
+    if (raw) {
+      const item = JSON.parse(raw);
+      if (item && typeof item.data === "string" && (Date.now() - item.timestamp) < 10 * 60 * 1000) {
+        const cached = item.data.replace(/\/+$/, "");
+        if (cached && obfAllowedOrigin(cached)) return cached;
+      }
+    }
+  } catch (e) {}
+  const host = (window.location && window.location.hostname) || "";
+  const local = host === "localhost" || host === "127.0.0.1";
+  const fallback = local ? "http://localhost:3350" : "https://backend.projectsheldon.me";
+  try {
+    const res = await fetch(fallback + "/config/backend");
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const key = local ? data.localhost : data.server;
+      const candidate = typeof key === "string" ? key.replace(/\/+$/, "") : "";
+      if (candidate && obfAllowedOrigin(candidate)) {
+        try { localStorage.setItem("cache_backend_url", JSON.stringify({ data: candidate, timestamp: Date.now() })); } catch (e) {}
+        return candidate;
+      }
+    }
+  } catch (e) {}
+  return fallback;
+}
+
+let obfBudgetTimer = 0;
+function obfRenderBudget(remaining, resetAfterSec) {
+  const el = document.getElementById("obf-budget");
+  if (!el) return;
+  clearInterval(obfBudgetTimer);
+  if (remaining == null && resetAfterSec == null) { el.textContent = "sign in to obfuscate"; return; }
+  let left = Math.max(0, Math.ceil(Number(resetAfterSec) || 0));
+  const paint = () => {
+    el.textContent = (remaining != null ? "budget: " + remaining + " left" : "rate limited") +
+      (left > 0 ? " · resets in " + left + "s" : "");
+  };
+  paint();
+  if (left > 0) obfBudgetTimer = setInterval(() => { left--; paint(); if (left <= 0) clearInterval(obfBudgetTimer); }, 1000);
+}
+
+function obfShowError(msg) {
+  const el = document.getElementById("obf-error");
+  if (el) {
+    if (!msg) { el.hidden = true; el.textContent = ""; }
+    else { el.hidden = false; el.textContent = msg; }
+  }
+  try { if (msg && window.Notify) window.Notify(msg, "error", 4000); } catch (e) {}
+}
+
+// True when every short quote and long-bracket string is closed at EOF.
+// Line comments and long comments are skipped, so pasted code with -- notes passes.
+function obfQuotesBalanced(src) {
+  const n = src.length;
+  const longLevel = (p) => {
+    if (src[p] !== "[") return -1;
+    let j = p + 1, lvl = 0;
+    while (src[j] === "=") { lvl++; j++; }
+    return src[j] === "[" ? lvl : -1;
+  };
+  let i = 0;
+  while (i < n) {
+    const c = src[i];
+    if (c === "-" && src[i + 1] === "-") {
+      if (src[i + 2] === "[") {
+        const lvl = longLevel(i + 2);
+        if (lvl >= 0) {
+          const close = "]" + "=".repeat(lvl) + "]";
+          const end = src.indexOf(close, i + 3 + lvl);
+          if (end === -1) return true;
+          i = end + close.length;
+          continue;
+        }
+      }
+      const nl = src.indexOf("\n", i);
+      i = nl === -1 ? n : nl + 1;
+      continue;
+    }
+    if (c === "[") {
+      const lvl = longLevel(i);
+      if (lvl >= 0) {
+        const close = "]" + "=".repeat(lvl) + "]";
+        const end = src.indexOf(close, i + 2 + lvl);
+        if (end === -1) return false;
+        i = end + close.length;
+        continue;
+      }
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1, closed = false;
+      while (j < n) {
+        const d = src[j];
+        if (d === "\\") { j += 2; continue; }
+        if (d === "\n") break;
+        if (d === c) { closed = true; break; }
+        j++;
+      }
+      if (!closed) return false;
+      i = j + 1;
+      continue;
+    }
+    i++;
+  }
+  return true;
+}
+
+// Same shape as CheckAuthStatus (GET {api}/discord/me, credentials + Bearer,
+// 8s abort) but returns a boolean and never surfaces raw endpoint errors.
+async function obfCheckAuth(api) {
+  let token = null;
+  try { token = localStorage.getItem("discord_session"); } catch (e) {}
+  try {
+    const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), 8000) : null;
+    const res = await fetch(api + "/discord/me", {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: token ? { Authorization: "Bearer " + token } : undefined,
+      signal: ctl ? ctl.signal : undefined
+    });
+    if (timer) clearTimeout(timer);
+    const data = await res.json().catch(() => ({}));
+    if (data && data.success && data.loggedIn) return true;
+    if (token) { try { localStorage.removeItem("discord_session"); } catch (e) {} }
+  } catch (e) {}
+  return false;
+}
+
+async function obfRequireLogin() {
+  const start = Date.now();
+  while ((!window.DiscordAuth || typeof window.DiscordAuth.LoginPopup !== "function") && Date.now() - start < 2500) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  if (window.DiscordAuth && typeof window.DiscordAuth.LoginPopup === "function") {
+    try { await window.DiscordAuth.LoginPopup(); return; } catch (e) {}
+  }
+  obfShowError("Sign in with Discord to obfuscate.");
+}
+
+async function obfSubmit() {
+  obfShowError(null);
+  const src = document.getElementById("obf-source");
+  const btn = document.getElementById("obf-submit");
+  const script = src ? src.value : "";
+  if (!script || !script.trim()) { obfShowError("Paste a script first."); if (src) src.focus(); return; }
+  let api = null;
+  try { api = await obfApiUrl(); } catch (e) {}
+  if (!api) { obfShowError("Could not reach the backend. Check your connection and try again."); return; }
+  if (!(await obfCheckAuth(api))) { await obfRequireLogin(); return; }
+  let bytes = 0;
+  try { bytes = new TextEncoder().encode(script).length; } catch (e) { bytes = script.length; }
+  if (bytes > OBF_MAX_BYTES) { obfShowError("Source too large – the cap is 512 KB (" + (bytes / 1024).toFixed(1) + " KB pasted)."); return; }
+  if (!obfQuotesBalanced(script)) { obfShowError("Syntax error – unbalanced quotes or an unclosed long string. Fix the break and try again."); return; }
+  let token = null;
+  try { token = localStorage.getItem("discord_session"); } catch (e) {}
+  const virt = document.getElementById("obf-virtualize");
+  let nonce = "";
+  try { nonce = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2); }
+  catch (e) { nonce = String(Date.now()); }
+  if (btn) { btn.disabled = true; btn.textContent = "Obfuscating…"; }
+  try {
+    const res = await fetch(api + "/obfuscate/submit", {
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+      headers: Object.assign({ "Content-Type": "application/json" }, token ? { Authorization: "Bearer " + token } : {}),
+      body: JSON.stringify({
+        script: script,
+        options: { virtualize: virt ? !!virt.checked : true },
+        clientVersion: OBF_CLIENT_VERSION,
+        reqNonce: nonce
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data && (data.remaining != null || data.resetAfterSec != null)) obfRenderBudget(data.remaining, data.resetAfterSec);
+    if (res.status === 429 || (data && data.code === "RATE_LIMITED")) {
+      const raw = data.resetAfterSec != null ? data.resetAfterSec : data.retry_after;
+      const wait = Math.max(1, Math.ceil(Number(raw) || 30));
+      obfShowError("Rate limited – try again in " + wait + "s.");
+      return;
+    }
+    if (!res.ok || (data && data.ok === false)) {
+      const code = (data && (data.code || data.error)) || "";
+      if (code === "AUTH_REQUIRED" || res.status === 401 || res.status === 403) { await obfRequireLogin(); return; }
+      if (code === "SOURCE_TOO_LARGE") { obfShowError("Source too large – the server caps scripts at 512 KB."); return; }
+      if (code === "SYNTAX_ERROR") { obfShowError("Syntax error – " + ((data && (data.message || data.detail)) || "the server could not parse the script.")); return; }
+      obfShowError(data && typeof data.message === "string" && data.message ? data.message : "Obfuscation failed. Try again in a moment.");
+      return;
+    }
+    const wrapper = data.wrapper != null ? data.wrapper : (data.output != null ? data.output : data);
+    try { sessionStorage.setItem(OBF_RESULT_KEY, JSON.stringify({ wrapper: wrapper, at: Date.now() })); }
+    catch (e) { obfShowError("Obfuscated, but this browser blocked the handoff (storage unavailable)."); return; }
+    location.hash = "#/obfuscate-result";
+  } catch (e) {
+    obfShowError("Network error – could not reach the obfuscation server.");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Obfuscate →"; }
+  }
+}
+
 function initObfuscatePage() {
   const noise = document.getElementById("obf-noise");
   if (noise && !noise.textContent) noise.textContent = obfNoise(5, 44);
   const src = document.getElementById("obf-source");
-  if (src) {
+  if (src && !src._obfBound) {
+    src._obfBound = true;
+    try {
+      const draft = sessionStorage.getItem(OBF_DRAFT_KEY);
+      if (draft && !src.value) src.value = draft;
+    } catch (e) {}
     const stats = document.getElementById("obf-stats");
     const update = () => {
       if (stats) {
@@ -3793,6 +4049,7 @@ function initObfuscatePage() {
         const lines = v.length ? v.split("\n").length : 0;
         stats.textContent = `${v.length} chars · ${lines} lines · ${bytes} B`;
       }
+      try { sessionStorage.setItem(OBF_DRAFT_KEY, src.value); } catch (e) {}
       renderObfuscateCode();
     };
     src.addEventListener("input", update);
@@ -3802,11 +4059,101 @@ function initObfuscatePage() {
     });
     update();
   }
+  const btn = document.getElementById("obf-submit");
+  if (btn && !btn._obfBound) {
+    btn._obfBound = true;
+    btn.addEventListener("click", obfSubmit);
+  }
+}
+
+function obfCopyText(text, btn, idleLabel) {
+  const done = () => {
+    if (!btn) return;
+    btn.classList.add("copied");
+    const label = btn.querySelector ? btn.querySelector(".copy-label") : null;
+    if (label) label.textContent = "Copied";
+    else btn.textContent = "Copied";
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => {
+      btn.classList.remove("copied");
+      if (label) label.textContent = idleLabel;
+      else btn.textContent = idleLabel;
+    }, 1500);
+  };
+  const fallback = () => {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {}
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(fallback);
+  else fallback();
+}
+
+function obfLuaQuote(s) {
+  let lvl = 0;
+  while (s.indexOf("]" + "=".repeat(lvl) + "]") !== -1) lvl++;
+  return "[" + "=".repeat(lvl) + "[" + s + "]" + "=".repeat(lvl) + "]";
 }
 
 function initObfuscateResult() {
   const garble = document.getElementById("obf-garble");
-  if (garble && !garble.textContent) garble.textContent = obfNoise(96, 13);
+  let text = "";
+  try {
+    const raw = sessionStorage.getItem(OBF_RESULT_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const w = parsed && parsed.wrapper != null ? parsed.wrapper : parsed;
+      text = typeof w === "string" ? w : JSON.stringify(w);
+    }
+  } catch (e) {}
+  const empty = document.getElementById("obf-empty");
+  const dot = document.getElementById("obf-result-dot");
+  const label = document.getElementById("obf-result-label");
+  const stats = document.getElementById("obf-result-stats");
+  const errSlot = document.getElementById("obf-result-error");
+  const showErr = (msg) => {
+    if (!errSlot) return;
+    if (!msg) { errSlot.hidden = true; errSlot.textContent = ""; }
+    else { errSlot.hidden = false; errSlot.textContent = msg; }
+  };
+  if (text) {
+    showErr(null);
+    if (garble) { garble.textContent = text; garble.classList.add("obf-garble-ready"); }
+    if (empty) empty.style.display = "none";
+    if (dot) { dot.classList.remove("obf-dot-off"); dot.classList.add("obf-dot-on"); }
+    if (label) label.textContent = "obfuscated";
+    if (stats) {
+      let bytes = 0;
+      try { bytes = new TextEncoder().encode(text).length; } catch (e) { bytes = text.length; }
+      stats.textContent = `${text.length} chars · ${bytes} B`;
+    }
+  } else {
+    if (garble && !garble.textContent) garble.textContent = obfNoise(96, 13);
+  }
+  const copyBtn = document.getElementById("obf-copy");
+  if (copyBtn && !copyBtn._obfBound) {
+    copyBtn._obfBound = true;
+    copyBtn.addEventListener("click", () => {
+      if (!text) { showErr("No output yet – submit a script first."); return; }
+      obfCopyText(text, copyBtn, "Copy output");
+    });
+  }
+  const sobfusBtn = document.getElementById("obf-copy-sobfus");
+  if (sobfusBtn && !sobfusBtn._obfBound) {
+    sobfusBtn._obfBound = true;
+    sobfusBtn.addEventListener("click", () => {
+      if (!text) { showErr("No output yet – submit a script first."); return; }
+      obfCopyText("cheat.SObfus(" + obfLuaQuote(text) + ")", sobfusBtn, "Copy cheat.SObfus(…)");
+    });
+  }
 }
 
 function render() {

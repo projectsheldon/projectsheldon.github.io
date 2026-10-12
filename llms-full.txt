@@ -20,11 +20,12 @@ source.lua
 raw input
 
 0 chars · 0 lines · 0 B
+sign in to obfuscate
 
-soon
+virtualize
 Obfuscate →
 
-The scrambler isn't wired up yet – this is the shell. The output will land on its own page.
+Signed-in users only – the scrambled output lands on its own page. Rate limits are enforced by the server.
 
 ---
 
@@ -39,6 +40,8 @@ No output yet
 submit a script and the scrambled result lands here
 
 –
+
+Copy cheat.SObfus(…)
 Copy output
 
 ---
