@@ -4005,22 +4005,29 @@ async function obfSubmit() {
     });
     const data = await res.json().catch(() => ({}));
     if (data && (data.remaining != null || data.resetAfterSec != null)) obfRenderBudget(data.remaining, data.resetAfterSec);
-    if (res.status === 429 || (data && data.code === "RATE_LIMITED")) {
+    if (res.status === 429 || (data && (data.error === "rate_limited" || data.code === "RATE_LIMITED"))) {
       const raw = data.resetAfterSec != null ? data.resetAfterSec : data.retry_after;
       const wait = Math.max(1, Math.ceil(Number(raw) || 30));
       obfShowError("Rate limited – try again in " + wait + "s.");
       return;
     }
     if (!res.ok || (data && data.ok === false)) {
-      const code = (data && (data.code || data.error)) || "";
-      if (code === "AUTH_REQUIRED" || res.status === 401 || res.status === 403) { await obfRequireLogin(); return; }
+      const code = (data && (data.error || data.code)) || "";
+      const detail = (data && typeof data.detail === "string" && data.detail) ? data.detail : "";
+      if (code === "Not authenticated" || code === "AUTH_REQUIRED" || res.status === 401 || res.status === 403) { await obfRequireLogin(); return; }
+      if (code === "missing_script" || res.status === 400) { obfShowError("Paste a script first."); return; }
+      if (code === "method_not_allowed" || res.status === 405) { obfShowError("Method not allowed – refresh the page and try again."); return; }
       if (code === "SOURCE_TOO_LARGE") { obfShowError("Source too large – the server caps scripts at 512 KB."); return; }
-      if (code === "SYNTAX_ERROR") { obfShowError("Syntax error – " + ((data && (data.message || data.detail)) || "the server could not parse the script.")); return; }
-      obfShowError(data && typeof data.message === "string" && data.message ? data.message : "Obfuscation failed. Try again in a moment.");
+      if (code === "SYNTAX_ERROR") { obfShowError("Syntax error – " + (detail || "the server could not parse the script.")); return; }
+      if (code === "duplicate_nonce" || res.status === 409) { obfShowError("Duplicate request – this submission was already received. Wait a moment, then retry."); return; }
+      if (code === "unknown_job" || res.status === 404) { obfShowError("Job not found – it may have expired. Submit the script again."); return; }
+      if (code === "not_configured" || res.status === 503) { obfShowError("Obfuscator unavailable – the server is not configured yet. Try again later."); return; }
+      obfShowError("Obfuscation failed. Try again in a moment.");
       return;
     }
-    const wrapper = data.wrapper != null ? data.wrapper : (data.output != null ? data.output : data);
-    try { sessionStorage.setItem(OBF_RESULT_KEY, JSON.stringify({ wrapper: wrapper, at: Date.now() })); }
+    const obfuscated = data && typeof data.obfuscated === "string" ? data.obfuscated : "";
+    if (!obfuscated) { obfShowError("Obfuscation failed – empty response. Try again in a moment."); return; }
+    try { sessionStorage.setItem(OBF_RESULT_KEY, JSON.stringify({ obfuscated: obfuscated, at: Date.now() })); }
     catch (e) { obfShowError("Obfuscated, but this browser blocked the handoff (storage unavailable)."); return; }
     location.hash = "#/obfuscate-result";
   } catch (e) {
@@ -4110,8 +4117,9 @@ function initObfuscateResult() {
     const raw = sessionStorage.getItem(OBF_RESULT_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      const w = parsed && parsed.wrapper != null ? parsed.wrapper : parsed;
-      text = typeof w === "string" ? w : JSON.stringify(w);
+      const out = parsed && typeof parsed.obfuscated === "string" ? parsed.obfuscated
+        : (parsed && typeof parsed.wrapper === "string" ? parsed.wrapper : "");
+      text = out || "";
     }
   } catch (e) {}
   const empty = document.getElementById("obf-empty");
