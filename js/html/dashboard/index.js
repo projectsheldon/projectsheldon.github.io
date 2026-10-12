@@ -1640,7 +1640,18 @@ if (endInput) {
         countTimer = null;
     }
 
+    function clearDisplay() {
+        codeEl.textContent = '';
+        if (countEl) countEl.textContent = '';
+        try {
+            const ctx = qr.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, qr.width, qr.height);
+        } catch (e) {}
+        qr.style.display = '';
+    }
+
     function showIdle() {
+        clearDisplay();
         idle.hidden = false;
         live.hidden = true;
         done.hidden = true;
@@ -1759,6 +1770,7 @@ if (endInput) {
 
     btn.addEventListener('click', () => { mint().catch(() => {}); });
     if (refreshBtn) refreshBtn.addEventListener('click', () => { mint().catch(() => {}); });
+    showIdle();
     if (hideBtn) hideBtn.addEventListener('click', () => {
         stopTimers();
         row = null;
