@@ -1204,6 +1204,10 @@ function licenseStatusBadge(status) {
 function setPageSub() {
     const sub = document.getElementById('dash-page-sub');
     if (!sub) return;
+    if (state.tab === 'settings') {
+        sub.textContent = 'Devices and account settings';
+        return;
+    }
     if (state.tab !== 'licenses') {
         // the stat row no longer carries a card, so the ban state lives here
         sub.textContent = (state.data && state.data.banned) ? 'Access revoked on this account' : 'Your usage, stats and licenses';
@@ -1419,11 +1423,12 @@ function switchTab(tab) {
     });
     document.getElementById('tab-overview').classList.toggle('hidden', tab !== 'overview');
     document.getElementById('tab-licenses').classList.toggle('hidden', tab !== 'licenses');
+    document.getElementById('tab-settings').classList.toggle('hidden', tab !== 'settings');
     // The header search is always there; only the license filter is tab-specific.
     document.getElementById('dash-license-tools').hidden = tab !== 'licenses';
     // table-heavy tabs use the full available width
     document.getElementById('dash-reader').classList.toggle('is-wide', tab === 'licenses');
-    document.getElementById('dash-page-title').textContent = tab === 'licenses' ? 'Licenses' : 'Overview';
+    document.getElementById('dash-page-title').textContent = tab === 'licenses' ? 'Licenses' : (tab === 'settings' ? 'Settings' : 'Overview');
     setPageSub();
 }
 
@@ -1597,6 +1602,20 @@ if (endInput) {
     endInput.addEventListener('change', function () {
         state.end = this.value;
         reloadActivity();
+    });
+}
+
+// Settings tab: reuse the same QR+PIN modal as the topbar menu entry.
+const linkDeviceBtn = document.getElementById('dash-link-device-btn');
+if (linkDeviceBtn) {
+    linkDeviceBtn.addEventListener('click', () => {
+        try {
+            if (DiscordAuth && typeof DiscordAuth.LinkNewDevice === 'function') {
+                DiscordAuth.LinkNewDevice().catch(() => {});
+            } else if (typeof Notify !== 'undefined') {
+                Notify('Login module still loading – try again in a moment.', 'warning', 2500);
+            }
+        } catch (e) {}
     });
 }
 

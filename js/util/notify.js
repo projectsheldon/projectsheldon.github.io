@@ -47,8 +47,13 @@
             info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7b18f" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
         };
 
-        notification.innerHTML = '<span style="flex-shrink:0;">' + (icons[type] || icons.info) + '</span>' +
-            '<span style="flex:1;">' + message + '</span>';
+        const iconSpan = document.createElement('span');
+        iconSpan.style.flexShrink = '0';
+        iconSpan.innerHTML = icons[type] || icons.info;
+        const msgSpan = document.createElement('span');
+        msgSpan.style.flex = '1';
+        msgSpan.textContent = message;
+        notification.append(iconSpan, msgSpan);
 
         notification.addEventListener('click', function ()
         {

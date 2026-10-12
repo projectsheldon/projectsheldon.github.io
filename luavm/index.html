@@ -3874,7 +3874,7 @@ function obfShowError(msg) {
     if (!msg) { el.hidden = true; el.textContent = ""; }
     else { el.hidden = false; el.textContent = msg; }
   }
-  try { if (msg && window.Notify) window.Notify(msg, "error", 4000); } catch (e) {}
+  try { if (msg && window.Notify) window.Notify(escapeHtml(msg), "error", 4000); } catch (e) {}
 }
 
 // True when every short quote and long-bracket string is closed at EOF.

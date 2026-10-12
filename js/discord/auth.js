@@ -813,6 +813,62 @@ const DiscordAuth = {
     async LinkNewDevice()
     {
         const apiUrl = await Api.GetApiUrl();
+        // The topbar menu calls this directly with no chooser overlay open, so
+        // #discord-app-modal does not exist and _QuickLogin used to return
+        // silently – the classic "button does nothing" bug. Mint the same
+        // overlay _PromptDiscordApp uses so the QR flow always has a host.
+        if(!document.querySelector('#discord-app-modal'))
+        {
+            const previouslyFocused = document.activeElement;
+            const previousBodyOverflow = document.body.style.overflow;
+            const overlay = document.createElement('div');
+            overlay.id = 'discord-app-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-labelledby', 'discord-app-title');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;transition:opacity 0.2s ease;opacity:0;';
+            const modal = document.createElement('div');
+            modal.id = 'discord-app-modal';
+            modal.style.cssText = 'position:relative;background:rgba(20,20,20,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);transform:scale(0.96);transition:transform 0.2s cubic-bezier(0.16,1,0.3,1);';
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => {
+                overlay.style.opacity = '1';
+                modal.style.transform = 'scale(1)';
+            });
+            window._discordOverlayCleanup = function ()
+            {
+                document.removeEventListener('keydown', onKeyDown);
+                document.body.style.overflow = previousBodyOverflow;
+                if(previouslyFocused && typeof previouslyFocused.focus === 'function')
+                {
+                    try { previouslyFocused.focus(); } catch(e) {}
+                }
+                window._discordOverlayCleanup = null;
+            };
+            function onKeyDown(e)
+            {
+                if(e.key === 'Escape')
+                {
+                    window._quickLoginCancelled = true;
+                    window._discordLoginPopupOpen = false;
+                    if(window._discordOverlayCleanup) window._discordOverlayCleanup();
+                    overlay.remove();
+                }
+            }
+            document.addEventListener('keydown', onKeyDown);
+            overlay.onclick = (e) => {
+                if(e.target === overlay)
+                {
+                    window._quickLoginCancelled = true;
+                    window._discordLoginPopupOpen = false;
+                    if(window._discordOverlayCleanup) window._discordOverlayCleanup();
+                    overlay.remove();
+                }
+            };
+            window._discordLoginPopupOpen = true;
+        }
         return DiscordAuth._QuickLogin(apiUrl, true);
     },
     async _QuickLogin(apiUrl, linkMode)
