@@ -381,3 +381,136 @@ async function claimWorkinkToken() {
 }
 
 claimWorkinkToken();
+
+// LootLabs return pattern: checkout stores the click_id at start
+// (sessionStorage sheldon_lootlabs_pending, mirrored to localStorage so the
+// noopener wall tab can hand it back), the wall redirects home to
+// /?lootlabs=done, and the homepage auto-claims with the same
+// balance-gain animation. Server-side anti-bypass is untouched: claim still
+// requires a postback-completed pending row. The modal Claim stays as fallback.
+
+const LOOTLABS_PENDING_KEY = 'sheldon_lootlabs_pending';
+
+// sessionStorage is the primary store; localStorage mirrors it because the
+// wall tab (opened with noopener) owns a separate sessionStorage and could
+// never hand the click_id back otherwise. Server ownership checks still apply.
+function getPendingLootlabsClick() {
+    let v = null;
+    try { v = sessionStorage.getItem(LOOTLABS_PENDING_KEY); } catch (e) {}
+    if (v && String(v).trim()) return String(v).trim();
+    try { v = localStorage.getItem(LOOTLABS_PENDING_KEY); } catch (e) {}
+    if (v && String(v).trim()) return String(v).trim();
+    return null;
+}
+
+function clearPendingLootlabsClick() {
+    try { sessionStorage.removeItem(LOOTLABS_PENDING_KEY); } catch (e) {}
+    try { localStorage.removeItem(LOOTLABS_PENDING_KEY); } catch (e) {}
+}
+
+async function loadLootlabsIdentitySafe() {
+    try {
+        const mod = await import('../../util/device.js');
+        if (mod && typeof mod.GetIdentityPayload === 'function') return await mod.GetIdentityPayload();
+    } catch (e) {}
+    return new URLSearchParams();
+}
+
+function stripLootlabsMarker() {
+    try {
+        const u = new URL(location.href);
+        if (!u.searchParams.has('lootlabs')) return;
+        u.searchParams.delete('lootlabs');
+        history.replaceState({}, '', u.pathname + (u.search ? u.search : '') + (u.hash ? u.hash : ''));
+    } catch (e) {
+        try { history.replaceState({}, '', location.pathname + location.hash); } catch (_) {}
+    }
+}
+
+async function claimLootlabsReturn() {
+    let params = null;
+    try { params = new URLSearchParams(location.search); } catch (e) { return; }
+    if (!params || !params.has('lootlabs')) return;
+
+    let clickId = getPendingLootlabsClick();
+    // Strip the marker first so a refresh can never re-submit (no infinite loop).
+    // The pending click_id is kept for the modal Claim fallback unless claimed below.
+    stripLootlabsMarker();
+    if (!clickId) return;
+
+    let sessionToken = await waitForLogin(4000);
+    if (!sessionToken) {
+        if (typeof window.Notify === 'function') window.Notify('Log in with Discord to claim your reward.', 'info', 5000);
+        try { window.DiscordAuth?.LoginPopup?.(); } catch (e) {}
+        sessionToken = await waitForLogin(180000);
+        if (!sessionToken) return;
+    }
+
+    try {
+        const apiUrl = await Api.GetApiUrl();
+
+        const statusBody = new URLSearchParams();
+        statusBody.set('sessionToken', sessionToken);
+        statusBody.set('click_id', clickId);
+        const statusRes = await fetch(`${apiUrl}/lootlabs/status`, { method: 'POST', body: statusBody });
+        const statusData = await statusRes.json().catch(() => null);
+        const st = (statusData && typeof statusData.status === 'string') ? statusData.status.toLowerCase() : '';
+        const completed = statusData && statusData.ok &&
+            (st === 'complete' || st === 'completed' || st === 'ready' || st === 'done' || st === 'verified');
+        if (!completed) {
+            if (statusRes.status === 401 || statusRes.status === 403) {
+                if (typeof window.Notify === 'function')
+                    window.Notify((statusData && statusData.message) || 'Session expired – please log in again.', 'error', 5000);
+                return;
+            }
+            if (statusData && statusData.ok === false && /expir|consumed|already claimed|unknown/i.test(String(statusData.message || ''))) {
+                clearPendingLootlabsClick();
+                if (typeof window.Notify === 'function') window.Notify(statusData.message, 'error', 5000);
+                return;
+            }
+            if (typeof window.Notify === 'function')
+                window.Notify('LootLabs step not completed yet – finish the task first.', 'info', 5000);
+            return;
+        }
+
+        const claimBody = new URLSearchParams();
+        claimBody.set('sessionToken', sessionToken);
+        claimBody.set('click_id', clickId);
+        try {
+            const identity = await loadLootlabsIdentitySafe();
+            for (const [k, v] of identity.entries()) claimBody.set(k, v);
+        } catch (e) {}
+
+        const res = await fetch(`${apiUrl}/lootlabs/claim`, { method: 'POST', body: claimBody });
+        const data = await res.json().catch(() => null);
+
+        if (data && data.ok && data.license) {
+            clearPendingLootlabsClick();
+            showRewardKey(data.license.key, data.license.product);
+        } else if (data && data.ok && data.new_balance !== undefined) {
+            clearPendingLootlabsClick();
+            const added = (typeof data.added === 'number' && !isNaN(data.added)) ? data.added : 0;
+            const oldBalance = Math.max(0, data.new_balance - added);
+            if (added > 0) playBalanceGain(added, oldBalance);
+            if (data.capped && typeof window.Notify === 'function')
+                window.Notify('Daily balance maxed – come back later.', 'info', 5000);
+            else if (typeof window.Notify === 'function')
+                window.Notify(added > 0 ? `Reward claimed: +${added} balance.` : 'Balance updated.', 'success', 4000);
+        } else if (res.status === 401 || res.status === 403) {
+            if (typeof window.Notify === 'function')
+                window.Notify((data && data.message) || 'Session expired – please log in again.', 'error', 5000);
+        } else if ((res.status === 429 || (data && data.rate_limited_until))) {
+            if (typeof window.Notify === 'function')
+                window.Notify((data && data.message) || 'Daily limit reached – try again later.', 'warning', 6000);
+        } else if (data && /already claimed|consumed|expir/i.test(String(data.message || ''))) {
+            clearPendingLootlabsClick();
+            if (typeof window.Notify === 'function') window.Notify(data.message, 'info', 5000);
+        } else if (data && data.message) {
+            if (typeof window.Notify === 'function') window.Notify(data.message, 'error', 5000);
+        }
+    } catch (e) {
+        if (typeof window.Notify === 'function') window.Notify('Could not claim your reward. Please try again.', 'error', 5000);
+    }
+}
+
+claimLootlabsReturn();
