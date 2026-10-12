@@ -271,7 +271,8 @@ const DiscordAuth = {
             '<div style="display:flex;gap:12px;">' +
                 '<button id="discord-app-yes" style="flex:1;background:#5865F2;color:white;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.2s ease;">Open App</button>' +
                 '<button id="discord-app-no" style="flex:1;background:rgba(255,255,255,0.08);color:white;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s ease;">Use Browser</button>' +
-            '</div>';
+            '</div>' +
+            '<button id="discord-app-quick" style="width:100%;margin-top:12px;background:transparent;border:1px solid rgba(199,177,143,0.4);color:#c7b18f;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s ease;">Quick login – scan with your phone</button>';
 
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
@@ -322,16 +323,23 @@ const DiscordAuth = {
 
         const yesBtn = document.getElementById('discord-app-yes');
         const noBtn = document.getElementById('discord-app-no');
+        const quickBtn = document.getElementById('discord-app-quick');
 
         yesBtn.onmouseenter = () => yesBtn.style.background = '#4752c4';
         yesBtn.onmouseleave = () => yesBtn.style.background = '#5865F2';
         noBtn.onmouseenter = () => noBtn.style.background = 'rgba(255,255,255,0.14)';
         noBtn.onmouseleave = () => noBtn.style.background = 'rgba(255,255,255,0.08)';
+        if(quickBtn)
+        {
+            quickBtn.onmouseenter = () => quickBtn.style.background = 'rgba(199,177,143,0.1)';
+            quickBtn.onmouseleave = () => quickBtn.style.background = 'transparent';
+        }
 
         yesBtn.onclick = () => {
             minCloseTime = Date.now() + 2000;
             callback('app');
         };
+        if(quickBtn) quickBtn.onclick = () => { callback('quick'); };
         noBtn.onclick = () => {
             callback('browser');
             // Do NOT closeOverlay here – the poll keeps the same overlay alive as a
@@ -398,6 +406,13 @@ const DiscordAuth = {
         const discordAppUrl = `discord://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${encodeURIComponent(authCode)}`;
 
         this._PromptDiscordApp(function (choice) {
+            // Phone-approval flow: needs only the backend URL, not the Discord
+            // client id, so it runs even when the OAuth config failed to load.
+            if(choice === 'quick')
+            {
+                DiscordAuth._QuickLogin(apiUrl);
+                return;
+            }
             if(!configOk || !clientId)
             {
                 const modal = document.querySelector('#discord-app-modal');
@@ -550,6 +565,7 @@ const DiscordAuth = {
             {
                 // User dismissed the chooser (ESC / click outside) – ensure flag is cleared.
                 window._discordLoginPopupOpen = false;
+                window._quickLoginCancelled = true;
                 if(window._discordOverlayCleanup) window._discordOverlayCleanup();
             }
         });
@@ -784,6 +800,235 @@ const DiscordAuth = {
         });
 
         CheckAuthStatus();
+    },
+
+    // Quick login: this device shows a QR + short code, the phone approves,
+    // this tab polls /discord/quick-status until it can claim the session.
+    // Everything rendered here comes from the server, so all of it goes
+    // through textContent/createElement – never innerHTML with live data.
+    async _QuickLogin(apiUrl)
+    {
+        window._quickLoginCancelled = false;
+        const modal = document.querySelector('#discord-app-modal');
+        if(!modal) { window._discordLoginPopupOpen = false; return; }
+        modal.dataset.quick = '1';
+
+        const alive = () => !window._quickLoginCancelled
+            && document.body.contains(modal)
+            && modal.dataset.quick === '1';
+
+        let pollTimer = null;
+        let countTimer = null;
+        const stopTimers = () => {
+            if(pollTimer) clearTimeout(pollTimer);
+            if(countTimer) clearInterval(countTimer);
+            pollTimer = null; countTimer = null;
+        };
+
+        function closeAll()
+        {
+            stopTimers();
+            window._quickLoginCancelled = true;
+            window._discordLoginPopupOpen = false;
+            if(window._discordOverlayCleanup) window._discordOverlayCleanup();
+            const o = document.querySelector('#discord-app-overlay');
+            if(o) o.remove();
+        }
+
+        function paintLoading()
+        {
+            modal.innerHTML = '';
+            const spin = document.createElement('div');
+            spin.style.cssText = 'width:42px;height:42px;margin:0 auto 14px;border:3px solid rgba(255,255,255,0.12);border-top-color:#c7b18f;border-radius:50%;animation:discordSpin 0.7s linear infinite;';
+            modal.appendChild(spin);
+            const t = document.createElement('h3');
+            t.style.cssText = 'color:white;font-size:17px;margin:0 0 6px;';
+            t.textContent = 'Preparing quick login…';
+            modal.appendChild(t);
+        }
+
+        function paintError(msg)
+        {
+            if(!alive()) return;
+            stopTimers();
+            modal.innerHTML = '';
+            const t = document.createElement('h3');
+            t.style.cssText = 'color:#ef4444;font-size:17px;margin:0 0 8px;';
+            t.textContent = 'Quick login unavailable';
+            modal.appendChild(t);
+            const p = document.createElement('p');
+            p.style.cssText = 'color:rgba(255,255,255,0.6);font-size:13px;margin:0 0 16px;';
+            p.textContent = msg;
+            modal.appendChild(p);
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:10px;';
+            modal.appendChild(row);
+            const retry = document.createElement('button');
+            retry.textContent = 'Try Again';
+            retry.style.cssText = 'flex:1;background:#5865F2;color:white;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer;';
+            row.appendChild(retry);
+            const close = document.createElement('button');
+            close.textContent = 'Close';
+            close.style.cssText = 'flex:1;background:rgba(255,255,255,0.08);color:white;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;cursor:pointer;';
+            row.appendChild(close);
+            retry.onclick = () => { DiscordAuth._QuickLogin(apiUrl); };
+            close.onclick = () => closeAll();
+        }
+
+        function paintEnd(title, sub, ok)
+        {
+            if(!alive()) return;
+            stopTimers();
+            modal.innerHTML = '';
+            const t = document.createElement('h3');
+            t.style.cssText = `color:${ok ? '#22c55e' : '#ef4444'};font-size:18px;margin:0 0 8px;`;
+            t.textContent = title;
+            modal.appendChild(t);
+            const p = document.createElement('p');
+            p.style.cssText = 'color:rgba(255,255,255,0.6);font-size:13px;margin:0 0 20px;';
+            p.textContent = sub;
+            modal.appendChild(p);
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:12px;';
+            modal.appendChild(row);
+            const retry = document.createElement('button');
+            retry.textContent = 'Try Again';
+            retry.style.cssText = 'flex:1;background:#5865F2;color:white;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:bold;cursor:pointer;';
+            row.appendChild(retry);
+            const close = document.createElement('button');
+            close.textContent = 'Close';
+            close.style.cssText = 'flex:1;background:rgba(255,255,255,0.1);color:white;border:none;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer;';
+            row.appendChild(close);
+            retry.onclick = () => { DiscordAuth._QuickLogin(apiUrl); };
+            close.onclick = () => closeAll();
+        }
+
+        paintLoading();
+
+        let start = null;
+        try
+        {
+            let fp = null;
+            try { fp = localStorage.getItem('sheldon_fp'); } catch(e) {}
+            const res = await fetch(`${apiUrl}/discord/quick-start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fp ? { device_id: fp } : {})
+            });
+            start = await res.json().catch(() => ({}));
+            if(res.status === 429) { paintError('Too many quick logins – wait a while and try again.'); return; }
+        }
+        catch(e) { start = null; }
+        if(!alive()) return;
+        if(!start || !start.ok || typeof start.qr_url !== 'string' || typeof start.user_code !== 'string' || typeof start.device_token !== 'string')
+        {
+            paintError('Could not reach the login server. Check your connection and try again.');
+            return;
+        }
+
+        modal.innerHTML = '';
+        const title = document.createElement('h3');
+        title.style.cssText = 'color:white;font-size:18px;margin:0 0 4px;';
+        title.textContent = 'Quick login';
+        modal.appendChild(title);
+        const sub = document.createElement('p');
+        sub.style.cssText = 'color:rgba(255,255,255,0.55);font-size:13px;margin:0 0 14px;';
+        sub.textContent = 'Scan with your phone, then approve on it.';
+        modal.appendChild(sub);
+
+        const canvas = document.createElement('canvas');
+        canvas.style.cssText = 'border-radius:12px;margin:0 auto 12px;display:block;';
+        modal.appendChild(canvas);
+        // The QR lib is a dynamic import on purpose: if it ever fails to load,
+        // the typed code below still completes the login – the button never dies.
+        try
+        {
+            const qr = await import('../util/qrcode.js');
+            if(alive()) qr.drawQRCode(canvas, start.qr_url, { scale: 5 });
+        }
+        catch(e) { canvas.style.display = 'none'; }
+
+        const code = document.createElement('div');
+        code.style.cssText = 'font-family:ui-monospace,monospace;font-size:30px;font-weight:800;letter-spacing:6px;color:#c7b18f;margin:0 0 4px;';
+        code.textContent = start.user_code;
+        modal.appendChild(code);
+        const codeHint = document.createElement('p');
+        codeHint.style.cssText = 'color:rgba(255,255,255,0.45);font-size:12px;margin:0 0 10px;';
+        codeHint.textContent = 'Type this on your phone after scanning.';
+        modal.appendChild(codeHint);
+
+        const count = document.createElement('p');
+        count.style.cssText = 'color:rgba(255,255,255,0.55);font-size:13px;margin:0 0 14px;font-variant-numeric:tabular-nums;';
+        modal.appendChild(count);
+        const cancel = document.createElement('button');
+        cancel.textContent = 'Cancel';
+        cancel.style.cssText = 'width:100%;background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border-radius:8px;padding:10px;font-size:13px;cursor:pointer;';
+        modal.appendChild(cancel);
+        cancel.onclick = () => closeAll();
+
+        function fmtLeft()
+        {
+            const s = Math.max(0, Math.ceil((Number(start.expires_at) - Date.now()) / 1000));
+            return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+        }
+        count.textContent = `Code expires in ${fmtLeft()}`;
+        countTimer = setInterval(() =>
+        {
+            if(!alive()) { stopTimers(); return; }
+            if(Date.now() >= Number(start.expires_at))
+            {
+                paintEnd('Code expired', 'That login code expired. Start again for a fresh one.', false);
+                return;
+            }
+            count.textContent = `Code expires in ${fmtLeft()}`;
+        }, 1000);
+
+        async function poll()
+        {
+            if(!alive()) { stopTimers(); return; }
+            try
+            {
+                const res = await fetch(`${apiUrl}/discord/quick-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_token: start.device_token })
+                });
+                const data = await res.json().catch(() => ({}));
+                if(!alive()) { stopTimers(); return; }
+                if(data && data.ok && data.status === 'approved' && typeof data.sessionToken === 'string')
+                {
+                    stopTimers();
+                    DiscordAuth.SetSessionToken(data.sessionToken);
+                    modal.innerHTML = '';
+                    const t = document.createElement('h3');
+                    t.style.cssText = 'color:#22c55e;font-size:18px;margin:0 0 8px;';
+                    t.textContent = 'Login Successful!';
+                    modal.appendChild(t);
+                    const p = document.createElement('p');
+                    p.style.cssText = 'color:rgba(255,255,255,0.6);font-size:13px;margin:0;';
+                    p.textContent = 'You are now logged in.';
+                    modal.appendChild(p);
+                    if(typeof Notify !== 'undefined') Notify('Logged in – welcome back.', 'success', 2500);
+                    setTimeout(() => { try { location.reload(); } catch(e) {} }, 700);
+                    window._discordLoginPopupOpen = false;
+                    if(window._discordOverlayCleanup) window._discordOverlayCleanup();
+                    return;
+                }
+                if(data && data.ok && data.status === 'denied')
+                {
+                    paintEnd('Login declined', 'The approval was declined on your phone.', false);
+                    return;
+                }
+                if(data && data.ok && (data.status === 'expired' || data.status === 'consumed'))
+                {
+                    paintEnd('Code expired', 'That login code expired. Start again for a fresh one.', false);
+                    return;
+                }
+            }
+            catch(e) { /* network hiccup – keep polling until the countdown ends */ }
+            if(alive()) pollTimer = setTimeout(poll, 2000);
+        }
+        pollTimer = setTimeout(poll, 2000);
     }
 };
 
