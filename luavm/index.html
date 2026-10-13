@@ -3883,7 +3883,7 @@ function obfRenderBudget(remaining, resetAfterSec) {
   if (remaining == null && resetAfterSec == null) { el.textContent = "sign in to obfuscate"; return; }
   let left = Math.max(0, Math.ceil(Number(resetAfterSec) || 0));
   const paint = () => {
-    el.textContent = (remaining != null ? "budget: " + remaining + " left" : "rate limited") +
+    el.textContent = (remaining != null ? "Obfuscations Left: " + remaining : "Obfuscations Left: 0") +
       (left > 0 ? " · resets in " + left + "s" : "");
   };
   paint();
@@ -3995,23 +3995,25 @@ async function obfSubmit() {
   obfShowError(null);
   const src = document.getElementById("obf-source");
   const btn = document.getElementById("obf-submit");
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.textContent = "Obfuscating…"; }
+  const releaseBtn = () => { if (btn) { btn.disabled = false; btn.textContent = "Obfuscate"; } };
   const script = src ? src.value : "";
-  if (!script || !script.trim()) { obfShowError("Paste a script first."); if (src) src.focus(); return; }
+  if (!script || !script.trim()) { obfShowError("Paste a script first."); if (src) src.focus(); releaseBtn(); return; }
   let api = null;
   try { api = await obfApiUrl(); } catch (e) {}
-  if (!api) { obfShowError("Could not reach the backend. Check your connection and try again."); return; }
-  if (!(await obfCheckAuth(api))) { await obfRequireLogin(); return; }
+  if (!api) { obfShowError("Could not reach the backend. Check your connection and try again."); releaseBtn(); return; }
+  if (!(await obfCheckAuth(api))) { await obfRequireLogin(); releaseBtn(); return; }
   let bytes = 0;
   try { bytes = new TextEncoder().encode(script).length; } catch (e) { bytes = script.length; }
-  if (bytes > OBF_MAX_BYTES) { obfShowError("Source too large – the cap is 512 KB (" + (bytes / 1024).toFixed(1) + " KB pasted)."); return; }
-  if (!obfQuotesBalanced(script)) { obfShowError("Syntax error – unbalanced quotes or an unclosed long string. Fix the break and try again."); return; }
+  if (bytes > OBF_MAX_BYTES) { obfShowError("Source too large – the cap is 512 KB (" + (bytes / 1024).toFixed(1) + " KB pasted)."); releaseBtn(); return; }
+  if (!obfQuotesBalanced(script)) { obfShowError("Syntax error – unbalanced quotes or an unclosed long string. Fix the break and try again."); releaseBtn(); return; }
   let token = null;
   try { token = localStorage.getItem("discord_session"); } catch (e) {}
   const virt = document.getElementById("obf-virtualize");
   let nonce = "";
   try { nonce = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2); }
   catch (e) { nonce = String(Date.now()); }
-  if (btn) { btn.disabled = true; btn.textContent = "Obfuscating…"; }
   try {
     const res = await fetch(api + "/obfuscate/submit", {
       method: "POST",
