@@ -540,27 +540,6 @@
     border-radius: 0.75rem;
     overflow: hidden;
   }
-  .obf-bar {
-    display: flex; align-items: center; gap: 0.6rem;
-    padding: 0.7rem 1rem;
-    background: rgba(255,255,255,0.03);
-    border-bottom: 1px solid var(--border);
-  }
-  .obf-dot {
-    width: 7px; height: 7px; border-radius: 9999px; flex-shrink: 0;
-    background: var(--gold); box-shadow: 0 0 8px rgba(199,177,143,0.55);
-  }
-  .obf-dot-off { background: rgba(255,255,255,0.16); box-shadow: none; }
-  .obf-dot-on { background: var(--gold); }
-  .obf-file {
-    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
-    font-size: 0.75rem; color: var(--muted);
-  }
-  .obf-mode {
-    margin-left: auto;
-    display: inline-flex; align-items: center; gap: 0.45rem;
-    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-2);
-  }
   .obf-body { position: relative; display: flex; align-items: stretch; }
   textarea.obf-input {
     flex: 1; width: 100%; min-height: 0; resize: none;
@@ -803,10 +782,6 @@
           </div>
         </div>
         <div class="obf-panel obf-result">
-          <div class="obf-bar">
-            <span class="obf-file">obfuscated.lua</span>
-            <span class="obf-mode" id="obf-inline-mode"><span class="obf-dot obf-dot-off" id="obf-inline-dot" aria-hidden="true"></span><span id="obf-inline-label">awaiting input</span></span>
-          </div>
           <div class="obf-body">
             <pre id="obf-inline-garble" class="obf-garble" aria-hidden="true"></pre>
             <div class="obf-empty" id="obf-inline-empty">
@@ -817,7 +792,6 @@
           <div class="obf-footer">
             <span class="obf-stats" id="obf-inline-stats">–</span>
             <span class="obf-actions">
-              <button class="obf-btn obf-btn-secondary" type="button" id="obf-inline-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
               <button class="obf-btn" type="button" id="obf-inline-copy">Copy output</button>
             </span>
           </div>
@@ -831,10 +805,6 @@
       <p class="intro">The scrambled output lands here.</p>
       <div class="body"><div class="obf-workbench">
         <div class="obf-panel obf-result">
-          <div class="obf-bar">
-            <span class="obf-file">obfuscated.lua</span>
-            <span class="obf-mode" id="obf-result-mode"><span class="obf-dot obf-dot-off" id="obf-result-dot" aria-hidden="true"></span><span id="obf-result-label">awaiting input</span></span>
-          </div>
           <div class="obf-body">
             <pre id="obf-garble" class="obf-garble" aria-hidden="true"></pre>
             <div class="obf-empty" id="obf-empty">
@@ -845,7 +815,6 @@
           <div class="obf-footer">
             <span class="obf-stats" id="obf-result-stats">–</span>
             <span class="obf-actions">
-              <button class="obf-btn obf-btn-secondary" type="button" id="obf-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
               <button class="obf-btn" type="button" id="obf-copy">Copy output</button>
             </span>
           </div>
@@ -1965,7 +1934,6 @@ const PAGES = {
           <div class="obf-footer">
             <span class="obf-stats" id="obf-inline-stats">–</span>
             <span class="obf-actions">
-              <button class="obf-btn obf-btn-secondary" type="button" id="obf-inline-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
               <button class="obf-btn" type="button" id="obf-inline-copy">Copy output</button>
             </span>
           </div>
@@ -1992,7 +1960,6 @@ const PAGES = {
           <div class="obf-footer">
             <span class="obf-stats" id="obf-result-stats">–</span>
             <span class="obf-actions">
-              <button class="obf-btn obf-btn-secondary" type="button" id="obf-copy-sobfus" title="Copy as a cheat.SObfus call">Copy cheat.SObfus(…)</button>
               <button class="obf-btn" type="button" id="obf-copy">Copy output</button>
             </span>
           </div>
@@ -4183,19 +4150,6 @@ function initObfuscatePage() {
       obfCopyText(text, inlineCopy, "Copy output");
     });
   }
-  const inlineSobfus = document.getElementById("obf-inline-copy-sobfus");
-  if (inlineSobfus && !inlineSobfus._obfBound) {
-    inlineSobfus._obfBound = true;
-    inlineSobfus.addEventListener("click", () => {
-      const text = obfInlineText();
-      const errSlot = document.getElementById("obf-inline-error");
-      if (!text) {
-        if (errSlot) { errSlot.hidden = false; errSlot.textContent = "No output yet – submit a script first."; }
-        return;
-      }
-      obfCopyText("cheat.SObfus(" + obfLuaQuote(text) + ")", inlineSobfus, "Copy cheat.SObfus(…)");
-    });
-  }
 }
 
 function obfCopyText(text, btn, idleLabel) {
@@ -4277,14 +4231,6 @@ function initObfuscateResult() {
     copyBtn.addEventListener("click", () => {
       if (!text) { showErr("No output yet – submit a script first."); return; }
       obfCopyText(text, copyBtn, "Copy output");
-    });
-  }
-  const sobfusBtn = document.getElementById("obf-copy-sobfus");
-  if (sobfusBtn && !sobfusBtn._obfBound) {
-    sobfusBtn._obfBound = true;
-    sobfusBtn.addEventListener("click", () => {
-      if (!text) { showErr("No output yet – submit a script first."); return; }
-      obfCopyText("cheat.SObfus(" + obfLuaQuote(text) + ")", sobfusBtn, "Copy cheat.SObfus(…)");
     });
   }
 }

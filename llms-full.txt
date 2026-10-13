@@ -22,15 +22,11 @@ sign in to obfuscate
 virtualize
 Obfuscate
 
-obfuscated.lua
-awaiting input
-
 No output yet
 submit a script and the scrambled result lands here
 
 –
 
-Copy cheat.SObfus(…)
 Copy output
 
 ---
@@ -39,15 +35,11 @@ Copy output
 
 The scrambled output lands here.
 
-obfuscated.lua
-awaiting input
-
 No output yet
 submit a script and the scrambled result lands here
 
 –
 
-Copy cheat.SObfus(…)
 Copy output
 
 ---
