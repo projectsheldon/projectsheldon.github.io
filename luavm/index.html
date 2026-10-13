@@ -1955,10 +1955,6 @@ const PAGES = {
           </div>
         </div>
         <div class="obf-panel obf-result">
-          <div class="obf-bar">
-            <span class="obf-file">obfuscated.lua</span>
-            <span class="obf-mode" id="obf-inline-mode"><span class="obf-dot obf-dot-off" id="obf-inline-dot" aria-hidden="true"></span><span id="obf-inline-label">awaiting input</span></span>
-          </div>
           <div class="obf-body">
             <pre id="obf-inline-garble" class="obf-garble" aria-hidden="true"></pre>
             <div class="obf-empty" id="obf-inline-empty">
@@ -1986,10 +1982,6 @@ const PAGES = {
     body: `
       <div class="obf-workbench">
         <div class="obf-panel obf-result">
-          <div class="obf-bar">
-            <span class="obf-file">obfuscated.lua</span>
-            <span class="obf-mode" id="obf-result-mode"><span class="obf-dot obf-dot-off" id="obf-result-dot" aria-hidden="true"></span><span id="obf-result-label">awaiting input</span></span>
-          </div>
           <div class="obf-body">
             <pre id="obf-garble" class="obf-garble" aria-hidden="true"></pre>
             <div class="obf-empty" id="obf-empty">
@@ -4093,7 +4085,10 @@ async function obfSubmit() {
     try { sessionStorage.setItem(OBF_RESULT_KEY, JSON.stringify({ obfuscated: obfuscated, at: Date.now() })); }
     catch (e) { obfShowError("Obfuscated, but this browser blocked the handoff (storage unavailable)."); return; }
     try { obfRenderInline(obfuscated); } catch (e) {}
-    location.hash = "#/obfuscate-result";
+    try {
+      const panel = document.getElementById("obf-inline-garble");
+      if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (e) {}
   } catch (e) {
     obfShowError("Network error – could not reach the obfuscation server.");
   } finally {
