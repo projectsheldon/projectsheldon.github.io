@@ -50,7 +50,7 @@
     color: white;
     font-family: 'Inter', sans-serif;
   }
-  html, body { height: 100%; overflow: hidden; }
+  html, body { height: auto; min-height: 100%; overflow: visible; }
   body > .pt-20 { display: none; }
   a { color: inherit; text-decoration: none; }
 
@@ -136,12 +136,15 @@
   @keyframes discordSpin { to { transform: rotate(360deg); } }
 
   .layout {
-    max-width: 80rem; margin: 76px auto 0; padding: 1rem 1.5rem 1rem;
-    display: flex; gap: 2rem; align-items: stretch;
-    height: calc(100vh - 76px); height: calc(100dvh - 76px);
+    max-width: 80rem; margin: 76px auto 0; padding: 1rem 1.5rem 2rem;
+    display: flex; gap: 2rem; align-items: flex-start;
+    height: auto; min-height: calc(100vh - 76px); min-height: calc(100dvh - 76px);
   }
   aside {
-    width: 16rem; flex-shrink: 0; height: 100%; overflow-y: auto;
+    width: 16rem; flex-shrink: 0; height: auto;
+    position: sticky; top: 76px;
+    max-height: calc(100vh - 92px); max-height: calc(100dvh - 92px);
+    overflow-y: auto; padding-bottom: 1rem;
     transform: translateX(calc(max(0px, (100vw - 80rem) / 2) * -0.3));
   }
   aside::-webkit-scrollbar { width: 4px; }
@@ -169,7 +172,7 @@
     border-radius: 9999px; background: var(--gold);
   }
 
-  main { min-width: 0; flex: 1; overflow-y: auto; }
+  main { min-width: 0; flex: 1; min-height: 0; overflow: visible; }
   article { max-width: 54rem; }
   article h1 {
     font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
@@ -741,7 +744,7 @@
       padding: 1rem;
       margin-top: 72px;
       flex-direction: column;
-      height: calc(100vh - 72px); height: calc(100dvh - 72px);
+      height: auto; min-height: calc(100vh - 72px); min-height: calc(100dvh - 72px);
     }
     main { flex: 1; min-height: 0; }
     article h1 { font-size: 1.75rem; }
@@ -768,8 +771,7 @@
     </svg>
   </button>
 
-  <!-- Single 64px spacer for the fixed shared topbar (works without Tailwind). -->
-  <div style="height:64px" aria-hidden="true"></div>
+  <!-- Topbar offset lives in .layout margin-top (fixed 64px bar + breathing room). -->
 
   <div class="layout">
     <aside><nav id="sidebar" class="sidebar"></nav></aside>
@@ -3531,7 +3533,7 @@ function renderMain() {
     </article>
   `;
   const mainEl = document.getElementById("main");
-  if (mainEl) mainEl.scrollTo({ top: 0 });
+  if (mainEl) mainEl.scrollTo({ top: 0 }); window.scrollTo({ top: 0 });
   if (path === "/obfuscate") initObfuscatePage();
   if (path === "/obfuscate-result") initObfuscateResult();
 }
