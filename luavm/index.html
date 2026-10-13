@@ -618,13 +618,6 @@
     font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
     font-size: 0.7rem; color: var(--muted-2); font-variant-numeric: tabular-nums;
   }
-  .obf-error {
-    margin: 0.6rem 0 0; padding: 0.55rem 0.8rem;
-    font-size: 0.78rem; color: #fca5a5;
-    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
-    border-radius: 0.5rem;
-  }
-  .obf-error[hidden] { display: none; }
   .obf-chk {
     --cb-bg: transparent;
     --cb-border: rgba(255,255,255,0.2);
@@ -796,8 +789,6 @@
             </span>
           </div>
         </div>
-        <p class="obf-error" id="obf-error" role="alert" hidden></p>
-        <p class="obf-error" id="obf-inline-error" role="alert" hidden></p>
       </div></div>
     </section>
     <section id="doc-obfuscate-result" class="doc-section" data-path="/obfuscate-result">
@@ -819,7 +810,6 @@
             </span>
           </div>
         </div>
-        <p class="obf-error" id="obf-result-error" role="alert" hidden></p>
       </div></div>
     </section>
     <section id="doc-globals" class="doc-section" data-path="/globals">
@@ -1938,8 +1928,6 @@ const PAGES = {
             </span>
           </div>
         </div>
-        <p class="obf-error" id="obf-error" role="alert" hidden></p>
-        <p class="obf-error" id="obf-inline-error" role="alert" hidden></p>
       </div>
     `,
   },
@@ -1964,7 +1952,6 @@ const PAGES = {
             </span>
           </div>
         </div>
-        <p class="obf-error" id="obf-result-error" role="alert" hidden></p>
       </div>
     `,
   },
