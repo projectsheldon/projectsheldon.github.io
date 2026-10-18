@@ -45,6 +45,30 @@ let bannerEl = null;
 let modalEl = null;
 let promptVisible = false;
 
+// Last choice the SERVER confirmed, kept locally for display only. If a probe fails
+// (restarting API, outage, blocked request) the banner must not treat a person who
+// already answered as undecided and ask again – the server stays authoritative and
+// every successful probe overwrites this.
+const CONSENT_CACHE_KEY = 'sheldon_consent';
+
+function readCachedConsent()
+{
+    try
+    {
+        const value = localStorage.getItem(CONSENT_CACHE_KEY);
+        return (value === 'accepted' || value === 'declined') ? value : null;
+    } catch(e) { return null; }
+}
+
+function writeCachedConsent(value)
+{
+    try
+    {
+        if(value === 'accepted' || value === 'declined') localStorage.setItem(CONSENT_CACHE_KEY, value);
+        else localStorage.removeItem(CONSENT_CACHE_KEY);
+    } catch(e) {}
+}
+
 const MAIN_PAGES = [ '/', '/index.html', '/checkout/', '/checkout/index.html', '/license/', '/license/index.html' ];
 
 function isMainPage()
@@ -68,11 +92,15 @@ export async function FetchConsentStatus()
         if(data && data.ok)
         {
             consentStatus = data.consent || null;
+            writeCachedConsent(consentStatus);
             window.dispatchEvent(new CustomEvent('sheldon-consent-state', { detail: { consent: consentStatus } }));
             return consentStatus;
         }
     } catch(e) {}
-    return consentStatus;
+    // Nothing usable came back: report the last server-confirmed choice for display, so an
+    // interruption can't re-open a prompt that was already answered. No state event fires –
+    // this is not fresh server state.
+    return consentStatus ?? readCachedConsent();
 }
 
 export function GetConsentStatus()
@@ -96,12 +124,17 @@ export async function RecordChoice(choice)
         const payload = await loadIdentityPayload();
         payload.set('choice', choice);
         const data = await postForm('/workink/consent', payload);
-        if(data && data.ok)
+        // Only a response that echoes a recorded choice means it was saved. The backend
+        // answers {ok:true, consent:null} when the identity lookup failed, and hiding the
+        // prompt on that would promise a save that never happened.
+        if(data && data.ok && data.consent)
         {
-            consentStatus = data.consent || choice;
+            consentStatus = data.consent;
+            writeCachedConsent(consentStatus);
             hidePrompt();
             window.dispatchEvent(new CustomEvent('sheldon-consent', { detail: { consent: consentStatus } }));
-            notifyToast('Choice saved.', 'success', 3000);
+            if(consentStatus === choice) notifyToast('Choice saved.', 'success', 3000);
+            else notifyToast('Your earlier choice is final \u2013 it can\'t be changed.', 'info', 6000);
             return true;
         }
     } catch(e) {}

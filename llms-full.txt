@@ -431,6 +431,20 @@ for _, srv in ipairs(servers) do
 end
 ```
 
+### Payload Execution
+
+| Function | Signature | Description |
+| --- | --- | --- |
+| **RunSecure(payload)** | `string` | Runs an obfuscated payload produced by the Obfuscate page. Paste the generated snippet as-is – it already wraps the payload in this call. |
+
+#### Example
+
+```lua
+-- Output from the Obfuscate page: run it like any other script.
+local kQ8d2fA=19584732;
+cheat.RunSecure("U09CMQ...")
+```
+
 ---
 
 ## internet
