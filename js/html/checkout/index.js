@@ -622,20 +622,11 @@ function getAdButtonLabel(noCooldown, firstAdBoosted, adRewardBalance)
     return `Watch Ads for +${adRewardBalance} balance`;
 }
 
-let adModalPollTimer = null;
-let adModalTimeoutTimer = null;
 let adModalEscapeHandler = null;
 let adModalCtx = null;
 
-function stopLootlabsPoll()
-{
-    if(adModalPollTimer) { clearInterval(adModalPollTimer); adModalPollTimer = null; }
-    if(adModalTimeoutTimer) { clearTimeout(adModalTimeoutTimer); adModalTimeoutTimer = null; }
-}
-
 function closeAdProviderModal()
 {
-    stopLootlabsPoll();
     adModalCtx = null;
     if(adModalEscapeHandler)
     {
@@ -650,21 +641,16 @@ function ensureAdModalStyle()
     if(document.getElementById('ad-provider-modal-style')) return;
     const st = document.createElement('style');
     st.id = 'ad-provider-modal-style';
-    // Static site, no build step – modal CSS lives here. V4 glow squares:
-    // two equal squares with subtle provider-tinted fills, logos centered,
-    // hover lift + colored ring. Stacked on narrow screens.
+    // Static site, no build step – modal CSS lives here. V4 glow square:
+    // one square with a subtle provider-tinted fill, logo centered,
+    // hover lift + colored ring.
     st.textContent = '#ad-provider-providers{display:flex;gap:16px;justify-content:center;margin-top:20px;}' +
         '#ad-provider-providers .ad-sq{width:180px;height:150px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}' +
         '#ad-provider-providers .ad-sq.wi{background:rgba(199,177,143,0.07);border:1px solid rgba(199,177,143,0.22);}' +
-        '#ad-provider-providers .ad-sq.ll{background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.25);}' +
         '#ad-provider-providers .ad-sq.wi img{width:64px;height:64px;border-radius:50%;object-fit:contain;display:block;border:none;background:none;pointer-events:none;}' +
-        '#ad-provider-providers .ad-sq.ll img{width:150px;height:auto;object-fit:contain;display:block;border:none;background:none;pointer-events:none;}' +
         '#ad-provider-providers .ad-sq.wi:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.5),0 0 0 2px rgba(199,177,143,0.7);}' +
-        '#ad-provider-providers .ad-sq.ll:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.5),0 0 0 2px rgba(129,140,248,0.7);}' +
         '#ad-provider-providers .ad-sq:focus-visible{outline:none;}' +
-        '#ad-provider-providers .ad-sq.wi:focus-visible{box-shadow:0 0 0 2px rgba(199,177,143,0.7);}' +
-        '#ad-provider-providers .ad-sq.ll:focus-visible{box-shadow:0 0 0 2px rgba(129,140,248,0.7);}' +
-        '@media (max-width:460px){#ad-provider-providers{flex-direction:column;align-items:center;}}';
+        '#ad-provider-providers .ad-sq.wi:focus-visible{box-shadow:0 0 0 2px rgba(199,177,143,0.7);}';
     document.head.appendChild(st);
 }
 
@@ -673,8 +659,8 @@ function isHttpUrl(u)
     return typeof u === 'string' && /^https?:\/\//i.test(u);
 }
 
-// V4 glow-square provider button: equal 180x150 squares with subtle
-// provider-tinted fills, logo centered (workink 64px, lootlabs 150px wide),
+// V4 glow-square provider button: one 180x150 square with a subtle
+// provider-tinted fill, logo centered (workink 64px),
 // hover lift + colored ring via CSS. No visible button text – state rides on
 // title/aria-label only. If the logo file is missing, the onerror fallback
 // hides the <img> and shows a borderless square letter tile.
@@ -702,22 +688,9 @@ function makeProviderLogoButton(name, logoSrc, fallbackLetter, fallbackStyle, va
     return btn;
 }
 
-function setProviderBtnLabel(btn, name, stateLabel)
-{
-    try
-    {
-        const label = stateLabel ? `${name} – ${stateLabel}` : name;
-        btn.title = label;
-        btn.setAttribute('aria-label', label);
-    }
-    catch(e) {}
-}
-
 // Ad-provider picker modal. Docs: this is the ad-link slot for renderCheckout()
 // below – the old direct <a href=workinkLink> became the #watch-ads-btn button
-// that opens this modal, so WorkInk keeps its existing link flow and LootLabs
-// runs start -> same-tab task -> homepage auto-claim. The LootLabs task URL
-// always comes from POST /lootlabs/start (never hardcoded in JS).
+// that opens this modal. WorkInk keeps the same link flow it always had.
 function openAdProviderModal(opts)
 {
     opts = opts || {};
@@ -755,39 +728,18 @@ function openAdProviderModal(opts)
     providers.id = 'ad-provider-providers';
     providers.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-top:20px;';
 
-    // Provider logo buttons – WorkInk keeps its existing link flow, LootLabs
-    // runs start -> same-tab task -> homepage auto-claim. The claim row below
-    // is kept only as an inert fallback and is never shown in the same-tab flow.
-    // Fallbacks are borderless square letter tiles (no rect, no border).
+    // WorkInk logo button – the same link flow it always had. The fallback is
+    // a borderless square letter tile (no rect, no border).
     const wiBtn = makeProviderLogoButton('WorkInk', '/checkout/assets/workink-logo.png', 'W',
         'color:#c7b18f;', 'wi');
-    const llBtn = makeProviderLogoButton('LootLabs', '/checkout/assets/lootlabs-logo.png', 'L',
-        'color:#a5b4fc;', 'll');
 
-    const status = document.createElement('div');
-    status.id = 'ad-provider-status';
-    status.style.cssText = 'display:none;margin-top:14px;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.65);';
-
-    const claimRow = document.createElement('div');
-    claimRow.style.cssText = 'display:none;margin-top:12px;gap:8px;justify-content:center;flex-wrap:wrap;';
-    const claimBtn = document.createElement('button');
-    claimBtn.textContent = 'Claim reward';
-    claimBtn.disabled = true;
-    claimBtn.style.cssText = 'flex:1;min-width:140px;padding:11px 0;border-radius:10px;border:none;background:#22c55e;color:#050505;font-size:11px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;opacity:0.5;';
-    const reopenBtn = document.createElement('button');
-    reopenBtn.textContent = 'Re-open task';
-    reopenBtn.style.cssText = 'display:none;flex:1;min-width:140px;padding:11px 0;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.75);font-size:11px;font-weight:700;cursor:pointer;';
-
-    providers.append(wiBtn, llBtn);
-    claimRow.append(claimBtn, reopenBtn);
+    providers.append(wiBtn);
     header.append(title, closeBtn);
-    card.append(header, providers, status, claimRow);
+    card.append(header, providers);
     overlay.append(card);
     document.body.appendChild(overlay);
 
-    adModalCtx = { apiUrl, authToken, clickId: null, taskUrl: null, claiming: false,
-        statusEl: status, claimRowEl: claimRow, claimBtnEl: claimBtn,
-        reopenBtnEl: reopenBtn, wiBtnEl: wiBtn, llBtnEl: llBtn };
+    adModalCtx = { apiUrl, authToken, wiBtnEl: wiBtn };
 
     const close = () => closeAdProviderModal();
     overlay.addEventListener('click', (e) => { if(e.target === overlay) close(); });
@@ -805,260 +757,7 @@ function openAdProviderModal(opts)
         try { window.location.href = workinkLink; } catch(e) {}
     });
 
-    llBtn.addEventListener('click', () => { startLootlabsFlow(adModalCtx); });
-    claimBtn.addEventListener('click', () => { claimLootlabsReward(adModalCtx); });
-    reopenBtn.addEventListener('click', () =>
-    {
-        if(adModalCtx && isHttpUrl(adModalCtx.taskUrl))
-        {
-            try { window.location.href = adModalCtx.taskUrl; } catch(e) {}
-        }
-    });
-
     return overlay;
-}
-
-// Form-urlencoded bodies keep these CORS-simple (no preflight), same as the
-// frontpage workink/generate call.
-async function startLootlabsFlow(ctx)
-{
-    if(!ctx) return;
-    const { apiUrl, authToken, statusEl, claimRowEl, claimBtnEl, reopenBtnEl, wiBtnEl, llBtnEl } = ctx;
-    if(!apiUrl || !authToken)
-    {
-        notifyAd('You must be logged in to use LootLabs.', 'error');
-        return;
-    }
-
-    stopLootlabsPoll();
-    ctx.clickId = null;
-    wiBtnEl.disabled = true;
-    llBtnEl.disabled = true;
-    wiBtnEl.style.opacity = '0.5';
-    llBtnEl.style.opacity = '0.5';
-    setProviderBtnLabel(llBtnEl, 'LootLabs', 'starting');
-    claimRowEl.style.display = 'none';
-    reopenBtnEl.style.display = 'none';
-    statusEl.style.display = 'block';
-    statusEl.textContent = 'Starting LootLabs task…';
-
-    try
-    {
-        const body = new URLSearchParams();
-        body.set('sessionToken', authToken);
-        try
-        {
-            const identity = await loadIdentityPayloadSafe();
-            for(const [k, v] of identity.entries()) body.set(k, v);
-        }
-        catch(e) {}
-
-        const res = await fetch(`${apiUrl}/lootlabs/start`, {
-            method: 'POST',
-            body,
-            credentials: 'include'
-        });
-        const data = await res.json().catch(() => null);
-
-        if(!data || !data.ok || !data.url || !data.click_id)
-        {
-            const msg = (data && data.message) || 'Could not start the LootLabs task. Please try again.';
-            statusEl.textContent = msg;
-            notifyAd(msg, 'error');
-            wiBtnEl.disabled = false;
-            llBtnEl.disabled = false;
-            wiBtnEl.style.opacity = '1';
-            llBtnEl.style.opacity = '1';
-            setProviderBtnLabel(llBtnEl, 'LootLabs', null);
-            return;
-        }
-
-        ctx.taskUrl = String(data.url);
-        ctx.clickId = String(data.click_id);
-        // Same-tab flow: sessionStorage survives the LootLabs round-trip in the
-        // current tab; localStorage mirrors it for safety. Stored as JSON with
-        // a timestamp so the homepage can expire abandoned flows (6h TTL).
-        try { sessionStorage.setItem('sheldon_lootlabs_pending', JSON.stringify({ click_id: String(data.click_id), ts: Date.now() })); } catch(e) {}
-        try { localStorage.setItem('sheldon_lootlabs_pending', JSON.stringify({ click_id: String(data.click_id), ts: Date.now() })); } catch(e) {}
-        if(!isHttpUrl(ctx.taskUrl))
-        {
-            statusEl.textContent = 'Could not start task. Please try again.';
-            wiBtnEl.disabled = false;
-            llBtnEl.disabled = false;
-            wiBtnEl.style.opacity = '1';
-            llBtnEl.style.opacity = '1';
-            setProviderBtnLabel(llBtnEl, 'LootLabs', null);
-            return;
-        }
-        // Same-tab navigation: the LootLabs wall returns to the homepage
-        // (bare homepage or ?lootlabs=* marker both work) where the return
-        // handler auto-claims. No "Waiting for completion" polling here.
-        statusEl.textContent = 'Opening LootLabs task…';
-        setProviderBtnLabel(llBtnEl, 'LootLabs', 'opening');
-        try { window.location.href = ctx.taskUrl; } catch(e) {}
-        return;
-    }
-    catch(err)
-    {
-        statusEl.textContent = 'Could not start the LootLabs task. Please try again.';
-        notifyAd('Could not start the LootLabs task. Please try again.', 'error');
-        wiBtnEl.disabled = false;
-        llBtnEl.disabled = false;
-        wiBtnEl.style.opacity = '1';
-        llBtnEl.style.opacity = '1';
-        setProviderBtnLabel(llBtnEl, 'LootLabs', null);
-    }
-}
-
-function startLootlabsPoll(ctx)
-{
-    stopLootlabsPoll();
-    if(!ctx || !ctx.clickId) return;
-    const MAX_MS = 10 * 60 * 1000;
-    const startedAt = Date.now();
-
-    const setExpired = (msg) =>
-    {
-        stopLootlabsPoll();
-        if(!ctx.statusEl || !document.body.contains(ctx.statusEl)) return;
-        ctx.statusEl.textContent = msg;
-        notifyAd(msg, 'warning', 6000);
-        ctx.claimBtnEl.disabled = true;
-        ctx.claimBtnEl.style.opacity = '0.5';
-        ctx.claimBtnEl.textContent = 'Claim reward';
-        ctx.wiBtnEl.disabled = false;
-        ctx.llBtnEl.disabled = false;
-        ctx.wiBtnEl.style.opacity = '1';
-        ctx.llBtnEl.style.opacity = '1';
-        setProviderBtnLabel(ctx.llBtnEl, 'LootLabs', null);
-    };
-
-    const check = async () =>
-    {
-        if(!document.body.contains(ctx.statusEl)) { stopLootlabsPoll(); return; }
-        if(Date.now() - startedAt > MAX_MS)
-        {
-            setExpired('Task expired – please start again.');
-            return;
-        }
-        try
-        {
-            const body = new URLSearchParams();
-            body.set('sessionToken', ctx.authToken);
-            body.set('click_id', ctx.clickId);
-            const res = await fetch(`${ctx.apiUrl}/lootlabs/status`, {
-                method: 'POST',
-                body,
-                credentials: 'include'
-            });
-            const data = await res.json().catch(() => null);
-            const st = (data && typeof data.status === 'string') ? data.status.toLowerCase() : '';
-            if(data && data.ok && (st === 'complete' || st === 'completed' || st === 'ready' || st === 'done' || st === 'verified'))
-            {
-                stopLootlabsPoll();
-                if(!document.body.contains(ctx.statusEl)) return;
-                ctx.statusEl.textContent = 'Task complete – press Claim to collect your reward.';
-                ctx.claimBtnEl.disabled = false;
-                ctx.claimBtnEl.style.opacity = '1';
-                ctx.claimBtnEl.textContent = 'Claim reward';
-                notifyAd('LootLabs task complete – press Claim.', 'success', 4000);
-                return;
-            }
-            if(data && data.ok === false && /expir|invalid|not found|unknown/i.test(String(data.message || '')))
-            {
-                setExpired(String(data.message) || 'Task expired – please start again.');
-                return;
-            }
-        }
-        catch(e) { /* transient network error – keep polling */ }
-    };
-
-    check();
-    adModalPollTimer = setInterval(check, 3000);
-    adModalTimeoutTimer = setTimeout(() => setExpired('Task expired – please start again.'), MAX_MS);
-}
-
-async function claimLootlabsReward(ctx)
-{
-    if(!ctx || ctx.claiming) return;
-    if(!ctx.clickId)
-    {
-        notifyAd('Start the LootLabs task first.', 'warning');
-        return;
-    }
-    ctx.claiming = true;
-    ctx.claimBtnEl.disabled = true;
-    ctx.claimBtnEl.style.opacity = '0.5';
-    ctx.claimBtnEl.textContent = 'Claiming…';
-
-    try
-    {
-        const body = new URLSearchParams();
-        body.set('sessionToken', ctx.authToken);
-        body.set('click_id', ctx.clickId);
-        try
-        {
-            const identity = await loadIdentityPayloadSafe();
-            for(const [k, v] of identity.entries()) body.set(k, v);
-        }
-        catch(e) {}
-
-        const res = await fetch(`${ctx.apiUrl}/lootlabs/claim`, {
-            method: 'POST',
-            body,
-            credentials: 'include'
-        });
-        const data = await res.json().catch(() => null);
-
-        // Same success shape as workink/generate: a license redirects to the
-        // license page, otherwise the new balance refreshes this checkout.
-        if(data && data.ok && data.license)
-        {
-            stopLootlabsPoll();
-            try { sessionStorage.removeItem('sheldon_lootlabs_pending'); } catch(e) {}
-            try { localStorage.removeItem('sheldon_lootlabs_pending'); } catch(e) {}
-            try { localStorage.removeItem('cache_licenses'); } catch(e) {}
-            const params = `${encodeURIComponent(data.license.key)}:${encodeURIComponent(data.license.product || 'License')}`;
-            window.location.href = `/license/?showKeys=${params}`;
-            return;
-        }
-        if(data && data.ok && data.new_balance !== undefined)
-        {
-            stopLootlabsPoll();
-            try { sessionStorage.removeItem('sheldon_lootlabs_pending'); } catch(e) {}
-            try { localStorage.removeItem('sheldon_lootlabs_pending'); } catch(e) {}
-            const added = (typeof data.added === 'number' && !isNaN(data.added)) ? data.added : 0;
-            if(data.capped) notifyAd('Daily balance maxed – come back later.', 'info');
-            else if(added > 0)
-            {
-                notifyAd(`Reward claimed: +${added} balance.`, 'success');
-                try { if(typeof window.animateBalanceGain === 'function') window.animateBalanceGain(added, Math.max(0, data.new_balance - added)); } catch(e) {}
-            }
-            else notifyAd('Balance updated.', 'success', 3000);
-            closeAdProviderModal();
-            try { await ShowBalanceCheckout(); } catch(e) { try { window.location.reload(); } catch(_) {} }
-            return;
-        }
-
-        const msg = (data && data.message) || 'Could not claim your reward yet – finish the task, then try again.';
-        if(ctx.statusEl && document.body.contains(ctx.statusEl)) ctx.statusEl.textContent = msg;
-        notifyAd(msg, (res && res.status === 429) ? 'warning' : 'error', 6000);
-        ctx.claimBtnEl.disabled = false;
-        ctx.claimBtnEl.style.opacity = '1';
-        ctx.claimBtnEl.textContent = 'Claim reward';
-    }
-    catch(err)
-    {
-        if(ctx.statusEl && document.body.contains(ctx.statusEl)) ctx.statusEl.textContent = 'Could not claim your reward. Please try again.';
-        notifyAd('Could not claim your reward. Please try again.', 'error');
-        ctx.claimBtnEl.disabled = false;
-        ctx.claimBtnEl.style.opacity = '1';
-        ctx.claimBtnEl.textContent = 'Claim reward';
-    }
-    finally
-    {
-        ctx.claiming = false;
-    }
 }
 
 async function ShowBalanceCheckout() {
@@ -1373,7 +1072,7 @@ async function ShowBalanceCheckout() {
                 }
 
                 // Ad-link slot: the Watch Ads button (label matches the old direct
-                // WorkInk link above) opens the WorkInk / LootLabs provider modal.
+                // WorkInk link above) opens the WorkInk provider modal.
                 const watchAdsBtn = document.getElementById('watch-ads-btn');
                 if(watchAdsBtn)
                 {
