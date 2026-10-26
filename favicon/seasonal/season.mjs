@@ -1,14 +1,26 @@
-// Season resolver: today's date -> which OG variant to serve.
+// Season resolver: today's date -> which icon variant to serve.
 //
-// Windows are inclusive day ranges in local time. Wrapping ranges (26 Dec -> 6 Jan)
-// are allowed. First match wins, so put the narrow windows above the wide ones.
+// Mirrored by Sheldon-Api/Api/src/managers/season/season.js, which drives the Discord
+// server icon and the logo in Sheldon and the Loader, so all of them flip on the same
+// day. Both use UTC (the GitHub Actions runner that calls this is UTC anyway).
+//
+// Windows are inclusive [month, day] ranges; an end before the start wraps the new year.
 
 const DAY = 86400000;
 
-export const VARIANTS = ["newyear", "valentine", "april", "easter", "halloween", "christmas", "default"];
+export const VARIANTS = ["default", "christmas", "easter", "summer", "halloween"];
 
-// Easter Sunday, anonymous Gregorian algorithm (no Gauss/Butcher corrections needed,
-// this is the one Meeus gives for the Gregorian calendar).
+const WINDOWS = [
+    { id: "christmas", from: [12, 1],  to: [1, 6] },
+    { id: "summer",    from: [6, 21],  to: [8, 31] },
+    { id: "halloween", from: [10, 1],  to: [11, 5] }
+];
+
+// Easter straddles the real holiday: a lead-in, the day itself, then a short tail.
+const EASTER_LEAD_DAYS = 9;
+const EASTER_TRAIL_DAYS = 16;
+
+// Easter Sunday, anonymous Gregorian algorithm.
 export function easterSunday(year) {
     const a = year % 19;
     const b = Math.floor(year / 100);
@@ -27,28 +39,6 @@ export function easterSunday(year) {
     return { month, day };
 }
 
-// [start, end] inclusive as [month, day]; end earlier than start means it wraps the new year.
-const WINDOWS = [
-    { id: "newyear",   from: [12, 26],  to: [1, 6] },
-    { id: "valentine", from: [2, 7],    to: [2, 15] },
-    { id: "april",     from: [4, 1],    to: [4, 2] },
-    { id: "halloween", from: [10, 1],   to: [11, 5] },
-    { id: "christmas", from: [11, 15],  to: [12, 25] }
-];
-
-// Easter art straddles the real holiday: a lead-in, the day itself, then a short
-// spring tail so the blossom art is not a single-day flash.
-const EASTER_LEAD_DAYS = 9;
-const EASTER_TRAIL_DAYS = 16;
-
-function easterWindow(year) {
-    const easter = easterSunday(year);
-    const noon = new Date(year, easter.month - 1, easter.day, 12);
-    const from = new Date(noon.getTime() - EASTER_LEAD_DAYS * DAY);
-    const to = new Date(noon.getTime() + EASTER_TRAIL_DAYS * DAY);
-    return { from: [from.getMonth() + 1, from.getDate()], to: [to.getMonth() + 1, to.getDate()], wraps: to.getFullYear() !== year };
-}
-
 function within(month, day, from, to) {
     const t = month * 100 + day;
     const s = from[0] * 100 + from[1];
@@ -57,22 +47,18 @@ function within(month, day, from, to) {
 }
 
 export function resolveSeason(date = new Date()) {
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const year = date.getFullYear();
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
+    const year = date.getUTCFullYear();
 
     for (const win of WINDOWS) {
         if (within(month, day, win.from, win.to)) return win.id;
     }
 
-    // Easter is checked after the fixed windows: a rare early-Easter in late March can
-    // land next to nothing else, but it must never shadow newyear or the fixed set.
-    const easter = easterWindow(year);
-    if (!easter.wraps && within(month, day, easter.from, easter.to)) return "easter";
+    const easter = easterSunday(year);
+    const noon = Date.UTC(year, easter.month - 1, easter.day, 12);
+    const t = date.getTime();
+    if (t >= noon - (EASTER_LEAD_DAYS + 0.5) * DAY && t <= noon + (EASTER_TRAIL_DAYS + 0.5) * DAY) return "easter";
 
     return "default";
-}
-
-export function variantPath(variant, ext = "png") {
-    return `favicon/og/variants/og-${variant}.${ext}`;
 }

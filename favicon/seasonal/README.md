@@ -1,149 +1,85 @@
 # Seasonal brand assets
 
-One thing on this site follows the calendar: the Discord embed art, which is what
-you see when someone pastes a Project Sheldon link into a chat. Seven variants,
-swapped automatically.
+One thing follows the calendar: the **icon**. The brain mark picks up an
+accessory for each season, and the same id is used everywhere:
 
-| Variant     | OG art          | Window                        |
-|-------------|-----------------|-------------------------------|
-| `default`   | no seasonal art | everything not listed below  |
-| `newyear`   | party popper    | 26 Dec – 6 Jan                |
-| `valentine` | heart + rose    | 7 – 15 Feb                    |
-| `april`     | clown + dice    | 1 – 2 Apr                     |
-| `easter`    | egg + blossom   | Easter − 9 days → Easter + 16 |
-| `halloween` | pumpkin + webs  | 1 Oct – 5 Nov                 |
-| `christmas` | tree + gifts    | 15 Nov – 25 Dec               |
+| Variant     | Accessory   | Window (UTC)                  |
+|-------------|-------------|-------------------------------|
+| `default`   | none        | everything not listed below   |
+| `christmas` | Santa hat   | 1 Dec – 6 Jan                 |
+| `easter`    | bunny ears  | Easter − 9 days → Easter + 16 |
+| `summer`    | sunglasses  | 21 Jun – 31 Aug               |
+| `halloween` | witch hat   | 1 Oct – 5 Nov                 |
 
-Easter is computed, not hardcoded, using the anonymous Gregorian algorithm.
+The Discord embed art (`favicon/og-image.png`) is **not** seasonal. It is one
+card all year, built from `variants/og-default.*`.
 
-The favicon, the apple-touch icon, `icon.png` and the in-page logo are **not**
-seasonal. They are the bare mark on transparency, byte for byte identical in all
-seven variants, so the calendar never touches them. That used to be a seasonal
-tinted tile; it is now just the mark.
+Where the season is used:
 
-## What gets swapped
+- **Website** – `pick.mjs`, daily from `.github/workflows/seasonal-brand.yml`,
+  copies the season's renders over the live icon files and stamps `?v=` on the
+  icon links.
+- **Discord server icon** – the bot (`Sheldon-Api/Api/src/managers/season/`)
+  checks hourly and calls `guild.setIcon` only when the season flips. It uses
+  `variants/discord-<season>.png`, copied to `Api/src/managers/season/icons/`.
+- **Sheldon overlay + Loader** – all variants are embedded in the binaries; they
+  ask `GET /season` once at startup and pick the matching one, falling back to
+  `default` offline.
 
-| Live file              | Source in `variants/`            |
-|------------------------|----------------------------------|
-| `favicon/og-image.png` | `og-<season>.png`                |
+`season.mjs` and `Api/src/managers/season/season.js` hold the same windows. Change
+both together.
 
-That is the whole list. `favicon.ico`, `apple-touch-icon.png`, `icon.png` and
-`logo.png` are committed once and never swapped.
+## What gets swapped on the site
 
-## Why the URLs have a query string
+| Live file                      | Source in `variants/`      |
+|--------------------------------|----------------------------|
+| `favicon/favicon.ico`          | `favicon-<season>.ico`     |
+| `favicon/apple-touch-icon.png` | `apple-touch-<season>.png` |
+| `favicon/icon.png`             | `icon-<season>-512.png`    |
+| `favicon/logo.png`             | `logo-<season>.png`        |
 
-Discord caches an embed image by URL. Serve the right bytes at the same URL and
-every existing embed keeps the picture it was created with. So `pick.mjs` also
-stamps `?v=<season>-<year>w<week>` on every `og:image` and `twitter:image`
-reference. Each season flip hands every cache a URL it has never fetched, and the
-weekly component is a safety net for windows retuned later.
-
-The icon links carry no query string at all. The icon is the bare mark and its
-bytes never change, so a stamp would only hand caches a new URL for an image they
-already hold, and the query string would pin the site logo to whatever mark
-shipped on the day it was last added.
-
-The one thing this cannot fix: messages that were already posted keep the embed
-they were created with. Only new posts pick up a change.
+Browsers cache a favicon by URL well past its HTTP lifetime, so every
+`rel="icon"` / `rel="apple-touch-icon"` link is stamped
+`?v=<season>-<year>r<rev>`. Bump `ART_REV` in `pick.mjs` if the art is redrawn
+inside a season.
 
 ## Files
 
-    build-og.mjs     renders the OG art to SVG, rasterises to 1200x630 PNG
-    build-logo.mjs   renders the mark: the favicon, the touch icon, icon.png, logo.png
+    build-logo.mjs   renders every icon variant (the props live in PROPS)
+    build-og.mjs     renders the OG card; only og-default is used
     season.mjs       date -> variant id, plus the Easter calculation
-    pick.mjs         swaps the embed art and stamps the HTML
+    pick.mjs         swaps the site icon and stamps the HTML
     variants/        the rendered assets
-    emoji/           Twemoji vectors, used by build-og.mjs
-    logo.png         the Sheldon mark, the source for everything logo-side
+    logo.png         the bare Sheldon mark, the source for every icon
 
 ## Regenerating by hand
 
 Needs Node and a Chromium build. The rasterisers look for the headless shell in the
 local Playwright cache (`%LOCALAPPDATA%\ms-playwright`).
 
-    node favicon/seasonal/build-og.mjs                   # all OG variants
-    node favicon/seasonal/build-logo.mjs                 # all mark renders
-    node favicon/seasonal/build-og.mjs --only=halloween  # one variant
+    node favicon/seasonal/build-logo.mjs                 # all icon variants
+    node favicon/seasonal/build-logo.mjs --only=summer   # one variant
+    node favicon/seasonal/build-og.mjs --only=default    # the embed card
     node favicon/seasonal/pick.mjs --dry                 # what today would change
     node favicon/seasonal/pick.mjs --date=2026-12-25     # stage a specific day
 
-`build-logo.mjs` writes the same bytes for all seven variants, so running it once
-is enough. If `logo.png` (the source) is replaced with artwork with different
-padding, rerun it and copy `variants/favicon-default.ico`, `apple-touch-default.png`,
-`icon-default-512.png` and `logo-default.png` up into `favicon/` – they are no
-longer swapped by `pick.mjs`.
-
-`build-og.mjs` writes the SVG and the PNG side by side in `variants/` and drops a
-`_contact-sheet.png` here, which is the fastest way to eyeball a change across
-every season at once.
-
-## Embed art construction
-
-The OG art fills the whole 1200x630 canvas. There is no frame and no rounded
-border: an inner stroke made Discord show a picture inside a picture, and the
-seasonal art is meant to reach the edges, not sit in a box inside them. The
-supporting glyphs live in four named slots (`SLOTS` in `build-og.mjs`) rather
-than hand-placed coordinates, so a new season picks slots instead of doing
-arithmetic. There is no off-canvas "bleed" slot: one existed, and because it
-carried the same glyph as the emblem and sat on the same left-hand diagonal, the
-embed showed two of the same picture - one solid, one ghosted - and read as a
-mistake. The lower left is left empty instead.
-
-The seasonal emblem is pinned to the **letter**, not the canvas, so each season can
-hang its own thing off the S in a way that suits the glyph. `PERCH` holds the
-anchors – `shoulder`, `topLeft`, `botLeft`, `botRight` – measured against the S
-box, and each season's `emblem` entry picks one and nudges it with `dx`/`dy`/
-`size`/`rot`. The wordmark is measured per glyph for exactly this reason:
-"SHELDON" is 720px wide starting at x 255, the S alone is 86px of that, and the
-caps run 107px from `CAP_TOP` to the baseline. If the wordmark size changes,
-re-measure with the same canvas `measureText` call and update `S_LEFT` and
-`S_WIDTH`.
-
-The `botLeft` / `botRight` anchors straddle the baseline: the glyph's foot lands on
-it, so it must not reach past `CAP_TOP + 140` or it collides with the tagline.
-
-Every emblem is painted *before* the wordmark, so where a glyph and the S overlap
-it is the glyph that gets covered, never the letter.
+After changing an icon, also copy `variants/discord-<season>.png` to
+`Sheldon-Api/Api/src/managers/season/icons/icon-<season>.png`, and regenerate the
+embedded headers in the Sheldon repo.
 
 ## Icon construction
 
-The icon is the mark on transparency and nothing else: no tile, no glow, no
-hairline border, no seasonal emblem, no seasonal tint. Anything behind the mark
-made the 16 px entry illegible and tinted the browser tab, which is not what a
-favicon is for.
+The props are plain SVG in `PROPS` in `build-logo.mjs`, drawn on a 512 canvas in
+the mark's own style: flat fills, a 12px `#1c1c1c` outline. Hats need room on
+top, so for those seasons the mark is shrunk to 392px and pushed down; the
+sunglasses sit on the full-size mark. `discord-*` renders add 48 units of padding
+on every side so Discord's circular crop never clips a hat brim or a pompom.
 
-`logo.png` – the source – carries transparent padding on all four sides, which
-left the mark filling only ~77% of the canvas and reading as small. The builder
-decodes the source alpha channel, finds the tightest box around the ink, widens
-it to a square and uses that as the SVG viewBox. So the mark touches the top and
-bottom edges of the icon, and the leftover margin lands on the left and right,
-where the mark is naturally narrower. No resampling: the image is placed at its
-own pixel size and only the viewport is smaller.
-
-`favicon.ico` is a real multi-size icon: 16, 32 and 48 px, each rendered
-separately rather than downscaled, with PNG-compressed entries, which every browser
-worth supporting reads. `build-logo.mjs` writes the ICO itself (`ICONDIR` plus a
-directory entry per size) so the build needs no image library.
-
-`icon.png` (512) is what the pages render in the topbar and footer, so the mark is
-drawn from a large render rather than upscaled out of the 48 px ICO entry.
-
-## Adding a season
-
-Only the OG art is seasonal now.
-
-1. Download the emoji you want from
-   [twemoji](https://github.com/jdecked/twemoji/tree/main/assets/svg) into `emoji/`,
-   named `<codepoint>.svg`.
-2. Add an entry to `SEASONS` in `build-og.mjs` with the emblem, marks and accent
-   colours. `build-logo.mjs` has a plain list of the seven ids and nothing else –
-   the mark does not change per season, so there is nothing to configure there.
-3. Add the window to `WINDOWS` in `season.mjs`.
-4. Run `build-og.mjs` and check the contact sheet. Narrow windows go above wide
-   ones, first match wins.
+`favicon.ico` holds 16, 32 and 48 px entries, each rendered separately rather than
+downscaled, with PNG-compressed entries.
 
 ## Artwork licence
 
-The emoji are [Twemoji](https://github.com/jdecked/twemoji) by Twitter, Inc,
-licensed [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/). Everything
-else here is original to the project.
+The OG card's emoji are [Twemoji](https://github.com/jdecked/twemoji) by Twitter,
+Inc, licensed [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Everything else here is original to the project.

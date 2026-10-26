@@ -28,24 +28,22 @@ jobs:
         with:
           node-version: "22"
 
-      # Swaps favicon/og-image.png to the current season and rewrites the ?v=
-      # stamp on every og:image / twitter:image. The favicon and the in-page logo
-      # are the bare mark year round and are never swapped. Both steps are
-      # no-ops when nothing changed, so the commit below is skipped for the
-      # ~360 days a year the art stays the same.
-      - name: Point the embed art at the current season
+      # Swaps the favicon, touch icon and in-page logo to the current season and
+      # stamps ?v= on the icon links. The Discord embed art is never touched.
+      # A no-op on most days, so the commit below is usually skipped.
+      - name: Point the site icon at the current season
         run: node favicon/seasonal/pick.mjs ${{ inputs.date && format('--date={0}', inputs.date) || '' }}
 
       - name: Commit the swap
         run: |
           if git diff --quiet; then
-            echo "seasonal assets unchanged, nothing to commit"
+            echo "seasonal icon unchanged, nothing to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add favicon/og-image.png
+          git add favicon/favicon.ico favicon/apple-touch-icon.png favicon/icon.png favicon/logo.png
           git add "*.html" "*/*.html" "*/*/*.html"
-          git commit -m "brand: switch seasonal embed art"
+          git commit -m "brand: switch seasonal icon"
           git pull --rebase --autostash
           git push

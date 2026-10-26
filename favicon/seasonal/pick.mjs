@@ -1,14 +1,12 @@
-// Points the Discord embed art at the current season, and gives it a new value
-// whenever it changes.
+// Points the site icon at the current season.
 //
-// Discord caches an embed image by URL. Serve the right bytes at the same URL and
-// an embed that already exists still shows the old picture, so the query string is
-// stamped with <season>-<iso week>r<rev>: each flip hands every cache a URL it has
-// never fetched, the weekly component is a safety net for windows retuned later,
-// and the revision busts the cache when the art is redrawn inside one season.
+// The favicon, the iOS touch icon and the in-page logo are swapped for the
+// seasonal render (Santa hat, bunny ears, sunglasses, witch hat, or the bare mark).
+// The Discord embed art (og-image.png) is NOT touched: one card all year.
 //
-// The icon and the in-page logo are not in this table. They are the bare mark in
-// every season, so they are committed once and never swapped.
+// Browsers cache a favicon by URL far past any HTTP max-age, so every
+// rel="icon" / rel="apple-touch-icon" link is stamped with ?v=<season>-<year>r<rev>.
+// Each flip hands every cache a URL it has never fetched.
 //
 //   node favicon/seasonal/pick.mjs [--date=YYYY-MM-DD] [--dry]
 //
@@ -28,32 +26,21 @@ const args = process.argv.slice(2);
 const DRY = args.includes("--dry");
 const forced = (args.find(a => a.startsWith("--date=")) || "").slice(7);
 
-const date = forced ? new Date(`${forced}T12:00:00`) : new Date();
+const date = forced ? new Date(`${forced}T12:00:00Z`) : new Date();
 const season = resolveSeason(date);
 
-// ISO week, so the stamp also moves for seasons we did not anticipate.
-function isoWeek(d) {
-    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const day = t.getUTCDay() || 7;
-    t.setUTCDate(t.getUTCDate() + 4 - day);
-    const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-    return Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
-}
+// Bump when build-logo.mjs output changes inside one season, so the stamps move.
+const ART_REV = 1;
 
-// Art revision. The season and the week only change when the calendar moves, so
-// redrawing the OG art inside the same season would keep serving the URL every
-// cache already has, and Discord would go on showing the old picture. Bump this
-// whenever build-og.mjs output changes and the stamps follow.
-const ART_REV = 7;
-
-const stamp = `${season}-${date.getFullYear()}w${String(isoWeek(date)).padStart(2, "0")}r${ART_REV}`;
+const stamp = `${season}-${date.getUTCFullYear()}r${ART_REV}`;
 const variants = path.join(HERE, "variants");
 
-// ---------------------------------------------------------------- assets
-// The swap table. `out` is relative to favicon/, `src` to the variants dir.
-// The embed art is the only seasonal file left.
+// `out` is relative to favicon/, `src` to variants/.
 const ASSETS = [
-    { out: "og-image.png", src: `og-${season}.png` }
+    { out: "favicon.ico",          src: `favicon-${season}.ico` },
+    { out: "apple-touch-icon.png", src: `apple-touch-${season}.png` },
+    { out: "icon.png",             src: `icon-${season}-512.png` },
+    { out: "logo.png",             src: `logo-${season}.png` }
 ];
 
 let changed = false;
@@ -61,10 +48,6 @@ for (const asset of ASSETS) {
     const src = path.join(variants, asset.src);
     const dst = path.join(FAVICON, asset.out);
     if (!fs.existsSync(src)) {
-        if (asset.optional) {
-            console.warn(`skip ${asset.out}: ${asset.src} not built`);
-            continue;
-        }
         console.error(`missing variant: ${src}`);
         process.exit(1);
     }
@@ -75,7 +58,6 @@ for (const asset of ASSETS) {
     console.log(`${asset.out} <- ${asset.src}`);
 }
 
-// ---------------------------------------------------------------- html
 function htmlFiles(dir) {
     const out = [];
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -87,15 +69,11 @@ function htmlFiles(dir) {
     return out;
 }
 
-// Only the Discord embed art is stamped. The icon files hold the same bytes in
-// every season, so a stamp on them would hand every cache a new URL for an image
-// it already has - and would keep the site logo pinned to whatever mark shipped
-// the day the query string was last added.
-const ASSET_REF = /((?:property|name)="(?:og:image|twitter:image)")(\s+[^>]*?content)="([^"]*?og-image\.png)(\?v=[^"]*)?"/g;
+const ICON_REF = /(rel="(?:icon|apple-touch-icon)"[^>]*?href="[^"]*?(?:favicon\.ico|apple-touch-icon\.png))(\?v=[^"]*)?"/g;
 
 for (const file of htmlFiles(ROOT)) {
     const before = fs.readFileSync(file, "utf-8");
-    let after = before.replace(ASSET_REF, (m, tag, attr, url) => `${tag}${attr}="${url}?v=${stamp}"`);
+    let after = before.replace(ICON_REF, (m, ref) => `${ref}?v=${stamp}"`);
 
     // iOS takes its home screen icon from apple-touch-icon only. Derive the href
     // from the page's own favicon link so the relative path is always right.
@@ -103,14 +81,11 @@ for (const file of htmlFiles(ROOT)) {
         const icon = after.match(/<link rel="icon"[^>]*href="([^"]*favicon\.ico)(?:\?v=[^"]*)?"/);
         if (icon) {
             const href = icon[1].replace(/favicon\.ico$/, "apple-touch-icon.png");
-            const link = `<link rel="apple-touch-icon" href="${href}">`;
+            const link = `<link rel="apple-touch-icon" href="${href}?v=${stamp}">`;
             const at = after.match(/<link rel="icon"[^>]*>\r?\n/);
             after = at ? after.replace(at[0], at[0] + "    " + link + "\n") : after;
         }
     }
-
-    // Older pages still carry a stamp left over from when the icon was seasonal.
-    after = after.replace(/((?:rel="(?:icon|apple-touch-icon)")[^>]*?href="[^"]*?)(\?v=[^"]*)?"/g, "$1\"");
 
     if (after !== before) {
         changed = true;

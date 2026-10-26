@@ -1,17 +1,15 @@
 // Logo/icon builder for Project Sheldon.
 //
-// Everything this writes is the bare Sheldon mark on transparency: no tile, no
-// glow, no border, no seasonal badge, no seasonal tint. The mark is the brand
-// and it is the same in December as it is in October.
-//
-// The Discord embed art is the one seasonal thing left, and it lives in
-// build-og.mjs. This builder has no opinion about the calendar, so it writes the
-// same bytes whatever `--only` says.
+// Everything this writes is the Sheldon mark on transparency. `default` is the
+// bare mark; the seasonal ids put one vector accessory on it (Santa hat, bunny
+// ears, sunglasses, witch hat), drawn in the mark's own thick-outline style so it
+// still reads at 16px. The Discord embed art is NOT seasonal: one card all year.
 //
 //   logo-<s>.png           256px mark for in-page use
 //   favicon-<s>.ico        multi-size icon (16/32/48), PNG entries
 //   apple-touch-<s>.png    180px mark for the iOS home screen
 //   icon-<s>-512.png       512px mark, high-dpi and in-page use
+//   discord-<s>.png        512px, padded so Discord's circle crop never clips a prop
 //
 //   node build-logo.mjs [outDir] [--only=halloween]
 
@@ -36,9 +34,8 @@ const APPLE_SIZE = 180;
 const ICON_SIZE = 512;
 const LOGO_SIZE = 256;
 
-// The variant ids, kept so `--only=halloween` still resolves. Nothing seasonal
-// happens per id any more; the table is just the list of files to write.
-const SEASONS = ["default", "newyear", "valentine", "april", "easter", "halloween", "christmas"];
+// Keep in sync with season.mjs and Sheldon-Api/Api/src/managers/season/season.js.
+const SEASONS = ["default", "christmas", "easter", "summer", "halloween"];
 
 // ---------------------------------------------------------------- source bounds
 // The shipped mark sits inside a 256px canvas with transparent padding on all
@@ -153,6 +150,69 @@ function markSvg(size, crop) {
         `</svg>`;
 }
 
+// ---------------------------------------------------------------- seasonal props
+// Drawn on a 512 canvas. `brain` is [ink height, ink top]: the hats need the
+// mark shrunk and pushed down to make room; the sunglasses sit on a full-size mark.
+// `back` is painted under the mark (the ears go behind it), `front` over it.
+const INK = "#1c1c1c";
+const PROPS = {
+    default: { brain: [512, 0], back: "", front: "" },
+    christmas: {
+        brain: [392, 116],
+        back: "",
+        front: `<g transform="rotate(-7 256 140)">
+<path d="M146 138 C150 62 222 14 306 16 C384 18 436 70 448 168 L414 170 C404 118 382 96 356 96 C366 110 374 124 378 138 Z" fill="#d8323a" stroke="${INK}" stroke-width="12" stroke-linejoin="round"/>
+<path d="M200 60 C230 36 270 28 300 30" fill="none" stroke="#ff6f74" stroke-width="12" stroke-linecap="round" opacity=".7"/>
+<rect x="120" y="116" width="272" height="52" rx="26" fill="#f6f2ea" stroke="${INK}" stroke-width="12"/>
+<circle cx="434" cy="186" r="34" fill="#f6f2ea" stroke="${INK}" stroke-width="12"/></g>`
+    },
+    easter: {
+        brain: [392, 116],
+        back: `<g stroke="${INK}" stroke-width="12">
+<g transform="rotate(-16 196 190)"><ellipse cx="196" cy="104" rx="44" ry="92" fill="#f3efe8"/><ellipse cx="196" cy="112" rx="20" ry="60" fill="#f2a7b8" stroke="none"/></g>
+<g transform="rotate(14 316 190)"><ellipse cx="316" cy="104" rx="44" ry="92" fill="#f3efe8"/><ellipse cx="316" cy="112" rx="20" ry="60" fill="#f2a7b8" stroke="none"/></g></g>`,
+        front: ""
+    },
+    summer: {
+        brain: [512, 0],
+        back: "",
+        front: `<defs><clipPath id="lens"><rect x="96" y="184" width="150" height="104" rx="34"/><rect x="266" y="184" width="150" height="104" rx="34"/></clipPath></defs>
+<path d="M96 206 L22 190 M416 206 L490 190" stroke="${INK}" stroke-width="14" stroke-linecap="round"/>
+<path d="M240 214 Q256 198 272 214" fill="none" stroke="${INK}" stroke-width="14" stroke-linecap="round"/>
+<rect x="96" y="184" width="150" height="104" rx="34" fill="#20242c" stroke="${INK}" stroke-width="12"/>
+<rect x="266" y="184" width="150" height="104" rx="34" fill="#20242c" stroke="${INK}" stroke-width="12"/>
+<g clip-path="url(#lens)" fill="#ffffff" opacity=".35"><path d="M110 270 L170 184 L196 184 L136 270 Z"/><path d="M280 270 L340 184 L366 184 L306 270 Z"/></g>`
+    },
+    halloween: {
+        brain: [392, 116],
+        back: "",
+        front: `<g transform="rotate(-6 256 130)">
+<defs><clipPath id="cone"><path d="M154 132 C184 92 206 52 226 22 C244 -2 296 -6 340 30 C306 22 284 40 300 70 L358 132 Z"/></clipPath></defs>
+<path d="M154 132 C184 92 206 52 226 22 C244 -2 296 -6 340 30 C306 22 284 40 300 70 L358 132 Z" fill="#4a3468"/>
+<path d="M214 40 C228 20 250 10 272 10" fill="none" stroke="#7a5aa6" stroke-width="12" stroke-linecap="round"/>
+<rect x="120" y="88" width="280" height="36" fill="#f28c28" clip-path="url(#cone)"/>
+<path d="M154 132 C184 92 206 52 226 22 C244 -2 296 -6 340 30 C306 22 284 40 300 70 L358 132 Z" fill="none" stroke="${INK}" stroke-width="12" stroke-linejoin="round"/>
+<rect x="238" y="90" width="36" height="32" rx="4" fill="none" stroke="#ffd36b" stroke-width="8" clip-path="url(#cone)"/>
+<ellipse cx="256" cy="138" rx="200" ry="32" fill="#4a3468" stroke="${INK}" stroke-width="12"/></g>`
+    }
+};
+
+// `pad` widens the viewBox on every side, in 512-canvas units.
+function seasonSvg(id, size, pad = 0) {
+    if (id === "default" && !pad) return markSvg(size);
+    const mark = fs.readFileSync(SOURCE).toString("base64");
+    const p = PROPS[id];
+    const { minX, maxX, minY, maxY } = CROP.ink;
+    const [h, top] = p.brain;
+    const s = h / (maxY - minY);
+    const x = (512 - (maxX - minX) * s) / 2 - minX * s;
+    const y = top - minY * s;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${-pad} ${-pad} ${512 + 2 * pad} ${512 + 2 * pad}">` +
+        p.back +
+        `<image href="data:image/png;base64,${mark}" x="${x}" y="${y}" width="${SRC.width * s}" height="${SRC.height * s}"/>` +
+        p.front + `</svg>`;
+}
+
 // ---------------------------------------------------------------- rasterise
 function findShell() {
     const root = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), "ms-playwright");
@@ -184,9 +244,9 @@ function shot(svgPath, pngPath, size) {
 }
 
 // Renders one size and returns the PNG bytes.
-function render(name, size) {
+function render(name, size, id, pad = 0) {
     const svgPath = path.join(WORK, `${name}.svg`);
-    fs.writeFileSync(svgPath, markSvg(size));
+    fs.writeFileSync(svgPath, seasonSvg(id, size, pad));
     return shot(svgPath, path.join(WORK, `${name}.png`), size);
 }
 
@@ -233,19 +293,20 @@ const written = [];
 
 for (const id of picked) {
     const logoSvgPath = path.join(WORK, `logo-${id}.svg`);
-    fs.writeFileSync(logoSvgPath, markSvg(LOGO_SIZE));
+    fs.writeFileSync(logoSvgPath, seasonSvg(id, LOGO_SIZE));
     shot(logoSvgPath, path.join(OUT, `logo-${id}.png`), LOGO_SIZE);
+    fs.writeFileSync(path.join(OUT, `discord-${id}.png`), render(`discord-${id}`, ICON_SIZE, id, 48));
 
     // Big to small, so the ico can be assembled from real renders.
     const sizes = [...new Set([ICON_SIZE, APPLE_SIZE, ...ICO_SIZES])].sort((a, b) => b - a);
     const renders = new Map();
-    for (const size of sizes) renders.set(size, render(`icon-${id}-${size}`, size));
+    for (const size of sizes) renders.set(size, render(`icon-${id}-${size}`, size, id));
 
     fs.writeFileSync(path.join(OUT, `favicon-${id}.ico`), buildIco(ICO_SIZES.map(size => ({ size, data: renders.get(size) }))));
     fs.writeFileSync(path.join(OUT, `apple-touch-${id}.png`), renders.get(APPLE_SIZE));
     fs.writeFileSync(path.join(OUT, `icon-${id}-${ICON_SIZE}.png`), renders.get(ICON_SIZE));
 
-    written.push(`logo-${id}.png`, `favicon-${id}.ico`, `apple-touch-${id}.png`, `icon-${id}-${ICON_SIZE}.png`);
+    written.push(`logo-${id}.png`, `favicon-${id}.ico`, `apple-touch-${id}.png`, `icon-${id}-${ICON_SIZE}.png`, `discord-${id}.png`);
     console.log(`${id.padEnd(10)} logo ${LOGO_SIZE} + favicon.ico [${ICO_SIZES.join("/")}] + apple-touch ${APPLE_SIZE} + icon ${ICON_SIZE}`);
 }
 
