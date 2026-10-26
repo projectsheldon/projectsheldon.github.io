@@ -175,38 +175,74 @@ document.getElementById('hero-cta')?.addEventListener('click', async () => {
     }
 });
 
-function getCachedServerCount() {
+function getCachedServerInfo() {
     try {
-        const raw = localStorage.getItem('cache_server_count');
+        const raw = localStorage.getItem('cache_server_info');
         if (!raw) return null;
         const item = JSON.parse(raw);
         if (Date.now() - item.timestamp < 600000) return item.data;
-        localStorage.removeItem('cache_server_count');
+        localStorage.removeItem('cache_server_info');
     } catch (e) {}
     return null;
 }
 
-function setCachedServerCount(count) {
+function setCachedServerInfo(info) {
     try {
-        localStorage.setItem('cache_server_count', JSON.stringify({ data: count, timestamp: Date.now() }));
+        localStorage.setItem('cache_server_info', JSON.stringify({ data: info, timestamp: Date.now() }));
     } catch (e) {}
+}
+
+// Only Discord's own CDN is trusted for the server art.
+function isDiscordCdn(url) {
+    return typeof url === 'string' && /^https:\/\/cdn\.discordapp\.com\//.test(url);
+}
+
+function applyServerInfo(info) {
+    if (typeof info.count === 'number') {
+        document.querySelectorAll('#discord-count, [data-discord-count]').forEach(el => { el.textContent = info.count.toLocaleString(); });
+    }
+
+    if (typeof info.online === 'number') {
+        document.querySelectorAll('[data-discord-online]').forEach(el => { el.textContent = info.online.toLocaleString(); });
+        document.querySelectorAll('[data-discord-online-wrap]').forEach(el => { el.hidden = false; });
+    }
+
+    if (typeof info.name === 'string' && info.name) {
+        document.querySelectorAll('[data-discord-name]').forEach(el => { el.textContent = info.name; });
+    }
+
+    if (isDiscordCdn(info.icon)) {
+        document.querySelectorAll('[data-discord-icon]').forEach(el => {
+            const img = el.querySelector('img');
+            if (!img) return;
+            img.src = info.icon;
+            el.classList.add('has-image');
+        });
+    }
+
+    if (isDiscordCdn(info.banner)) {
+        document.querySelectorAll('[data-discord-banner]').forEach(el => {
+            el.style.backgroundImage = `url("${info.banner}")`;
+            el.classList.add('has-image');
+        });
+    }
 }
 
 async function updateMemberCount() {
     try {
-        const cached = getCachedServerCount();
-        const el = document.getElementById('discord-count');
+        const cached = getCachedServerInfo();
         if (cached) {
-            if (el) el.textContent = cached.toLocaleString();
+            applyServerInfo(cached);
             return;
         }
 
         const apiUrl = await Api.GetApiUrl();
         const res = await fetch(`${apiUrl}/discord/servercount`);
         const data = await res.json();
-        if (el && data.count !== undefined) {
-            el.textContent = data.count.toLocaleString();
-            setCachedServerCount(data.count);
+        if (data.count !== undefined) {
+            const info = { count: data.count, online: data.online, name: data.name, icon: data.icon, banner: data.banner };
+            applyServerInfo(info);
+            setCachedServerInfo(info);
         }
     } catch (e) {
     }

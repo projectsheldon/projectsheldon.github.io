@@ -12,7 +12,7 @@
 
 - [Sheldon's Scripting Environment](https://www.projectsheldon.me/luavm/#/)
 - [Obfuscate](https://www.projectsheldon.me/luavm/#/obfuscate)
-- [Obfuscated Script](https://www.projectsheldon.me/luavm/#/obfuscate-result)
+- [Auto Complete](https://www.projectsheldon.me/luavm/#/autocomplete)
 - [Global Functions](https://www.projectsheldon.me/luavm/#/globals)
 - [base64](https://www.projectsheldon.me/luavm/#/base64)
 - [hash](https://www.projectsheldon.me/luavm/#/hash)
@@ -32,7 +32,6 @@
 - [fflags](https://www.projectsheldon.me/luavm/#/fflags)
 - [Instance](https://www.projectsheldon.me/luavm/#/instance)
 - [RemoteEvent](https://www.projectsheldon.me/luavm/#/remoteevent)
-- [Class Properties](https://www.projectsheldon.me/luavm/#/class-properties)
 - [Custom Types](https://www.projectsheldon.me/luavm/#/custom-types)
 - [RBXScriptSignal (Events)](https://www.projectsheldon.me/luavm/#/signals)
 - [Library Gating](https://www.projectsheldon.me/luavm/#/library-gating)

@@ -86,7 +86,8 @@ if (!PAGES || typeof PAGES !== 'object') throw new Error('PAGES was not captured
 const slugFor = (p) => (p === '/' ? 'home' : p.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-'));
 
 // 3. Bake static HTML into <main> so crawlers read every section.
-const sections = Object.keys(PAGES).map((p) => {
+const visiblePages = Object.keys(PAGES).filter((p) => !PAGES[p].hidden);
+const sections = visiblePages.map((p) => {
   const pg = PAGES[p];
   const intro = pg.intro ? `\n      <p class="intro">${pg.intro}</p>` : '';
   const body = (pg.body || '').trim();
@@ -193,7 +194,7 @@ const fullParts = [
   '> This plain-text file mirrors the full documentation for AI assistants and search tools.',
   '',
 ];
-for (const p of Object.keys(PAGES)) {
+for (const p of visiblePages) {
   const pg = PAGES[p];
   fullParts.push('', '---', '', `## ${pg.title}`, '');
   if (pg.intro) fullParts.push(toMd(pg.intro), '');
@@ -203,7 +204,7 @@ for (const p of Object.keys(PAGES)) {
 const fullText = fullParts.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
 fs.writeFileSync(path.join(ROOT, 'llms-full.txt'), fullText);
 
-const toc = Object.keys(PAGES)
+const toc = visiblePages
   .map((p) => `- [${PAGES[p].title}](${SITE}/luavm/#${p})`)
   .join('\n');
 const indexText = `# Project Sheldon – LuaVM
@@ -222,7 +223,7 @@ ${toc}
 `;
 fs.writeFileSync(path.join(ROOT, 'llms.txt'), indexText);
 
-console.log(`✓ ${Object.keys(PAGES).length} sections`);
+console.log(`✓ ${visiblePages.length} sections`);
 console.log(`  • luavm/index.html   static block ${(block.length / 1024).toFixed(1)} KB`);
 console.log(`  • llms-full.txt      ${(fullText.length / 1024).toFixed(1)} KB`);
 console.log(`  • llms.txt           ${(indexText.length / 1024).toFixed(1)} KB`);

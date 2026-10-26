@@ -43,7 +43,7 @@
             'nav.pricing.resellers.t': 'Resellers', 'nav.pricing.resellers.s': 'Verified sellers',
             'nav.community.discord.t': 'Discord server', 'nav.community.discord.s': 'Chat and support',
             'nav.community.guides.t': 'Guides', 'nav.community.guides.s': 'Step-by-step tutorials',
-            'hero.subtitle': 'Get Project Sheldon today - Best & Only Freemium External.',
+            'hero.subtitle': 'A feature-rich Roblox developer tool with a free tier. Log in with Discord to download.',
             'hero.download': 'Download for Windows', 'hero.pricing': 'See pricing',
             'hero.terms.pre': 'Using Sheldon means you agree to the',
             'hero.terms.link': 'Terms of Service', 'hero.terms.post': '',

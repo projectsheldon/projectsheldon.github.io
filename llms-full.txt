@@ -8,7 +8,70 @@
 
 ## Sheldon's Scripting Environment
 
-A scripting environment made for letting users have more customizability over their product. (<- not ai)
+A Lua 5.4 environment that runs scripts inside the Sheldon overlay with direct access to the game, the renderer, input, files, networking and process memory.
+
+### What runs
+
+Scripts are executed by a single `sol::state` on a worker thread. The environment is Lua 5.4, not Luau. Standard `base`, `math`, `table` and `string` libraries are available, and all of Lua 5.4's bitwise operators work without a `bit32` library.
+
+Two Luau conveniences are translated before the source reaches the Lua compiler: type ascriptions (`local part: Part = ...` and `value :: Type`) are stripped, and compound assignments (`+=`, `-=`, `*=`, `/=`, `%=`, `^=`, `..=`, `&=`, `|=`, `>=`) are expanded. The ascriptions are still read by the editor's autocomplete, so they are useful even though Lua never sees them.
+
+### Entry points
+
+`game` is the DataModel. There is no separate `Game` or `workspace` global; use `game:GetService("Workspace")`, `game:GetService("Players")` and so on. Instances are wrapped by the [Instance](#/instance) type, which exposes their registered and reflected properties, children and methods.
+
+```lua
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local me = Players.LocalPlayer
+
+print(me.Name, me.DisplayName)
+print(Workspace.Gravity)
+```
+
+`Players.LocalPlayer` and player character properties are read from the live process. See [Instance](#/instance) for property access rules and [RBXScriptSignal](#/signals) for events.
+
+### Libraries
+
+| Library | What it covers |
+| --- | --- |
+| **globals** | `print`, `warn`, `typeof`, `loadstring`, `hex`, `tick` and the `math`/`string` additions |
+| **task** | Coroutine scheduling and yields |
+| **tween** | Property interpolation |
+| **memory** | Typed process reads and writes |
+| **cheat** | Frame events, custom ESP, game modules, GC access, raycasts, servers |
+| **internet** | HTTP requests, including asynchronous POST |
+| **input** | Mouse and keyboard simulation |
+| **file** | Sandboxed file access |
+| **draw** | 2D primitives on the overlay |
+| **gui** | Runtime overlay tabs |
+| **imgui** | Immediate-mode widgets and windows |
+| **entity** | Custom entity registration for ESP and targeting |
+| **fflags** | Client FastFlag reads and writes |
+| **utility** | Clipboard access |
+| **base64**, **hash**, **compress** | Encoding, hashing and LZ4 |
+
+`memory`, `input`, `file`, `utility` and `internet` are gated. They throw a "library is not enabled" error until switched on in the Lua VM settings. See [Library Gating](#/library-gating).
+
+### Editor
+
+The script editor keeps multiple tabs, runs each tab as an independent slot, and exposes Execute, Stop, Restart, Save and Upload. Files can be marked Auto Execute per place or for the current session. The console below the editor receives `print`, `warn` and runtime errors.
+
+[Auto Complete](#/autocomplete) reads the live VM and the game's reflection table, so it lists instance children, writable and read-only properties, library functions, services, FFlags, key names and type names as you type.
+
+### Minimal script
+
+```lua
+cheat.Register("onPaint", function()
+    local root = game:GetService("Players").LocalPlayer.Character
+    if not root then return end
+
+    local pos, onScreen = cheat.WorldToScreen(root.HumanoidRootPart.Position)
+    if onScreen then
+        draw.TextOutlined("you", pos.x, pos.y, Color3.new(1, 1, 1))
+    end
+end)
+```
 
 ---
 
@@ -31,16 +94,106 @@ Copy output
 
 ---
 
-## Obfuscated Script
+## Auto Complete
 
-The scrambled output lands here.
+The editor completes against the live VM and the game's reflection table, not a fixed list of names.
 
-No output yet
-submit a script and the scrambled result lands here
+Completion is part of the script editor. It inspects the code around the cursor, resolves the expression on the left of a `.` or `:` against the running VM, and offers the members that expression actually has. Because instance properties come from the same reflection table the VM reads at runtime, the list includes properties that are not written into this documentation.
 
-–
+### Opening and accepting
 
-Copy output
+| Action | Result |
+| --- | --- |
+| Type an identifier | Suggestions open immediately while you type |
+| `Ctrl` + `Space` | Opens the full suggestion list, including locals |
+| `Tab` or `Enter` | Accepts the highlighted row |
+| `Tab` a second time | For a method, appends `()`; for a writable property, appends `= ` |
+| `Tab` during a snippet | Jumps to the next `$` stop |
+| `Esc` | Closes the popup |
+
+### What is completed
+
+| Context | Suggestions |
+| --- | --- |
+| Anywhere | Local variables declared so far, functions, globals, library names, known type names |
+| `value.` / `value:` | Table keys, userdata members, instance children, methods and properties |
+| `game:GetService("...")` | Services and other children of the DataModel |
+| `instance:FindFirstChild("...")`, `WaitForChild` | Child names of that instance |
+| `instance:FindFirstChildOfClass("...")`, `FindDescendantsOfClass` | Class names |
+| `instance:FindDescendants("...")` | Descendant names of that instance |
+| `instance:IsA("...")` | Known class names and `Instance` |
+| `instance:GetAttribute("...")`, `SetAttribute` | Attribute names on that instance, with their types |
+| `instance:HasTag("...")`, `AddTag`, `RemoveTag`, `GetTag`, `RenameTag` | Tags on that instance |
+| `instance:GetPropertyChangedSignal("...")` | Registered and reflected property names for that class |
+| `:: ` | Class names, usertypes and primitive type names |
+| `fflags.Get("...")`, `fflags.Set("...")` | FFlag names from the client, plus read/write memory types in the type argument |
+| `memory.Read(address, "...")`, `memory.Write(address, value, "...")` | Readable or writable memory types |
+| `input.IsHeld("...")` and the other key functions | Windows key names for the current layout |
+| `draw.Text(..., "...")`, `TextOutlined`, `GetTextSize` | Loaded font names |
+| `gui.AddTab("...")`, `RemoveTab`, `IsTab` | Existing tab names |
+| `entity.AddEntity("...")` and the other entity functions | Registered entity keys |
+| `cheat.Register("...")`, `Unregister` | Event names |
+| `cheat.SetEspOrder("...")`, `UnregisterEsp` | Registered ESP ids |
+| `cheat.TeleportPlace("...")`, `GetServers` | Job ids from the last server list |
+| `tween.Info(time, delay, "...")` | Easing style names |
+| `file.write("...")` and the other file functions | Files and folders in the sandbox |
+
+Instance rows show child names with their class icon, functions with a function icon, writable properties with a property icon, and read-only properties with a separate icon. Gated libraries that are switched off appear as `name [Disabled]` and are inserted without being callable.
+
+### Type hints
+
+Because the VM strips type ascriptions, they cost nothing at runtime and give completion something to work with when the value is not available yet:
+
+```lua
+local part: Part = game:GetService("Workspace").SomePart
+part. -- Position, Size, Transparency, Anchored, ...
+
+local character: Model = player.Character
+character:FindFirstChild(" -- child names
+
+local value = game:GetService("Workspace").SomePart :: Part
+value:GetPropertyChangedSignal(" -- property names for Part
+```
+
+Ascriptions also work on loop variables when the iterator is a known instance call:
+
+```lua
+for _, child in ipairs(game:GetService("Workspace"):GetChildren()) do
+    child. -- child is completed as an Instance
+end
+```
+
+Locals assigned directly from the VM are inferred without an ascription, for example `local players = game:GetService("Players")`. Locals copied between names are followed for a few steps.
+
+### Snippets
+
+Typing one of these names offers a snippet. Tab moves through the numbered stops.
+
+| Trigger | Expands to |
+| --- | --- |
+| `if` | `if ... then ... end` |
+| `while` | `while ... do ... end` |
+| `fordo` | Numeric `for` loop |
+| `forpairs` | `for k, v in pairs(...) do` |
+| `foripairs` | `for i, v in ipairs(...) do` |
+| `repeat` | `repeat ... until ...` |
+| `func` | Global function |
+| `localfunc` | Local function |
+| `local` | `local name = value` |
+| `return` | `return value` |
+| `pcall` | `local ok, err = pcall(function() ... end)` |
+
+### Settings
+
+The editor exposes two completion switches in the autocomplete settings:
+
+- **Find first child completion** – enables the string-argument lists such as `FindFirstChild("`, `GetAttribute("`, `GetService("`, FFlag names, key names and file names.
+
+- **Find first child auto trigger** – opens that list automatically when you type the opening quote inside one of those calls. With it off, press `Ctrl` + `Space` inside the string.
+
+### Relationship to Class Properties
+
+The old [Class Properties](#/class-properties) page listed a hand-picked subset of properties. That list went stale whenever a class gained a property, and it could not show children of the current game. This page replaces it: completion reads the VM's class map and live reflection data at edit time, so it lists every property the running build will accept, with read-only state and the correct class.
 
 ---
 
@@ -50,13 +203,26 @@ Built-in global functions available in the LuaVM environment.
 
 | Function | Description |
 | --- | --- |
-| **print(...)** | Outputs to console with `[print]` prefix |
-| **warn(...)** | Outputs to console with `[warn]` prefix |
-| **error(...)** | Throws a Lua error |
-| **hex(number)** | Formats a number as hex string (e.g. `0x7FF...`) |
-| **tick()** | Returns `GetTickCount64()` – milliseconds since system start |
-| **loadstring(source)** | Loads and compiles Lua source code. Returns `(function, nil)` on success or `(nil, error_message)` on failure. |
-| **type(v)** | Overrides Lua's built-in `type()`. Behaves normally for all Lua values, and additionally recognizes Roblox Luau GC addresses returned by `cheat.getgc()`/`cheat.rawget()` – for a number that points at a live GC object it returns `"table"`, `"string"`, `"function"`, `"userdata"`, or `"thread"` depending on the object's type. |
+| **print(...)** | Writes to the console with a `[print]` prefix |
+| **warn(...)** | Writes to the console with a `[warn]` prefix |
+| **error(...)** | Raises a Lua error with the formatted arguments |
+| **typeof(v)** | Like `type`, but returns `"Instance"` for wrapped Roblox instances instead of `"userdata"` |
+| **type(v)** | Lua's `type`, extended for GC addresses. A number that points at a live Luau object returns `"string"`, `"table"`, `"function"`, `"userdata"` or `"thread"` based on the object header. All other values behave normally. |
+| **hex(number)** | Formats an integer as an uppercase hex string, e.g. `0x7FF6A2C1` |
+| **tick()** | Returns `GetTickCount64()` – milliseconds since the system started, not a UNIX timestamp |
+| **loadstring(source)** | Compiles source after stripping Luau type ascriptions. Returns `(function, nil)` or `(nil, error_message)` |
+| **getfenv([f])** | Returns the global table. The argument is accepted for compatibility but does not change the result |
+| **setfenv(f, env)** | No-op, kept for scripts that probe for it |
+
+### Math Additions
+
+Appended to Lua's `math` library:
+
+| Function | Returns | Description |
+| --- | --- | --- |
+| **math.ldexp(x, exp)** | `number` | Returns `x * 2^exp` |
+| **math.frexp(x)** | `number, number` | Splits `x` into mantissa and exponent |
+| **math.round(x)** | `number` | Rounds to the nearest integer, halfway away from zero |
 
 ### String Extensions
 
@@ -64,13 +230,13 @@ Appended to Lua's built-in `string` library:
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **string.regex(text, pattern)** | `string, string` | Returns `true` if the pattern is found (std::regex_search). Returns `false` on invalid patterns. |
+| **string.regex(text, pattern)** | `string, string` | Returns `true` when the pattern matches. This uses C++ `std::regex` (ECMAScript syntax), not Lua patterns. Invalid patterns return `false`. |
 
 #### Example
 
 ```lua
--- string.regex
-if string.regex("hello123", "%d+") then
+-- std::regex syntax: \d+, not Lua's %d+
+if string.regex("hello123", "\\d+") then
     print("contains digits")
 end
 
@@ -78,8 +244,8 @@ end
 local gc = cheat.getgc()
 for _, t in next, gc do
     if type(t) == "table" then
-        -- t is a number (Roblox table's memory address), but
-        -- type() reports "table" because it dereferences the GC header.
+        -- t is a number (the table's memory address), but type()
+        -- reads the GC header and reports "table".
     end
 end
 ```
@@ -92,8 +258,8 @@ Base64 encoding and decoding. Always available (no library gate).
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **base64.Encode(data)** | `string` | Encodes a string to base64 |
-| **base64.Decode(data)** | `string` | Decodes a base64 string back to plaintext |
+| **base64.Encode(data)** | `string` | Encodes a string to base64. Input is limited to 10 MB. |
+| **base64.Decode(data)** | `string` | Decodes a base64 string. Invalid input raises an error; output is limited to 10 MB. |
 
 ### Example
 
@@ -112,9 +278,9 @@ Cryptographic hash functions. Always available (no library gate).
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **hash.Sha256(data)** | `string` | Returns SHA-256 hex digest |
-| **hash.Sha3(data)** | `string` | Returns SHA-3 hex digest |
-| **hash.Md5(data)** | `string` | Returns MD5 hex digest |
+| **hash.Sha256(data)** | `string` | Returns a lowercase SHA-256 hex digest. Input is limited to 10 MB. |
+| **hash.Sha3(data)** | `string` | Returns a lowercase SHA3-256 hex digest. Input is limited to 10 MB. |
+| **hash.Md5(data)** | `string` | Returns a lowercase MD5 hex digest. Input is limited to 10 MB. |
 
 ### Example
 
@@ -127,19 +293,20 @@ print(sha)  -- 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
 
 ## compress
 
-LZ4 compression utilities. Always available (no library gate).
+LZ4 compression. Always available (no library gate).
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **compress.Compress(data)** | `string` | Compresses data using LZ4 (does NOT prepend original size). `Decompress` expects a 4-byte size header – functions are currently incompatible. |
-| **compress.Decompress(data)** | `string` | Decompresses LZ4-compressed data back to original. |
+| **compress.Compress(data)** | `string` | Compresses a string with LZ4 and returns the raw compressed bytes. Input is limited to 10 MB. The original size is not stored. |
+| **compress.Decompress(data)** | `string` | Expects a 4-byte little-endian original size followed by LZ4 data, and returns the decompressed string. |
+
+**Current mismatch:** `compress.Compress` does not write the size header that `compress.Decompress` reads. Round-tripping through these two functions does not work yet. Store the original length separately if you need to decompress data outside the VM.
 
 ### Example
 
 ```lua
 local comp = compress.Compress("Hello, world!")
-local dec = compress.Decompress(comp)
-print(dec)  -- Hello, world!
+print(#comp)  -- raw LZ4 bytes, no size header
 ```
 
 ---
@@ -150,9 +317,10 @@ Scheduling utilities for asynchronous execution.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **task.spawn(fn)** | `function` | Schedules `fn` to run asynchronously |
-| **task.delay(seconds, fn)** | `number, function` | Schedules `fn` after `seconds` |
-| **task.wait(seconds)** | `number` | Yields the coroutine, returns actual elapsed time. Must be called within a `task.spawn`'d or yielded coroutine (not from main thread). |
+| **task.spawn(fn, ...)** | `function, ...` | Schedules `fn` to run on the VM worker thread. Extra arguments are passed to `fn`. |
+| **task.defer(fn, ...)** | `function, ...` | Schedules `fn` the same way as `task.spawn`. Both enter the scheduler at the next tick. |
+| **task.delay(seconds, fn)** | `number, function` | Runs `fn` after `seconds`. The callback runs on the worker thread. |
+| **task.wait(seconds?)** | `number?` | Yields the current coroutine and returns the measured elapsed time. Defaults to `0`. Calling it from the main script body raises an error; wrap the script in `task.spawn` first. |
 
 ### Example
 
@@ -161,8 +329,18 @@ task.spawn(function()
     print("Runs asynchronously!")
 end)
 
-local elapsed = task.wait(1)
-print("Waited", elapsed, "seconds")
+task.defer(function(a, b)
+    print("deferred", a, b)
+end, "with", "arguments")
+
+task.delay(2, function()
+    print("two seconds later")
+end)
+
+task.spawn(function()
+    local elapsed = task.wait(1)
+    print("Waited", elapsed, "seconds")
+end)
 ```
 
 ---
@@ -173,8 +351,8 @@ Interpolate instance properties smoothly over time. Modelled on Roblox's TweenSe
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **tween.Info(time, delayTime?, style?)** | `number, number?, string?` | Builds a TweenInfo table. `style` defaults to `"Linear"`, `delayTime` to `0`. You can also pass a raw table `{time=..., delayTime=..., style=...}` anywhere info is expected. |
-| **tween.Create(instance, info, props)** | `Instance, table, table` | Creates a tween that will interpolate each property in `props` from its current value to the target value. Returns a tween object. |
+| **tween.Info(time, delayTime?, style?)** | `number, number?, string\|int?` | Builds a TweenInfo table. `style` defaults to `"Linear"`, `delayTime` to `0`. You can also pass a raw table `{time=..., delayTime=..., style=...}` anywhere info is expected. |
+| **tween.Create(instance, info, props)** | `Instance, table, table` | Creates a tween that interpolates each property in `props` from its current value to the target value. Returns a tween object. The target must still be alive when the tween plays. |
 
 ### Tween Object
 
@@ -185,7 +363,7 @@ Interpolate instance properties smoothly over time. Modelled on Roblox's TweenSe
 
 ### Easing Styles
 
-`Linear`, `Bounce`, `Elastic`, `Exponential`, `Cubic`. Also exposed as `tween.EasingStyle.Linear` etc. for readability. Pass either the string or the constant.
+`Linear`, `Bounce`, `Elastic`, `Exponential`, `Cubic`. Also exposed as `tween.EasingStyle.Linear` etc. for readability. Pass either the string, the constant, or an integer index (`0` = Linear through `4` = Cubic). Unknown styles fall back to `Linear`.
 
 ### Supported Property Types
 
@@ -195,12 +373,14 @@ Interpolate instance properties smoothly over time. Modelled on Roblox's TweenSe
 
 - `Color3` – e.g. `Color`
 
-The property must be registered for the instance's class (see [Class Properties](#/class-properties)) and must not be read-only. Unsupported properties raise an error at `tween.Create` time.
+Hand-written property maps exist for `Part`, `MeshPart`, `VehicleSeat` and the other classes in the property table. Any other class works through its reflected property offsets as long as the game exposes the property.
+
+The property must be writable on that instance. Hand-written class properties and reflected properties both work; [Auto Complete](#/autocomplete) lists what is available for the selected instance. Read-only properties, unknown names and unsupported value types raise an error at `tween.Create` time.
 
 ### Example – Move a part
 
 ```lua
-local part = workspace.Part
+local part = game:GetService("Workspace").Part
 local info = tween.Info(1.5, 0, "Cubic")
 
 local t = tween.Create(part, info, {
@@ -214,7 +394,7 @@ t:Play()
 ### Example – Wait until finished
 
 ```lua
-local part = workspace.Part
+local part = game:GetService("Workspace").Part
 
 local t = tween.Create(part, { time = 2, style = "Bounce" }, {
     Position = part.Position + Vector3.new(0, 15, 0),
@@ -228,12 +408,14 @@ print("Tween finished – running follow-up code")
 
 ```lua
 task.spawn(function()
-    local part = workspace.Part
+    local part = game:GetService("Workspace").Part
     local up   = tween.Create(part, tween.Info(1, 0, "Cubic"),  { Position = part.Position + Vector3.new(0, 10, 0) })
     local down = tween.Create(part, tween.Info(1, 0, "Bounce"), { Position = part.Position })
 
-    up:Play(true)
-    down:Play(true)
+    up:Play()
+    task.wait(1)
+    down:Play()
+    task.wait(1)
 end)
 ```
 
@@ -241,7 +423,7 @@ end)
 
 - Each property tweens independently. Passing multiple properties runs them in parallel on the same schedule.
 
-- `tween:Play(true)` blocks the calling coroutine – use `task.spawn` if you don't want to freeze your main script.
+- `tween:Play(true)` blocks the VM worker thread until every property finishes, pausing all scripts. `task.spawn` does not avoid this. Use `Play()` without the flag and schedule follow-up work with `task.delay`.
 
 - Tweens write directly to memory. Physics-driven properties (`Position`, `CFrame`, velocities) update visually but the engine may resimulate them next physics step; combine with anchoring or velocity-zeroing for full control.
 
@@ -257,11 +439,11 @@ Requires: Memory library enabled
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **memory.Read(address, type)** | `uintptr, string` | Reads from memory, converting to the given type |
-| **memory.Write(address, value)** | `uintptr, any` | Writes a value, auto-deciding the width from its type |
-| **memory.Write(address, value, type)** | `uintptr, any, string` | Writes a value, explicitly converting it to the given type |
-| **memory.GetRTTI(address)** | `uintptr` | Gets RTTI type from vtable |
-| **memory.GetBase()** |  | Returns Roblox process base address |
+| **memory.Read(address, type)** | `uintptr, string` | Reads from memory and converts to the given type. Unknown or write-only types raise an error. |
+| **memory.Write(address, value)** | `uintptr, any` | Writes a value, choosing the width from its Lua type |
+| **memory.Write(address, value, type)** | `uintptr, any, string` | Writes a value using an explicit type |
+| **memory.GetRTTI(address)** | `uintptr` | Returns the RTTI class name for an object pointer. If the address is not a vtable pointer, it tries the pointer stored at that address. Returns `???` when neither resolves. |
+| **memory.GetBase()** |  | Returns the Roblox process base address |
 | **memory.Rebase(offset)** | `uintptr` | Returns `base + offset` |
 
 ### Supported Types
@@ -305,7 +487,7 @@ memory.Write(base + 0x1250, Vector3.new(1, 2, 3), "vector3")
 
 ## cheat
 
-Cheat utilities – event registration, raycasting, server/teleport helpers, and the Roblox Luau garbage-collector interface.
+Frame events, custom ESP elements, game modules, raycasting, server and teleport helpers, and direct access to the Roblox Luau garbage collector.
 
 ### Events
 
@@ -318,10 +500,12 @@ Cheat utilities – event registration, raycasting, server/teleport helpers, and
 
 | Event | Description |
 | --- | --- |
-| **onPaint** | Fires every frame for rendering |
-| **onUpdate** | Fires every frame for logic updates |
-| **onSlowUpdate** | Fires at a reduced rate |
-| **teleport** | Fires when the player teleports |
+| **onPaint** | Runs on the overlay render thread every rendered frame. Drawing belongs here. |
+| **onUpdate** | Runs from the game's fast update listener |
+| **onSlowUpdate** | Runs from the game's slow update listener |
+| **teleport** | Runs from the game's teleport listener |
+
+Callbacks receive no arguments and cannot yield. Errors are written to the console and the callback stays registered. `Register` raises `unknown cheat event` for a bad name; `Unregister` silently returns for unknown names or functions that were never registered.
 
 #### Example
 
@@ -336,22 +520,126 @@ cheat.Register("onPaint", onPaint)
 cheat.Unregister("onPaint", onPaint)
 ```
 
-### Garbage Collector
+### Custom ESP
 
-Read and write the target process's Luau GC directly. `getgc` enumerates live objects; `rawget`/`rawset` operate on a single external table by address; `setgc` writes across every table that has a key.
+Registers an element in the ESP layout without touching the built-in element list. Each id is placed with the same anchor, order, smoothing and preview drag behaviour as the built-in labels. The element belongs to the script's slot and is removed when the script stops or the id is unregistered.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **getgc(includeAll?, searchKey?)** | `bool?, string?` | Enumerates the target process's Luau GC. Default returns tables only; pass `true` as the first arg to include strings, functions, userdata, and threads. If `searchKey` is a non-empty string, `getgc` instead scans every GC table for that key and returns the **first non-nil value** it finds – decoded to a Lua value (`string`/`number`/`boolean`) where possible, or the raw address as a `number` for GC-typed values. Returns `nil` if no table has the key. |
-| **setgc(key, value)** | `string, bool \| number \| address` | Iterates every GC table and writes `value` into every table that already has `key`. Accepts `bool`, `number`, or a GC address (the tt is inferred from the GC object's header). Cannot create new keys and does not issue a GC write barrier. String literals are rejected – pass an existing TString address (a `number`) instead. |
-| **rawget(addr, key \| true)** | `number, string \| bool` | Reads a field on the external table at `addr`. 2nd arg: pass a `string` key to fetch a single field, or pass `true` to dump the whole table as a Lua table. Missing keys return `nil`. Returned GC-typed values (tables/functions/userdata) come back as their raw address `number`; call `rawget` recursively on them to dive deeper. |
-| **rawset(addr, key, value)** | `number, string, any` | Writes an **existing** field on the external table at `addr`. Accepts `nil`, `bool`, `number`, or an address for GC-typed values (the tt is inferred from the GC object's header). Returns `true` on success, `false` if the key doesn't already exist. Cannot create new keys and does not issue a GC write barrier. |
+| **RegisterEsp(id, options)** | `string, table` | Registers or replaces an ESP element. The id must be non-empty and must not collide with a built-in element or a reserved name. |
+| **SetEspOrder(id, order)** | `string, number` | Changes the element's sort order. Lower numbers render first. Default is `15`. |
+| **UnregisterEsp(id)** | `string` | Removes the element and its cached text. |
+
+#### Options
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `text` | `function` | Called per player with the player table. Returns the label text and optionally a `Color3`. Results are cached for 33 ms per player and truncated to 64 characters. |
+| `measure` | `function` | Called per player with the player table. Must return `width, height` numbers; they are clamped to 0-2000. Used when the element is positioned or dragged. |
+| `draw` | `function` | Called per player as `draw(player, x, y, w, h)` after layout. Use the draw library inside it. |
+| `anchor` | `string` | `Top` (default), `Bottom`, `TopLeft`, `TopRight`, `BottomLeft`, `BottomRight`, `CenterLeft`, `CenterRight` |
+| `order` | `number` | Sort order, default `15` |
+| `enabled` | `bool` | Whether the element is drawn, default `true` |
+| `color` | `Color3` or table | Default text color, default white. Tables use `r, g, b` or `1, 2, 3` and accept 0-1 or 0-255 values. |
+
+At least one of `text`, `measure` or `draw` is required. A Lua error inside a callback disables that ESP with an error in the console instead of retrying every frame.
+
+#### Player table
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `address` | `number` | Player instance address |
+| `username` | `string` | Account name |
+| `displayName` | `string` | Display name |
+| `userId` | `number` | User id |
+| `health`, `maxHealth` | `number` | Current and maximum health |
+| `team` | `string` | Team name |
+| `isSameTeam` | `bool` | Whether the player shares the local team |
+| `isAlive` | `bool` | Alive state |
+| `isActiveUser` | `bool` | Active-user flag from the player cache |
+| `position` | `Vector3` | Head position |
+| `distance` | `number` | Distance from the local head to this player's head |
 
 #### Example
 
 ```lua
--- GC enumeration + rawget / rawset (Roblox Luau)
---   Find every weapon config and give it unlimited ammo.
+cheat.RegisterEsp("Distance", {
+    anchor = "Top",
+    order = 4,
+    color = Color3.new(1, 1, 1),
+    text = function(player)
+        return string.format("%s [%dm]", player.username, math.floor(player.distance))
+    end,
+    measure = function(player)
+        return 120, 14
+    end,
+    draw = function(player, x, y, w, h)
+        draw.Rect(x - 2, y - 1, w + 4, h + 2, Color3.new(0, 0, 0), 1, 2, 0.6)
+    end,
+})
+```
+
+### Custom game module
+
+Some games parent characters outside `Players` or use a bone layout the default module cannot read. `RegisterGame` installs a Lua replacement for the module that finds player roots, reads player data and returns bones. Only one Lua game module can be active; registering another replaces it.
+
+**Manual run only:** `RegisterGame` refuses to run from auto-execute or session auto-load, and it also refuses when the current place id is not in `placeIds`. Execute it from the editor.
+
+| Function | Signature | Description |
+| --- | --- | --- |
+| **RegisterGame(definition)** | `table` | Registers the module, adds a tab named after `name`, and makes it the active player provider. |
+| **UnregisterGame()** |  | Removes the module if the calling script owns it. The default module returns. |
+
+#### Definition
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Required. Tab name and module name. |
+| `placeIds` | `table` | Required. Place ids this module accepts. Numbers or numeric strings. |
+| `getParents` | `function` | Optional. Returns a table of Instances that contain the player models. Returning nothing falls back to `Players`. |
+| `getPlayer` | `function` | Optional. Called with a parent Instance; returns a table with `Character`/`model`, `userId`, `username`/`Name`, `displayName`/`DisplayName`, `Team`/`teamName`, `Humanoid`, `rigType` and `bones`. |
+| `getBones` | `function` | Optional. Called as `getBones(character, rigType)`; returns a table of bone name to Instance. Names such as `Head`, `HumanoidRootPart`, `UpperTorso`, `LeftUpperArm` and `RightFoot` are read. |
+| `onUpdate` | `function` | Optional. Runs once per module update. Errors are reported to the console. |
+
+#### Example
+
+```lua
+cheat.RegisterGame({
+    name = "My Game",
+    placeIds = { 123456789 },
+    getParents = function()
+        return { game:GetService("Workspace").Characters }
+    end,
+    getPlayer = function(parent)
+        local model = parent:FindFirstChild("Dummy")
+        if not model then return nil end
+        return {
+            Character = model,
+            Humanoid = model:FindFirstChildOfClass("Humanoid"),
+            username = model.Name,
+            displayName = model.Name,
+            teamName = "Neutral",
+        }
+    end,
+})
+```
+
+### Garbage Collector
+
+Read and write the target process's Luau GC directly. `getgc` enumerates live objects or looks up one key; `rawget`/`rawset` operate on a single external table by address; `setgc` writes one key into the first table that has it.
+
+| Function | Signature | Description |
+| --- | --- | --- |
+| **getgc(includeAll?)** | `bool?` | Returns an array of GC object addresses. The default returns tables only; `true` also includes strings, functions, userdata and threads. Use `type(address)` to identify each entry. |
+| **getgc(key)** | `string` | Scans the GC for the first table that has `key` and returns its value. Primitive values are decoded to Lua values; tables, functions and userdata come back as their address. Returns `nil` when no table has the key. The string form and the boolean form cannot be combined. |
+| **setgc(key, value)** | `string, bool \| number \| address` | Finds the first table with `key` and overwrites it. Accepts `bool`, `number`, or a GC address for object values. Strings are rejected – pass an existing TString address instead. It does not create keys, does not write a GC barrier, and silently does nothing if no table has the key. |
+| **rawget(addr, key \| true)** | `number, string \| bool` | Reads a field on the external table at `addr`. Pass a `string` key for one field, or `true` to dump the whole table as a Lua table. Missing keys return `nil`. GC-typed values come back as address numbers; call `rawget` on those addresses to go deeper. |
+| **rawset(addr, key, value)** | `number, string, any` | Writes an existing field on the external table at `addr`. Accepts `nil`, `bool`, `number`, or an address for object values. Returns `true` on success and `false` if the key does not exist. It does not create keys or write a GC barrier. |
+
+#### Example
+
+```lua
+-- Walk every table once. This is the only form that visits all of them.
 for _, t in next, cheat.getgc() do
     if type(t) == "table"
        and cheat.rawget(t, "MaxAmmo") ~= nil then
@@ -360,13 +648,11 @@ for _, t in next, cheat.getgc() do
     end
 end
 
--- Shortcut: getgc(includeAll, searchKey) walks the GC for you
---   and returns the first table's value for that key, or nil.
-local ammo = cheat.getgc(false, "MaxAmmo")
+-- Key lookup returns the first match only, not every table.
+local ammo = cheat.getgc("MaxAmmo")
 if ammo then print("first MaxAmmo seen =", ammo) end
 
--- setgc(key, value) writes into every GC table that has the key.
---   One-liner replacement for the loop above:
+-- setgc also writes the first table that has the key.
 cheat.setgc("MaxAmmo",     math.huge)
 cheat.setgc("CurrentAmmo", math.huge)
 
@@ -379,18 +665,20 @@ for k, v in pairs(dump) do print(k, "=", v) end
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **Raycast(pos, dir, distance, ignoreTransparent?)** | `Vector3, Vector3, number, bool?` | Casts a ray. Returns `(hit, instance, position, distance)`. |
+| **Raycast(pos, dir, distance?, ignoreTransparent?)** | `Vector3, Vector3, number?, bool?` | Casts a ray through the cached world scene. `distance` defaults to `1000`; intersections closer than 4 studs are ignored. `ignoreTransparent` skips invisible parts. Returns `(missed, instance, position, distance)`: the first value is `true` when nothing was hit, `instance` is then invalid and `position` is `(0, 0, 0)`. On a hit, `distance` is the hit distance; on a miss it is the maximum. |
+
+The scene comes from the cached Workspace parts, not from Roblox's own raycast API, so very new parts can lag by one cache refresh and parts outside the streamed region are not present.
 
 #### Example
 
 ```lua
-local hit, inst, pos, dist = cheat.Raycast(
+local missed, inst, pos, dist = cheat.Raycast(
     Vector3.new(0, 5, 0),
     Vector3.new(0, -1, 0),
     500
 )
 
-if hit then
+if not missed then
     print("hit", inst.Name, "at", pos, "dist", dist)
 end
 ```
@@ -405,8 +693,13 @@ end
 
 ```lua
 -- Project a player's position to screen
-local pos = cheat.WorldToScreen(player.Character.HumanoidRootPart.Position)
-draw.Text("Player", pos.X, pos.Y, Color3.new(1, 1, 1))
+local character = player.Character
+if not character then return end
+
+local screen, onScreen = cheat.WorldToScreen(character.HumanoidRootPart.Position)
+if onScreen then
+    draw.Text("Player", screen.x, screen.y, Color3.new(1, 1, 1))
+end
 ```
 
 ### Servers & Teleport
@@ -449,19 +742,70 @@ cheat.RunSecure("U09CMQ...")
 
 ## internet
 
-HTTP networking functions.
+HTTP GET and POST with request headers, timeouts and an asynchronous POST path for the render thread. Requires the Internet library to be enabled.
+
+Requires: Internet library enabled
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **internet.get(url, timeout?, info?)** | `string, number?, table?` | HTTP GET. Info supports `{headers={}}`. Returns `{text, status_code}` |
-| **internet.post(url, body?, timeout?, info?)** | `string, string?, number?, table?` | HTTP POST |
+| **internet.get(url, timeout?, info?)** | `string, number?, table?` | Blocking GET. Returns `{ text = string, status_code = number }`. |
+| **internet.post(url, body?, timeout?, info?)** | `string, string?, number?, table?` | Blocking POST. Returns the same table. The body defaults to an empty string. |
+| **internet.postasync(url, body?, timeout?, info?, callback?)** | `string, string?, number?, table?, function?` | Runs the POST on a worker thread. Without a callback it yields and returns `result` or `nil, error`. With a callback it returns nothing and calls `callback(result, error)` on the VM worker. |
 
-### Example
+### Arguments
+
+| Argument | Details |
+| --- | --- |
+| `url` | Must start with `https://`. The Require HTTPS setting can be turned off in the Lua VM settings, which also allows `http://`. Maximum 2048 characters. |
+| `timeout` | Milliseconds, default `5000`, clamped to `1-15000`. `0` is raised to `1`. |
+| `body` | String, maximum 10 MB. |
+| `info` | Table with a `headers` sub-table. Header names must be non-empty and at most 1024 characters; values at most 8192. CR, LF and NUL are rejected. A browser User-Agent is added when missing. |
+| Response | Responses larger than 10 MB raise `response too big >10mb`. Network failures raise a Lua error; the callback form receives the error message instead. |
+
+### Render thread
+
+`internet.get` and `internet.post` refuse to run inside a `gui.AddTab` callback because they would freeze the overlay. Use `postasync` with a callback there, or push the work into `task.spawn` and call a blocking function from the worker.
+
+### Examples
 
 ```lua
 local res = internet.get("https://api.example.com/data", 5000)
 print(res.status_code)
 print(res.text)
+
+local posted = internet.post(
+    "https://api.example.com/items",
+    '{"name":"item"}',
+    5000,
+    { headers = { ["Content-Type"] = "application/json" } }
+)
+```
+
+Callback form, safe on the render thread:
+
+```lua
+internet.postasync("https://api.example.com/items", "{}", 5000, nil, function(result, err)
+    if err then
+        warn("request failed:", err)
+        return
+    end
+
+    print(result.status_code, result.text)
+end)
+```
+
+Yield form, inside a coroutine:
+
+```lua
+task.spawn(function()
+    local result, err = internet.postasync("https://api.example.com/items", "{}")
+    if err then
+        warn("request failed:", err)
+        return
+    end
+
+    print(result.status_code, result.text)
+end)
 ```
 
 ---
@@ -476,25 +820,27 @@ Requires: Input library enabled
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **input.MoveMouse(dir, relative?)** | `Vector2, bool?` | Move mouse (absolute or relative to overlay) |
-| **input.GetMousePosition()** |  | Current cursor position |
-| **input.MouseClick(click, time?)** | `int, int?` | Simulate click (1=left, 2=right) |
-| **input.MousePress(click)** | `int` | Press button |
-| **input.MouseRelease(click)** | `int` | Release button |
-| **input.GetScrollDelta()** |  | Scroll wheel delta |
-| **input.GetMoveDelta()** |  | Mouse move delta |
+| **input.MoveMouse(dir, relative?)** | `Vector2, bool?` | Moves the mouse to an absolute overlay position, or by a delta when `relative` is true. The resulting position must stay strictly inside the overlay, otherwise it raises an error. |
+| **input.GetMousePosition()** |  | Returns the current cursor position as a `Vector2` |
+| **input.MouseClick(click, time?)** | `int, int?` | Clicks a button (1 = left, 2 = right). `time` is the hold time in ms, default `50` |
+| **input.MousePress(click)** | `int` | Presses a button and leaves it down |
+| **input.MouseRelease(click)** | `int` | Releases a button |
+| **input.GetScrollDelta()** |  | Returns the current scroll-wheel delta |
+| **input.GetMoveDelta()** |  | Returns the frame's mouse movement as a `Vector2` |
 
 ### Keyboard
 
+Keys can be Windows virtual-key codes or the display names returned by `GetKeyNameTextA` for the current layout, matched case-insensitively. Autocomplete lists the names. Examples: `"W"`, `"Space"`, `"Left Shift"`, `"Up"`, `"F1"`.
+
 | Function | Signature | Description |
 | --- | --- | --- |
-| **input.IsHeld(vKey)** | `int\|string` | Key held down |
-| **input.IsPressed(vKey)** | `int\|string` | Key just pressed |
-| **input.IsReleased(vKey)** | `int\|string` | Key just released |
-| **input.PressKey(vKey, time?)** | `int\|string, int?` | Press and release key |
-| **input.HoldKey(vKey)** | `int\|string` | Hold key down |
-| **input.ReleaseKey(vKey)** | `int\|string` | Release key |
-| **input.Type(text, time?)** | `string, int?` | Type text character by character |
+| **input.IsHeld(vKey)** | `int\|string` | True while the key is down |
+| **input.IsPressed(vKey)** | `int\|string` | True on the frame the key went down |
+| **input.IsReleased(vKey)** | `int\|string` | True on the frame the key went up |
+| **input.PressKey(vKey, time?)** | `int\|string, int?` | Presses and releases a key. `time` is the hold time in ms, default `0` |
+| **input.HoldKey(vKey)** | `int\|string` | Holds a key down |
+| **input.ReleaseKey(vKey)** | `int\|string` | Releases a key |
+| **input.Type(text, time?)** | `string, int?` | Types text character by character with an optional delay between characters |
 
 ### Example
 
@@ -515,16 +861,18 @@ Sandboxed file system operations. Requires the File_Management library to be ena
 
 Requires: File_Management library enabled
 
-All operations are sandboxed to `{workspaceDir}/scripts/SandboxEnv/`. Path traversal (`..`) is blocked.
+All operations are sandboxed to `%LOCALAPPDATA%\Penguu\Sheldon\scripts\SandboxEnv\`. Absolute paths, drive names and `..` components are rejected. `write` and `rename` create parent folders as needed.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **file.write(location, content)** | `string, string` | Write file |
-| **file.read(location)** | `string` | Read file |
-| **file.rename(location, newName)** | `string, string` | Rename/move file |
-| **file.delete(location)** | `string` | Delete file |
-| **file.list(location)** | `string` | List directory |
-| **file.append(location, content)** | `string, string` | Append to file |
+| **file.write(location, content)** | `string, string` | Writes or truncates a file. Content is limited to 10 MB. |
+| **file.read(location)** | `string` | Reads a file as binary text. Files over 10 MB raise an error. |
+| **file.rename(location, newName)** | `string, string` | Moves or renames a file inside the sandbox. Both paths are resolved inside the sandbox. |
+| **file.delete(location)** | `string` | Deletes a file. Missing paths raise an error. |
+| **file.list(location)** | `string` | Returns an array of entry names. Stops after 256 entries and does not recurse. |
+| **file.append(location, content)** | `string, string` | Appends to a file, creating it if needed. The resulting file is capped at 10 MB. |
+
+The path argument autocompletes from the sandbox directory.
 
 ### Example
 
@@ -539,12 +887,14 @@ file.delete("config.txt")
 
 ## utility
 
-System clipboard access.
+System clipboard access. Requires the Clipboard library to be enabled.
+
+Requires: Clipboard library enabled
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **utility.GetClipboard()** |  | Get clipboard text |
-| **utility.SetClipboard(text)** | `string` | Set clipboard text |
+| **utility.GetClipboard()** |  | Returns clipboard text, or an empty string when the clipboard is locked or holds no ANSI text |
+| **utility.SetClipboard(text)** | `string` | Replaces the clipboard with ANSI text |
 
 ### Example
 
@@ -554,22 +904,44 @@ local text = utility.GetClipboard()
 print(text)
 ```
 
-`GetClipboard` / `SetClipboard` require `Clipboard` library enabled.
+Both functions raise `Clipboard library is not enabled` when the gate is off. They use the Win32 clipboard directly, so they only see `CF_TEXT` content; images and Unicode-only formats are not returned.
 
 ---
 
 ## entity
 
-Custom entity management system.
+Adds non-player models to the same cache the built-in ESP, targeting and combat modules read.
+
+An entity is a regular character model with a fake negative user id. Once added, it behaves like a player for ESP, aimbot and other modules that read the player cache. The local character cannot be added.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **entity.AddEntity(key, data)** | `string, table` | Add custom entity. `data` supports: `Character`, `PrimaryPart`, `Name`, `DisplayName`, `Team`, `TeamColor`, `DoTeamCheck`, `Humanoid`, `MaxHealth`, `Health`, `RemoveOnDeath`, `Bones` |
-| **entity.EditEntity(key, data)** | `string, table` | Edit entity data |
-| **entity.RemoveEntity(key)** | `string` | Remove entity |
-| **entity.Clear()** |  | Remove all entities |
-| **entity.GetEntity(key)** | `string` | Get entity data. Returns `Character`, `PrimaryPart`, `Name`, `DisplayName`, `Team`, `Humanoid`, `MaxHealth`, `Health`, `UserId`, `IsEntity` |
-| **entity.GetPlayers(includeEnemies?, includeEntities?)** | `bool?, bool?` | Get players/entities data. Additionally returns: `IsAlive`, `IsCameraVisible`, `IsLocal`, `IsPreview`, `IsTargeted`, `IsFriend`, `IsWhitelisted`, `IsEnemy`, `RigType` |
+| **entity.AddEntity(key, data)** | `string, table` | Adds an entity under `key`. Returns `true` on success, or `false` when the model is the local character. `Character`, `PrimaryPart` and `Name` are required. |
+| **entity.EditEntity(key, data)** | `string, table` | Updates any of the same fields. Missing fields are left unchanged. Returns `false` for an unknown key. |
+| **entity.RemoveEntity(key)** | `string` | Removes the entity and stops its update thread. Returns `false` if the key is unknown. |
+| **entity.Clear()** |  | Removes every entity, not real players. Returns `true`. |
+| **entity.GetEntity(key)** | `string` | Returns the entity table or `nil`. Fields: `Character`, `PrimaryPart`, `Name`, `DisplayName`, `Team`, `Humanoid`, `MaxHealth`, `Health`, `UserId`, `IsEntity`. |
+| **entity.GetPlayers(includeEnemies?, includeEntities?)** | `bool?, bool?` | Returns an array of player and entity tables. Defaults: `includeEnemies = true`, `includeEntities = false`. |
+
+### Entity fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Character` | `Instance` | Required. Model to treat as the character. |
+| `PrimaryPart` | `Instance` | Required. Used as the root part for distance, targeting and ESP. |
+| `Name` | `string` | Required. Shown in ESP and used as the username. |
+| `DisplayName` | `string` | Optional display name, defaults to `Name`. |
+| `Team` | `Team` or `string` | A Team instance, or a team name. A name without a color gets a default color. |
+| `TeamColor` | `Color3` | Used with a string `Team` to build the team's BrickColor. |
+| `DoTeamCheck` | `bool` | When true, compares the entity's team with the local team for `IsEnemy`. |
+| `Humanoid` | `Instance` | Optional Humanoid. Found on the character when omitted. |
+| `MaxHealth` / `Health` | `number` or `function` | A fixed value, or a zero-argument function evaluated whenever health is read. Defaults to the Humanoid values. |
+| `RemoveOnDeath` | `bool` | Removes the entity when the Humanoid dies. Default `false`. |
+| `Bones` | `table` | Optional map of bone name to Instance. Without it, bones are discovered from the character's children using its rig type. |
+
+### Player table
+
+`GetPlayers` returns every field from `GetEntity` plus `IsAlive`, `IsCameraVisible`, `IsLocal`, `IsPreview`, `IsTargeted`, `IsFriend`, `IsWhitelisted`, `IsEnemy` and `RigType` (`"R6"` or `"R15"`).
 
 ### Example
 
@@ -577,69 +949,99 @@ Custom entity management system.
 entity.AddEntity("target", {
     Character = char,
     PrimaryPart = char.HumanoidRootPart,
-    Name = "Player1"
+    Name = "Player1",
+    Team = "Enemies",
+    TeamColor = Color3.new(1, 0.3, 0.3),
+    Health = function()
+        return char.Humanoid.Health
+    end,
 })
+
 local data = entity.GetEntity("target")
-print(data.Name, data.Character)
+if data then
+    print(data.Name, data.Health, data.PrimaryPart.Position)
+end
+
+for _, player in ipairs(entity.GetPlayers(true, true)) do
+    print(player.Name, player.RigType, player.IsEntity)
+end
 ```
 
 ---
 
 ## draw
 
-2D drawing primitives for rendering overlays.
+Immediate 2D primitives drawn on the overlay's background draw list.
 
-| Function | Signature |
-| --- | --- |
-| **draw.Text(text, x, y, color?, font?, alpha?)** | `string, number, number, Color3?, string?, int?` |
-| **draw.TextOutlined(text, x, y, color?, font?, alpha?)** | same |
-| **draw.GetTextSize(text, font?)** | `string, string?` |
-| **draw.Line(x1,y1,x2,y2, color?, thickness?, alpha?)** |  |
-| **draw.Rect(x,y,w,h, color?, thickness?, rounding?, alpha?)** |  |
-| **draw.RectFilled(x,y,w,h, color?, rounding?, alpha?)** |  |
-| **draw.Circle(cx,cy,radius, color?, thickness?, segments?, alpha?)** |  |
-| **draw.CircleFilled(cx,cy,radius, color?, segments?, alpha?)** |  |
-| **draw.Triangle(x1,y1,x2,y2,x3,y3, color?, thickness?, alpha?)** |  |
-| **draw.TriangleFilled(x1,y1,x2,y2,x3,y3, color?, alpha?)** |  |
-| **draw.Gradient(x,y,w,h, startColor, endColor, isHorizontal, startAlpha?, endAlpha?)** |  |
-| **draw.Image(textureId, x,y,w,h, r,g,b,a)** | `int, number,number,number,number, int,int,int,int` |
-| **draw.Polyline(points, color, closed, thickness, alpha?)** | `table, Color3, bool, number, int?` |
-| **draw.ConvexPolyFilled(points, color, alpha?)** |  |
-| **draw.ComputeConvexHull(points)** | `table` |
-| **draw.GetPartCorners(part)** | `Instance` |
-| **draw.DeltaTime()** |  |
+All functions draw immediately. Call them from `cheat.Register("onPaint", ...)`, an ESP `draw` callback, or a `gui.AddTab` callback. Coordinates are pixels in the overlay window. Colors are `Color3` with 0-1 components unless noted; `alpha` is 0-1.
 
-`draw.GetTextSize` returns `width, height` as two float values.
+| Function | Signature | Description |
+| --- | --- | --- |
+| **draw.Text(text, x, y, color?, font?, alpha?, scale?)** | `string, number, number, Color3?, string?, number?, number?` | Draws text at the top-left. Unknown font names fall back to the default font; `scale` multiplies the font size and skips drawing at 0 or below. |
+| **draw.TextOutlined(text, x, y, color?, font?, alpha?, scale?)** | same | Draws text with a one-pixel black outline on four sides. |
+| **draw.GetTextSize(text, font?, scale?)** | `string, string?, number?` | Returns `width, height`. Returns `0, 0` for a non-positive scale. |
+| **draw.Line(x1, y1, x2, y2, color?, thickness?, alpha?)** | `number x4, Color3?, number?, number?` | Straight line. |
+| **draw.Rect(x, y, w, h, color?, thickness?, rounding?, alpha?)** | `number x4, Color3?, number?, number?, number?` | Rectangle outline. |
+| **draw.RectFilled(x, y, w, h, color?, rounding?, alpha?)** | `number x4, Color3?, number?, number?` | Filled rectangle. |
+| **draw.Circle(cx, cy, radius, color?, thickness?, segments?, alpha?)** | `number x3, Color3?, number?, int?, number?` | Circle outline. Default segments: 12. |
+| **draw.CircleFilled(cx, cy, radius, color?, segments?, alpha?)** | `number x3, Color3?, int?, number?` | Filled circle. Default segments: 12. |
+| **draw.Triangle(x1, y1, x2, y2, x3, y3, color?, thickness?, alpha?)** | `number x6, Color3?, number?, number?` | Triangle outline. |
+| **draw.TriangleFilled(x1, y1, x2, y2, x3, y3, color?, alpha?)** | `number x6, Color3?, number?` | Filled triangle. |
+| **draw.Gradient(x, y, w, h, startColor?, endColor?, isHorizontal?, startAlpha?, endAlpha?)** | `number x4, Color3?, Color3?, bool?, number?, number?` | Two-color rectangle. Defaults: white to black, vertical. |
+| **draw.Image(textureId, x, y, w, h, r, g, b, a)** | `int, number x4, int x4` | Draws an ImGui texture. Color and alpha are 0-255 integers. |
+| **draw.Polyline(points, color?, closed?, thickness?, alpha?)** | `table, Color3?, bool?, number?, number?` | Connects `{ {x, y}, ... }` points. Needs at least two points. |
+| **draw.ConvexPolyFilled(points, color?, alpha?)** | `table, Color3?, number?` | Fills a convex point list. Needs at least three points. |
+| **draw.ComputeConvexHull(points)** | `table` | Returns the convex hull of a point list, as `{ {x, y}, ... }`. |
+| **draw.GetPartCorners(part)** | `Instance` | Returns the eight world-space corners of a part as `Vector3` values, or `nil` for an invalid instance. |
+| **draw.DeltaTime()** |  | Frame delta in seconds. |
 
 ### Example
 
 ```lua
--- Draw overlay text and shapes
-draw.Text("Hello World", 100, 100, Color3.new(1, 1, 1))
-draw.RectFilled(50, 50, 200, 100, Color3.new(1, 0, 0), 4, 0.8)
+local function onPaint()
+    draw.Text("Hello World", 100, 100, Color3.new(1, 1, 1))
+    draw.RectFilled(50, 50, 200, 100, Color3.new(1, 0, 0), 4, 0.8)
+
+    local w, h = draw.GetTextSize("Hello World", nil, 1.2)
+    draw.Rect(98, 98, w + 4, h + 4, Color3.new(0, 0, 0), 1, 0, 0.8)
+end
+
+cheat.Register("onPaint", onPaint)
 ```
 
 ---
 
 ## gui
 
-Overlay GUI management functions.
+Creates scripted tabs in the Sheldon overlay. Draw their contents with imgui or draw.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **gui.AddTab(tabName, func)** | `string, function` | Add a scripted runtime tab |
-| **gui.RemoveTab(tabName)** | `string` | Remove a runtime tab |
-| **gui.IsTab(tabName)** | `string` | Check if tab exists |
-| **gui.GetMenuState(checkForeground?)** | `bool?` | Menu overlay state |
-| **gui.IsForeground()** |  | Roblox is foreground window |
-| **gui.GetWindowSize()** |  | Overlay window dimensions |
+| **gui.AddTab(tabName, callback, showPreview?)** | `string, function, bool?` | Adds or replaces a runtime tab. The callback runs every frame while the tab is rendered. `showPreview` keeps the tab visible when the menu preview is active. |
+| **gui.RemoveTab(tabName)** | `string` | Removes a runtime tab and releases the callback. |
+| **gui.IsTab(tabName)** | `string` | Returns whether a tab with that name exists. |
+| **gui.GetMenuState(checkForeground?)** | `bool?` | Returns whether the menu is open. With `true`, also requires Roblox to be the foreground window. |
+| **gui.IsForeground()** |  | Returns whether Roblox is the foreground window. |
+| **gui.GetWindowSize()** |  | Returns the overlay size as a `Vector2`. |
+
+The tab callback runs on the render thread and must not yield. Do not call `task.wait` inside it. Start work in `task.spawn`, keep state in a Lua table, and render from the callback. The callback also shares the VM lock with every other script, so it is skipped for that frame if the lock is busy for more than 8 ms.
 
 ### Example
 
 ```lua
--- Add a runtime tab
+local enabled = false
+local value = 0
+
 gui.AddTab("My Script", function()
-    print("Tab opened!")
+    imgui.SetNextWindowSize(320, 180, 0)
+    imgui.Begin("My Script", 0)
+
+    local changed
+    changed, enabled = imgui.Checkbox("Enabled", enabled)
+    changed, value = imgui.Slider("Value", value, 0, 100)
+
+    imgui.Text("Value: " .. value)
+    imgui.End()
 end)
 ```
 
@@ -723,34 +1125,36 @@ Dear ImGui-style immediate mode GUI system.
 
 ### Text Utilities
 
-| Function | Signature |
-| --- | --- |
-| **imgui.CalcTextSize(text)** | Returns rendered `width, height` of text |
+| Function | Signature | Description |
+| --- | --- | --- |
+| **imgui.Text(text)** | `string` | Draws unformatted text using ImGui's current text style. Does not interpret `%` placeholders. |
+| **imgui.CalcTextSize(text)** | `string` | Returns the rendered `width, height` of the text. |
 
 ### Widgets
 
-| Function | Signature |
-| --- | --- |
-| **imgui.Button(text, w?, h?)** |  |
-| **imgui.TabButton(text, w?, h?, active?)** |  |
-| **imgui.Checkbox(text, v)** |  |
-| **imgui.Slider(title, v, min, max)** |  |
-| **imgui.SliderInt(title, v, min, max)** |  |
-| **imgui.DragFloat(title, v, speed?, min?, max?, format?, disabled?)** | returns `changed, value` |
-| **imgui.DragInt(title, v, speed?, min?, max?, format?, disabled?)** | returns `changed, value` |
-| **imgui.DragFloat2(title, x, y, speed?, min?, max?, format?, disabled?)** | labeled row, returns `changed, x, y` |
-| **imgui.DragFloat3(title, x, y, z, speed?, min?, max?, format?, disabled?)** | labeled row, returns `changed, x, y, z` |
-| **imgui.InputText(title, v, placeholder, w?, flags?)** |  |
-| **imgui.MultilineInput(title, v, placeholder, w?, flags?)** |  |
-| **imgui.WidgetsText(text, color?, alpha?)** |  |
-| **imgui.BeginContent(title, h?, w?)** |  |
-| **imgui.EndContent()** |  |
-| **imgui.ColorPicker(title, color?, alpha?)** |  |
-| **imgui.ProgressBar(title, value01, width, divisions, align?)** |  |
-| **imgui.Note(text)** |  |
-| **imgui.ListBox(label, items, height?, w?, listHeight?)** |  |
-| **imgui.Dropdown(title, items, current?)** |  |
-| **imgui.Shimmer(w, h)** |  |
+| Function | Signature | Returns / notes |
+| --- | --- | --- |
+| **imgui.Button(text, w?, h?)** | `string, number?, number?` | `true` on click |
+| **imgui.TabButton(text, w?, h?, active?)** | `string, number?, number?, bool?` | `true` on click |
+| **imgui.Checkbox(text, v)** | `string, bool` | `changed, value` |
+| **imgui.TickBox(text, v)** | `string, bool` | Themed tick box. Returns `changed, value` |
+| **imgui.Slider(title, v, min, max)** | `string, number, number, number` | `changed, value` |
+| **imgui.SliderInt(title, v, min, max)** | `string, int, int, int` | `changed, value` |
+| **imgui.DragFloat(title, v, speed?, min?, max?, format?, disabled?)** | `string, number, number?, number?, number?, string?, bool?` | `changed, value`. Default format `"%.3f"` |
+| **imgui.DragInt(title, v, speed?, min?, max?, format?, disabled?)** | `string, int, number?, int?, int?, string?, bool?` | `changed, value`. Default format `"%d"` |
+| **imgui.DragFloat2(title, x, y, speed?, min?, max?, format?, disabled?)** | `string, number x2, ...` | Labeled row, returns `changed, x, y` |
+| **imgui.DragFloat3(title, x, y, z, speed?, min?, max?, format?, disabled?)** | `string, number x3, ...` | Labeled row, returns `changed, x, y, z` |
+| **imgui.InputText(title, v, placeholder, w?, flags?)** | `string, string, string, number?, int?` | `changed, value` |
+| **imgui.MultilineInput(title, v, placeholder, w?, flags?)** | `string, string, string, number?, int?` | `changed, value` |
+| **imgui.WidgetsText(text, color?, alpha?)** | `string, Color3?, number?` | Themed label with optional color. No return. |
+| **imgui.BeginContent(title, h?, w?)** | `string, number?, number?` | Starts a themed content box. Returns whether it is visible / open. |
+| **imgui.EndContent()** |  | Closes the box |
+| **imgui.ColorPicker(title, color?, alpha?)** | `string, Color3?, number?` | `changed, Color3` |
+| **imgui.ProgressBar(title, value01, width, divisions, align?)** | `string, number, number, int, string?` | `align` is `"Left"`, `"Center"` or `"Right"`. No return. |
+| **imgui.Note(text)** | `string` | Small themed note. No return. |
+| **imgui.ListBox(label, items, height?, w?, listHeight?)** | `string, table, int?, number?, number?` | `changed, selected`. `items` is a 1-based array of strings. |
+| **imgui.Dropdown(title, items, current?)** | `string, table, string?` | `changed, current` |
+| **imgui.Shimmer(w, h)** | `number, number` | Loading placeholder. No return. |
 
 ### Drag Widgets
 
@@ -768,39 +1172,39 @@ Dear ImGui-style immediate mode GUI system.
 
 ### Tabs
 
-| Function | Signature |
-| --- | --- |
-| **imgui.BeginTabs(title, enableAnim?)** |  |
-| **imgui.BeginTab(name)** |  |
-| **imgui.EndTab()** |  |
-| **imgui.EndTabs()** |  |
+| Function | Signature | Notes |
+| --- | --- | --- |
+| **imgui.BeginTabs(title, enableAnim?)** | `string, bool?` | Returns whether the tab bar is visible |
+| **imgui.BeginTab(name)** | `string` | Returns whether this tab is selected |
+| **imgui.EndTab()** |  | Closes the current tab |
+| **imgui.EndTabs()** |  | Closes the tab bar |
 
 ### Item State
 
-| Function | Signature |
+| Function | Returns / notes |
 | --- | --- |
-| **imgui.IsItemHovered(flags?)** |  |
-| **imgui.IsItemActive()** |  |
-| **imgui.IsItemFocused()** |  |
-| **imgui.IsItemClicked(btn?)** |  |
-| **imgui.IsAnyItemHovered()** |  |
-| **imgui.IsAnyItemActive()** |  |
-| **imgui.IsAnyItemFocused()** |  |
-| **imgui.GetItemRectMin()** |  |
-| **imgui.GetItemRectMax()** |  |
-| **imgui.GetItemRectSize()** |  |
-| **imgui.IsWindowHovered(flags?)** |  |
-| **imgui.IsWindowFocused(flags?)** |  |
+| **imgui.IsItemHovered(flags?)** | `bool`. Optional ImGui hover flags |
+| **imgui.IsItemActive()** | `bool` |
+| **imgui.IsItemFocused()** | `bool` |
+| **imgui.IsItemClicked(btn?)** | `bool`. Button defaults to 0 (left) |
+| **imgui.IsAnyItemHovered()** | `bool` |
+| **imgui.IsAnyItemActive()** | `bool` |
+| **imgui.IsAnyItemFocused()** | `bool` |
+| **imgui.GetItemRectMin()** | Returns `x, y` |
+| **imgui.GetItemRectMax()** | Returns `x, y` |
+| **imgui.GetItemRectSize()** | Returns `w, h` |
+| **imgui.IsWindowHovered(flags?)** | `bool` |
+| **imgui.IsWindowFocused(flags?)** | `bool` |
 
 ### Columns
 
-| Function | Signature |
-| --- | --- |
-| **imgui.Columns(...)** |  |
-| **imgui.NextColumn()** |  |
-| **imgui.GetColumnIndex()** |  |
-| **imgui.GetColumnWidth()** |  |
-| **imgui.SetColumnWidth()** |  |
+| Function | Signature | Notes |
+| --- | --- | --- |
+| **imgui.Columns(count?, id?, border?)** | `int?, string?, bool?` | Defaults: 1 column, no id, border on |
+| **imgui.NextColumn()** |  | Advances to the next column |
+| **imgui.GetColumnIndex()** |  | Returns the current column index |
+| **imgui.GetColumnWidth(index?)** | `int?` | Defaults to the current column |
+| **imgui.SetColumnWidth(index, width)** | `int, number` | Sets a column's width |
 
 ### Example
 
@@ -831,16 +1235,18 @@ FastFlag (FFlag) reading and writing utilities.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **fflags.Get(name, type, original?)** | `string, string, bool?` | Get an FFlag value |
-| **fflags.Set(name, value)** | `string, any` | Set an FFlag value, auto-deciding the width from its type |
-| **fflags.Set(name, value, type)** | `string, any, string` | Set an FFlag value, explicitly converting it to the given type |
-| **fflags.GetAll()** |  | Get all FFlags. Returns a table of entries, each with `name`, `runtime`, and `original` fields. |
+| **fflags.Get(name, type, original?)** | `string, string, bool?` | Reads a flag as `type`. `original` reads the startup value instead of the current value. Returns `nil` for an unknown flag or unsupported read type. |
+| **fflags.Set(name, value)** | `string, any` | Writes a flag, choosing the width from the value. Returns `true`, or `nil` if the flag does not exist. |
+| **fflags.Set(name, value, type)** | `string, any, string` | Writes a flag with an explicit type. Returns `true`, or `nil` for an unknown flag or unsupported write type. |
+| **fflags.GetAll()** |  | Returns an array of `{ name, runtime, original }` entries for every loaded flag. |
 
 ### Types
 
 `float`, `double`, `int`, `uint`, `bool`, `byte`, `short`, `ushort`, `int64`, `uint64`, `string`. Set also supports `pointer`.
 
 When `Set` is called without a type, the width is decided from the value: integers in int32 range → `int32` (larger → `int64`), floats → `float`, booleans → `bool`, strings → `string`.
+
+Flag names are read from the client's FFlag name cache and autocomplete from the first string argument. The type argument autocompletes the read or write types.
 
 ### Example
 
@@ -855,64 +1261,84 @@ fflags.Set("FFlagEnableVR", true, "bool")
 
 ## Instance
 
-The core Roblox instance type. Access instances via game, Instance constructors, or methods.
+The wrapper around a live Roblox instance. Access instances through game, services, properties and child lookups.
 
 ### Properties
 
 | Property | Type | Access | Description |
 | --- | --- | --- | --- |
-| **Name** | `string` | RW | Instance name |
+| **Name** | `string` | RW | Instance name. Cannot be set on the DataModel. |
 | **ClassName** | `string` | RO | Class name |
-| **Parent** | `Instance` | RW | Parent instance |
+| **Parent** | `Instance` | RO | Parent instance. Re-parenting is not exposed. |
 | **Address** | `uintptr` | RO | Raw memory address |
 | **FullName** | `string` | RO | Full hierarchical path |
+
+Every class property the VM can read is also available as a field. That includes the hand-written classes and everything in the game's reflection table. [Auto Complete](#/autocomplete) lists them per class. Read-only properties raise `'name' is read-only` when assigned.
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| **:FindFirstChild(name)** | `Instance\|nil` | Find first child by name |
-| **:WaitForChild(name, timeout?)** | `Instance\|nil` | Wait for child to appear |
-| **:FindFirstChildOfClass(className)** | `Instance\|nil` | Find first child of class |
-| **:FindDescendants(name)** | `table` | Find all descendants by name |
-| **:FindDescendantsOfClass(className)** | `table` | Find all descendants of class |
+| **:FindFirstChild(name)** | `Instance\|nil` | Finds a direct child by exact name |
+| **:WaitForChild(name, timeout?)** | `Instance\|nil` | Polls for a child every 25 ms until it appears or the timeout in seconds expires. This blocks the calling thread; do not use it in a render callback. |
+| **:FindFirstChildOfClass(className)** | `Instance\|nil` | Finds a direct child by class |
+| **:FindDescendants(name)** | `table` | Returns every descendant with that name |
+| **:FindDescendantsOfClass(className)** | `table` | Returns every descendant of that class |
 | **:GetChildren()** | `table` | Direct children |
 | **:GetDescendants()** | `table` | All descendants |
 | **:Ancestors()** | `table` | All ancestors |
-| **:IsDescendantOf(ancestor)** | `bool` | Check ancestry |
-| **:IsA(className)** | `bool` | Check class |
-| **:IsAncestorOf(descendant)** | `bool` | Check if is ancestor |
-| **:GetAttributes()** | `table` | Attribute table |
-| **:GetAttribute(name)** | `string\|nil` | Get attribute |
-| **:SetAttribute(name, value)** |  | Set attribute |
-| **:GetTags()** | `table` | Collection tags |
-| **:HasTag(tag)** | `bool` | Check tag |
-| **:RenameTag(oldName, newName)** |  | Rename tag |
-| **:GetPropertyChangedSignal(property)** | `RBXScriptSignal` | Returns a signal that fires when the given property changes |
+| **:IsDescendantOf(ancestor)** | `bool` | Whether this instance is below `ancestor` |
+| **:IsA(className)** | `bool` | Exact `ClassName` comparison. Unlike Roblox's `IsA`, base classes do not match. |
+| **:IsAncestorOf(descendant)** | `bool` | Whether this instance is above `descendant` |
+| **:GetAttributes()** | `table` | Returns a table with attribute names as keys and a matching array of names |
+| **:GetAttribute(name)** | `string\|nil` | Reads a string attribute. Non-string attributes return `nil`. |
+| **:SetAttribute(name, value)** |  | Writes an existing attribute. Supports `double`, `float`, `bool`, `int`, `Vector3` and `string` attributes. Unknown names and unsupported types are ignored. |
+| **:GetTags()** | `table` | Array of collection tags |
+| **:GetTag(tag)** | `string\|nil` | Returns the tag when present |
+| **:HasTag(tag)** | `bool` | Checks for a tag |
+| **:AddTag(tag)** | `bool` | Adds a tag |
+| **:RemoveTag(tag)** | `bool` | Removes a tag |
+| **:RenameTag(oldName, newName)** |  | Renames a tag |
+| **:GetPropertyChangedSignal(property)** | `RBXScriptSignal` | Returns a signal that fires when the property changes |
+
+### Signals
+
+| Signal | Arguments | Description |
+| --- | --- | --- |
+| **Changed** | `propertyName, newValue` | Fires when a registered or reflected property changes |
+| **ChildAdded** | `child` | Fires for new direct children |
+| **DescendantAdded** | `descendant` | Fires for new descendants |
+| **GetPropertyChangedSignal(property)** |  | Per-property signal, same connection API |
 
 #### Example
 
 ```lua
-local part = workspace.Part
+local Workspace = game:GetService("Workspace")
+local part = Workspace.Part
+
 local sig = part:GetPropertyChangedSignal("Position")
 sig:Connect(function()
     print("Position changed!")
 end)
+
+part.ChildAdded:Connect(function(child)
+    print("new child:", child.Name, child.ClassName)
+end)
 ```
 
-### Meta-Behavior
+`Changed`, `ChildAdded` and `DescendantAdded` are derived by polling the instance tree. They fire from the VM's scheduler, not from Roblox's own event system.
 
-- `instance.PropertyName` first checks built-in properties, then registered class properties, then falls back to child lookup by name.
+### Property lookup
 
-- Setting properties respects read-only flags.
+- `instance.PropertyName` checks the built-in properties, then the three signals above, then the class property map, then the game's reflected property table, then direct children by name.
 
-- `instance.Changed` returns an `RBXScriptSignal` that fires when any registered class property changes. Usage: `instance.Changed:Connect(function(propertyName, newValue) ... end)`.
+- Writing goes through the class property map and then reflected properties. Read-only fields raise an error. `ClassName`, `Parent`, `Address`, `FullName` and the built-in signals cannot be assigned.
 
-- `for k, v in pairs(instance) do ... end` iterates over built-in properties, class properties, and children.
+- `for k, v in pairs(instance) do ... end` builds a snapshot table of built-ins, class properties, reflected properties and children.
 
 ### DataModel
 
-Both `game` and `Game` resolve to the Roblox `DataModel` instance.
+The global `game` is the Roblox `DataModel`. There is no `Game` or `workspace` global; use `game:GetService("Workspace")`.
 
 `DataModel` inherits from `Instance`, so all Instance methods are available.
 
@@ -931,359 +1357,26 @@ local RunService = game:GetService("RunService")
 
 ## RemoteEvent
 
-FireServer, InvokeServer, and bidirectional remote spy – extra members added to RemoteEvent, UnreliableRemoteEvent, and RemoteFunction instances.
+RemoteEvent, UnreliableRemoteEvent and RemoteFunction use the standard Instance API in this build.
 
-These members appear on top of the standard [Instance](#/instance) API for any instance whose `ClassName` matches. Reading a spy signal auto-installs the underlying hook on first read – you don't need to opt in ahead of time.
+**No extra Lua members:** this build does not add `FireServer`, `InvokeServer`, `OnFireServer`, `OnClientEvent` or the other remote-spy signals to remote instances. The engine has an internal remote spy, but it is not exposed to Lua yet.
 
-Remotes parented anywhere under `RobloxReplicatedStorage` are treated as protected – trying to access the spy on them errors with `Protected `.
-
-### Methods
-
-| Method | Applies to | Description |
-| --- | --- | --- |
-| **FireServer(...)** | `RemoteEvent`, `UnreliableRemoteEvent` | Fires the remote to the server with the given args. |
-| **InvokeServer(...)** | `RemoteFunction` | Invokes the remote against the server with the given args. Currently fire-and-forget – the server WILL reply but the return value is not routed back to Lua yet, so this returns `nil`. If you need the reply value, pair a `RemoteEvent` both directions instead. |
-
-#### Example
+Remote instances still support every [Instance](#/instance) property and method: `Name`, `ClassName`, `Parent`, `FullName`, children, attributes, tags and signals. Find them like any other object:
 
 ```lua
-local rem = game:GetService("ReplicatedStorage").Events.MyEvent
-rem:FireServer("hello", 42, true)
+local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+local event = remotes and remotes:FindFirstChild("MyEvent")
 
--- Instances, nested arrays, and string-keyed dicts are all supported.
-rem:FireServer(
-    game:GetService("Players").LocalPlayer,
-    { 1, 2, 3 },
-    { action = "buy", itemId = 7, meta = { source = "shop" } }
-)
-
-local func = game:GetService("ReplicatedStorage").Functions.RequestInventory
-func:InvokeServer("get", { slot = 1 })  -- returns nil for now
+if event then
+    print(event.ClassName, event.Name, event.FullName)
+end
 ```
-
-### Outgoing spy (client → server)
-
-Fires whenever anything in the game (Lua, C++, other exploits) sends args from this client to the server through the remote. One shared hook per class covers every instance – the first read installs it.
-
-| Member | Type | Description |
-| --- | --- | --- |
-| **OnFireServer** | `RBXScriptSignal` | Callback fires with the args when this `RemoteEvent` / `UnreliableRemoteEvent` is fired to the server. |
-| **OnServerEvent** | `RBXScriptSignal` | Alias for `OnFireServer`. |
-| **OnInvokeServer** | `RBXScriptSignal` | Callback fires with the args when this `RemoteFunction` is invoked against the server. `RemoteFunction` only. |
-| **OnServerInvoke** | `RBXScriptSignal` | Alias for `OnInvokeServer`. |
-
-#### Example
-
-```lua
-local rem = game:GetService("ReplicatedStorage").Events.MyEvent
-
-rem.OnFireServer:Connect(function(...)
-    print("FireServer intercepted:", ...)
-end)
-
--- :Wait() yields the coroutine and returns the next fire's args.
-task.spawn(function()
-    local a, b, c = rem.OnFireServer:Wait()
-    print("first fire:", a, b, c)
-end)
-
-local func = game:GetService("ReplicatedStorage").Functions.GetInventory
-func.OnInvokeServer:Connect(function(...)
-    print("InvokeServer intercepted:", ...)
-end)
-```
-
-### Incoming spy (server → client)
-
-Fires whenever the server sends args to this client through the remote. Hooked per-instance – the first read installs one shared hooked vtable per unique class-vptr, then every subsequent instance is cheap. Callback receives the args the server sent.
-
-| Member | Type | Description |
-| --- | --- | --- |
-| **OnClientEvent** | `RBXScriptSignal` | Callback fires with the args when the server sends to this client through the `RemoteEvent` / `UnreliableRemoteEvent`. |
-| **OnClientInvoke** | `RBXScriptSignal` | Callback fires with the args when the server invokes this `RemoteFunction` against the client. Purely observational – the connect does not assign a return value the server sees. `RemoteFunction` only. |
-
-#### Example
-
-```lua
-local rem = game:GetService("ReplicatedStorage").Events.MyEvent
-
-rem.OnClientEvent:Connect(function(...)
-    print("server -> client:", ...)
-end)
-
-local func = game:GetService("ReplicatedStorage").Functions.GetInventory
-func.OnClientInvoke:Connect(function(...)
-    print("server invoked us with:", ...)
-end)
-```
-
----
-
-## Class Properties
-
-Registered class properties for common Roblox classes.
-
-### Part / MeshPart (BasePart)
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Transparency | float | RW |
-| Reflectance | float | RW |
-| Position | Vector3 | RW |
-| Size | Vector3 | RW |
-| LinearVelocity | Vector3 | RW |
-| AngularVelocity | Vector3 | RW |
-| Rotation | Vector3 (euler) | RW |
-| RightVector | Vector3 | RO |
-| UpVector | Vector3 | RO |
-| ForwardVector | Vector3 | RO |
-| Anchored | bool | RW |
-| CanCollide | bool | RW |
-| Color | Color3 | RW |
-
-### Humanoid
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Health | float | RW |
-| MaxHealth | float | RW |
-| WalkSpeed | float | RW |
-| JumpPower | float | RW |
-| JumpHeight | float | RW |
-| HipHeight | float | RW |
-| MaxSlopeAngle | float | RW |
-| PlatformStand | bool | RW |
-| AutoRotate | bool | RW |
-| UseJumpPower | bool | RW |
-| Sit | bool | RW |
-
-### Player
-
-| Property | Type | Access |
-| --- | --- | --- |
-| UserId | uintptr | RO |
-| DisplayName | string | RO |
-| Character | Instance | RO |
-| CameraMode | int | RW |
-| NetworkPing | float | RO |
-
-`NetworkPing` returns the player's ping in ms. Only non-nil for `LocalPlayer`.
-
-### Players
-
-| Property | Type | Access |
-| --- | --- | --- |
-| LocalPlayer | Instance (Player) | RO |
-| GetPlayers | function | RO |
-| PlayerAdded | RBXScriptSignal | RO |
-| PlayerRemoving | RBXScriptSignal | RO |
-
-### Camera
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Fov | float | RW |
-| Position | Vector3 | RW |
-| Subject | Instance\|nil | RW |
-| CameraType | int | RW |
-
-### Workspace
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Gravity | float | RW |
-
-### Lighting
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Brightness | float | RW |
-| FogStart | float | RW |
-| FogEnd | float | RW |
-| ClockTime | float | RW |
-| Exposure | float | RW |
-| Latitude | float | RW |
-| GlobalShadows | bool | RW |
-| FogColor | Color3 | RW |
-| Ambient | Color3 | RW |
-| ColorShiftTop | float | RW |
-| ColorShiftBottom | float | RW |
-| SkyTopAmbient | Color3 | RW |
-| SkyBottomAmbient | Color3 | RW |
-| LightColor | Color3 | RW |
-| LightDirection | Vector3 | RW |
-| TrueSunPosition | Vector3 | RW |
-| TrueMoonPosition | Vector3 | RW |
-| Sky | Instance | RO |
-| Atmosphere | Instance | RO |
-| SunRays | Instance | RO |
-| ColorCorrection | Instance | RO |
-
-### Sky
-
-| Property | Type | Access |
-| --- | --- | --- |
-| SkyboxBk / SkyboxDn / SkyboxFt / SkyboxLf / SkyboxRt / SkyboxUp | string | RW |
-| MoonTextureId | string | RW |
-| MoonSize | float | RW |
-| SunTextureId | string | RW |
-| SunSize | float | RW |
-| StarCount | int | RW |
-| SkyboxOrientation | Vector3 | RW |
-
-### Atmosphere
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Color | Color3 | RW |
-| Decay | Color3 | RW |
-| Glare | float | RW |
-| Haze | float | RW |
-| Density | float | RW |
-
-### SunRays
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Intensity | float | RW |
-| Spread | float | RW |
-
-### ColorCorrection
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Brightness | float | RW |
-| Contrast | float | RW |
-| Saturation | float | RW |
-| TintColor | Color3 | RW |
-
-### Teams
-
-| Property | Type | Access |
-| --- | --- | --- |
-| GetPlayers | function(team) | RO |
-
-### FriendService
-
-| Property | Type | Access |
-| --- | --- | --- |
-| FriendsStatus | function() | RO |
-| GetFriendStatus | function(userId, otherUserId?) | RO |
-
-### Value Objects
-
-`IntValue`, `BoolValue`, `StringValue`, `NumberValue`, `ObjectValue`, `Color3Value`, `Vector3Value` – all have a single `Value` property of their respective type (RW).
-
-### Animation
-
-| Property | Type | Access |
-| --- | --- | --- |
-| AnimationId | string | RW |
-
-### Animator
-
-| Property | Type | Access |
-| --- | --- | --- |
-| ActiveAnimations | function() | RO |
-
-### AnimationTrack
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Speed | float | RW |
-| TimePosition | float | RO |
-| Influence | float | RW |
-| Animation | Instance | RO |
-| Animator | Instance | RO |
-
-### VehicleSeat
-
-| Property | Type | Access |
-| --- | --- | --- |
-| MaxSpeed | float | RW |
-| Torque | float | RW |
-| TurnSpeed | float | RW |
-
-### ProximityPrompt
-
-| Property | Type | Access |
-| --- | --- | --- |
-| HoldDuration | float | RW |
-
-### GuiObject (base class for GUI elements)
-
-Inherited by `Frame`, `TextLabel`, `TextBox`, `TextButton`, `ImageLabel`, `ScreenGui`.
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Rotation | float | RW |
-| Size | UDim2 | RW |
-| Position | UDim2 | RW |
-| BackgroundColor3 | Color3 | RW |
-| BorderColor3 | Color3 | RW |
-| Visible | bool | RW |
-
-### ScreenGui
-
-Inherits all `GuiObject` properties.
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Enabled | bool | RW |
-| DisplayOrder | int | RW |
-| ResetOnSpawn | bool | RW |
-| IgnoreGuiInset | bool | RW |
-| AbsoluteSize | Vector2 | RO |
-| AbsolutePosition | Vector2 | RO |
-
-### TextLabel
-
-Inherits all `GuiObject` properties.
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Text | string | RW |
-| TextColor3 | Color3 | RW |
-
-### TextBox
-
-Inherits all `GuiObject` properties.
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Text | string | RW |
-| PlaceholderText | string | RW |
-| TextColor3 | Color3 | RW |
-| PlaceholderColor3 | Color3 | RW |
-
-### TextButton
-
-Inherits all `GuiObject` properties.
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Text | string | RW |
-| TextColor3 | Color3 | RW |
-
-### ImageLabel
-
-Inherits all `GuiObject` properties.
-
-| Property | Type | Access |
-| --- | --- | --- |
-| Image | string | RW |
-| ImageColor3 | Color3 | RW |
-| ImageTransparency | float | RW |
-
-### Frame
-
-Inherits all `GuiObject` properties. No additional own properties.
 
 ---
 
 ## Custom Types
 
-Vector3, Vector2, Color3, UDim, and UDim2 types with Roblox-like semantics.
+The five value types the VM binds: Vector3, Vector2, Color3, UDim and UDim2. They are not Roblox userdata and do not have the full Roblox API.
 
 ### Vector3
 
@@ -1293,15 +1386,13 @@ Vector3.new(x, y, z)
 Vector3.new(n)          -- (n, n, n)
 ```
 
-| Member | Type |
-| --- | --- |
-| .x | float |
-| .y | float |
-| .z | float |
-| .Magnitude | float (RO) |
-| .Unit | Vector3 (RO) |
+| Member | Type | Description |
+| --- | --- | --- |
+| .x / .y / .z | float | Mutable components |
+| .Magnitude | float | Read-only length |
+| .Unit | Vector3 | Read-only normalized vector; zero stays zero |
 
-**Operators:** `+`, `-`, `*`, `/`, unary `-`
+**Operators:** `+`, `-`, `*`, `/` component-wise with another Vector3 or a Vector2 (the z component is kept), unary `-`, and `tostring`. Scalar multiplication and division are not bound.
 
 ### Vector2
 
@@ -1311,20 +1402,21 @@ Vector2.new(x, y)
 Vector2.new(n)          -- (n, n)
 ```
 
-| Member | Type |
-| --- | --- |
-| .x | float |
-| .y | float |
-| .Magnitude | float (method) |
-| .Unit | Vector2 (RO) |
+| Member | Type | Description |
+| --- | --- | --- |
+| .x / .y | float | Mutable components |
+| **:Magnitude()** | float | Method, not a property. Call `v:Magnitude()`. |
+| .Unit | Vector2 | Read-only normalized vector |
+
+**Operators:** `+`, `-`, `*`, `/` with another Vector2 or Vector3 (the result is a Vector3), unary `-`, and `tostring`.
 
 ### Color3
 
 ```lua
-Color3.new(r, g, b)     -- values > 1 are divided by 255
-Color3.fromRGB(r, g, b)
-Color3.fromHSV(h, s, v)
-Color3.fromHex(string)
+Color3.new(r, g, b)     -- if any component is > 1, all are divided by 255
+Color3.fromRGB(r, g, b) -- 0-255 integers
+Color3.fromHSV(h, s, v) -- h is 0-360 degrees
+Color3.fromHex("#ff8800")
 ```
 
 | Member | Type |
@@ -1333,14 +1425,14 @@ Color3.fromHex(string)
 | .g | float |
 | .b | float |
 
-**Static constants:** `.White`, `.Red`, `.Green`, `.Blue`, `.Yellow`, `.Black`
+**Static values are functions:** `Color3.White()`, `Color3.Red()`, `Color3.Green()`, `Color3.Blue()`, `Color3.Yellow()`, `Color3.Black()`. Calling them without parentheses returns a function, not a color.
 
 ### UDim
 
 ```lua
-UDim.new()                -- UDim(0, 0)
-UDim.new(scale)           -- UDim(scale, 0)
-UDim.new(scale, offset)   -- UDim(scale, offset)
+local u = UDim.new()   -- UDim(0, 0)
+u.Scale = 0.5
+u.Offset = 10
 ```
 
 | Property | Type | Access |
@@ -1348,17 +1440,17 @@ UDim.new(scale, offset)   -- UDim(scale, offset)
 | .Scale | float | RW |
 | .Offset | int | RW |
 
-**Operators:** `+`, `-`, `tostring`
+`UDim.new` only accepts zero arguments. Use a `UDim2`'s `X` / `Y` fields, or create an empty UDim and assign the fields. Operators: `+`, `-`, `tostring`.
 
 ### UDim2
 
 ```lua
-UDim2.new()                                          -- UDim2(0,0, 0,0)
-UDim2.new(UDim x, UDim y)                          -- UDim2
-UDim2.new(float xs, int xo, float ys, int yo)       -- UDim2
-UDim2.fromScale(float xs, float ys)                 -- UDim2
-UDim2.fromOffset(int xo, int yo)                    -- UDim2
-UDim2.Lerp(UDim2 a, UDim2 b, float alpha)          -- UDim2
+UDim2.new()                                          -- 0,0, 0,0
+UDim2.new(UDim x, UDim y)
+UDim2.new(float xs, int xo, float ys, int yo)
+UDim2.fromScale(float xs, float ys)
+UDim2.fromOffset(int xo, int yo)
+UDim2.Lerp(UDim2 a, UDim2 b, float alpha)
 ```
 
 | Property | Type | Access |
@@ -1366,7 +1458,7 @@ UDim2.Lerp(UDim2 a, UDim2 b, float alpha)          -- UDim2
 | .X | UDim | RW |
 | .Y | UDim | RW |
 
-**Operators:** `+`, `-`, `tostring`
+Operators: `+`, `-`, `tostring`. `UDim2.Lerp` is a static function on the type table, not a method on a value.
 
 #### Example
 
@@ -1375,43 +1467,92 @@ local u = UDim2.fromOffset(100, 50)
 local v = UDim2.new(0.5, 0, 0, 20)
 local result = u + v
 
-local udim = UDim.new(0.5, 10)
+local udim = UDim.new()
+udim.Scale = 0.5
+udim.Offset = 10
 print(udim.Scale, udim.Offset)
+
+print(Color3.Red())
 ```
 
 ---
 
 ## RBXScriptSignal (Events)
 
-Roblox-style event connection system.
+Roblox-style connections backed by the VM scheduler.
 
 ```lua
-local connection = signal:Connect(fn)
-connection:Disconnect()
-connection:Stop()
+local connection = signal:Connect(function(...)
+    print(...)
+end)
 
-local result = signal:Wait()  -- yields coroutine
+connection:Disconnect()  -- removes only this callback
+connection:Stop()        -- stops the script slot that owns the callback
+
+-- Inside a coroutine: yields until the next fire and returns its arguments.
+task.spawn(function()
+    local a, b = signal:Wait()
+end)
 ```
+
+`Connect` returns a connection table. `Wait` raises `Cannot call Wait on the main thread - use task.spawn` when called from the script body, because it needs a coroutine to suspend.
+
+Callbacks run on the VM worker thread. They can yield. An error inside a callback is caught and does not disconnect the other callbacks.
 
 ### Built-in Signals
 
-| Signal | Description |
-| --- | --- |
-| **Players.PlayerAdded** | Fires when a new player is detected |
-| **Players.PlayerRemoving** | Fires when a player leaves |
+| Signal | Arguments | Description |
+| --- | --- | --- |
+| **Players.PlayerAdded** | `Player` | Fires when a new player is detected |
+| **Players.PlayerRemoving** | `Player` | Fires when a player leaves |
+| **Player.CharacterAdded** | `Model` | Fires when the player's character spawns |
+| **Player.CharacterRemoving** | `Model` | Fires before the character is removed |
+| **Player.CharacterAppearanceLoaded** | `Model` | Fires after the character's appearance loads |
+| **Instance.Changed** | `propertyName, newValue` | Fires when a registered or reflected property changes |
+| **Instance.ChildAdded** | `child` | Fires for new direct children |
+| **Instance.DescendantAdded** | `descendant` | Fires for new descendants |
+| **Instance:GetPropertyChangedSignal(name)** |  | Per-property signal with the same connection API |
+
+`PlayerAdded`, `PlayerRemoving` and the character signals are registered on the `Player` / `Players` classes. Instance signals and property signals are derived by polling the instance tree from the scheduler, so they can arrive a scheduler tick late.
+
+### Example
+
+```lua
+local Players = game:GetService("Players")
+
+Players.PlayerAdded:Connect(function(player)
+    print("joined:", player.Name, player.UserId)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    print("left:", player.Name)
+end)
+
+local player = Players.LocalPlayer
+if player then
+    player.CharacterAdded:Connect(function(character)
+        print("spawned:", character.Name)
+    end)
+end
+```
 
 ---
 
 ## Library Gating
 
-Some libraries must be explicitly enabled before use.
+Five libraries are switched off by default and throw until enabled in the Lua VM settings.
 
-| Library | Gated Functions |
-| --- | --- |
-| **Memory** | All `memory.*` |
-| **Clipboard** | `utility.GetClipboard`, `utility.SetClipboard` |
-| **File_Management** | All `file.*` |
-| **Input** | All `input.*` |
+| Library | Gated functions | Error |
+| --- | --- | --- |
+| **Memory** | All `memory.*` | `'Memory' library is not enabled` |
+| **Clipboard** | `utility.GetClipboard`, `utility.SetClipboard` | `Clipboard library is not enabled` |
+| **File_Management** | All `file.*` | `'File_Management' library is not enabled` |
+| **Input** | All `input.*` | `'Input' library is not enabled` |
+| **Internet** | All `internet.*` | `'Internet' library is not enabled` |
+
+Open the Lua VM's Settings popup and enable the toggle under **Libraries**. The change applies to the running VM immediately; scripts do not need to be restarted. Toggles are not persisted across a full Sheldon restart in this build.
+
+[Auto Complete](#/autocomplete) marks a disabled library's members as `[Disabled]` and inserts the name without making it callable.
 
 ---
 
@@ -1419,24 +1560,34 @@ Some libraries must be explicitly enabled before use.
 
 Additional implementation details and behavior notes.
 
-- Compound assignments (`+=`, `-=`, `*=`, `/=`, `**=`) are automatically expanded before execution.
+- The VM runs Lua 5.4, not Luau. Only `base`, `math`, `table` and `string` are opened. There is no `coroutine`, `os`, `io`, `utf8`, `bit32` or `debug` library exposed to scripts.
 
-- `pcall` and `xpcall` are overridden to support script interruption.
+- Luau type ascriptions (`local x: Type`, `value :: Type`) are removed before compilation. Compound assignments `+=`, `-=`, `*=`, `/=`, `%=`, `**=`, `..=`, `&=`, `|=`, `>=` are expanded. `continue`, generalized iteration and Luau-only syntax are not supported.
 
-- Scripts can be interrupted mid-execution via a Lua instruction hook (every 10 instructions) that checks the stop flag.
+- `pcall` and `xpcall` are replaced so a stopped script can interrupt protected calls. The VM also checks its stop flag from a Lua instruction hook every 10 instructions.
 
-- File operations are sandboxed; path traversal (`..`) is blocked.
+- Scripts run on a worker thread. `task.wait` and `RBXScriptSignal:Wait` need a coroutine and raise on the main script body. `WaitForChild` blocks the calling thread instead of yielding.
 
-- `print()` outputs with prefix `[print]`; `warn()` outputs with prefix `[warn]`.
+- `print()` writes with a `[print]` prefix and `warn()` with `[warn]`. Runtime errors go to the console as `[error]`.
 
-- `tick()` returns `GetTickCount64()` – milliseconds since system start (not UNIX time).
+- `tick()` returns `GetTickCount64()`, milliseconds since system start, not UNIX time.
 
-- `loadstring` returns `(function, nil)` on success or `(nil, error_message)` on failure.
+- `loadstring` also strips type ascriptions. It returns `(function, nil)` or `(nil, error_message)`.
 
-- Instance property access via `__index` checks built-in properties first, then registered class properties, then falls back to child lookup by name.
+- Instance reads check built-ins, signals, the class property map, the game's reflected properties, then direct children. Writes go through the class map and reflected properties. Read-only writes raise an error; they do not fail silently.
 
-- Property writes respect read-only flags – silently fail on RO properties like `Address`, `FullName`, `RightVector`, `UpVector`, `ForwardVector`, etc.
+- `Instance:IsA` compares the exact `ClassName`; base classes do not match. `Parent` is read-only in this build.
 
-- Both `game` and `Game` globals resolve to the Roblox DataModel instance.
+- `game` is the only DataModel global. There is no `Game` or `workspace` global; use `game:GetService("Workspace")`.
 
-- Compressed data from `compress.Compress` does NOT store the original size, but `compress.Decompress` expects it. This is a known inconsistency – Compress and Decompress are currently incompatible.
+- `string.regex` uses C++ `std::regex` with ECMAScript syntax, so it expects `\d+`, not Lua's `%d+`.
+
+- File, HTTP response, HTTP request-body, base64, hash and compress inputs are capped at 10 MB. File listings stop at 256 entries.
+
+- HTTP requires `https://` unless Require HTTPS is turned off in the Lua VM settings. Timeouts are 1-15000 ms, default 5000.
+
+- `compress.Compress` does not store the original size, but `compress.Decompress` expects a 4-byte header. The two functions do not round-trip in this build.
+
+- Remote spy members and `FireServer` / `InvokeServer` are not exposed to Lua. Remote instances use the standard Instance API.
+
+- The old Class Properties page is deprecated. The live property list comes from [Auto Complete](#/autocomplete) and the game's reflection table.

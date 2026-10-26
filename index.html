@@ -15,7 +15,7 @@
     <meta property="og:title" content="Project Sheldon – Advanced Roblox Development">
     <meta property="og:description" content="A feature-rich, actively maintained developer tool for Roblox.">
     <meta property="og:url" content="https://www.projectsheldon.me/">
-    <meta property="og:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=halloween-2026w43r7">
+    <meta property="og:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=default-2026w44r1">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Project Sheldon – Advanced Roblox Development">
@@ -23,7 +23,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Project Sheldon – Advanced Roblox Development">
     <meta name="twitter:description" content="A feature-rich, actively maintained developer tool for Roblox.">
-    <meta name="twitter:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=halloween-2026w43r7">
+    <meta name="twitter:image" content="https://www.projectsheldon.me/favicon/og-image.png?v=default-2026w44r1">
     <script src="https://cdn.tailwindcss.com?warn=false" onerror="var f=document.createElement('link');f.rel='stylesheet';f.href='./tailwind-fallback.css';document.head.appendChild(f)"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -345,112 +345,683 @@
             transform: scale(1.02);
         }
 
-        /* Feature / community info cards */
-        .feature-icon {
-            display: inline-flex;
+        /* Alternating feature rows: text on one side, visual on the other. */
+        .feature-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
             align-items: center;
-            justify-content: center;
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 1rem;
-            background: rgba(199, 177, 143, 0.08);
-            border: 1px solid rgba(199, 177, 143, 0.25);
-            margin-bottom: 1.75rem;
-            transition: all 0.4s ease;
         }
 
-        .feature-card:hover .feature-icon {
-            background: rgba(199, 177, 143, 0.16);
-            border-color: rgba(199, 177, 143, 0.45);
-            box-shadow: 0 0 30px rgba(199, 177, 143, 0.15);
-            transform: translateY(-2px);
+        .feature-row > * {
+            min-width: 0;
         }
 
-        .feature-bullet {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.75);
-            line-height: 1.5;
+        @media (min-width: 900px) {
+            .feature-row {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+                gap: 4.5rem;
+            }
+
+            .feature-row.is-flipped {
+                grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            }
+
+            .feature-row.is-flipped > :last-child {
+                order: -1;
+            }
         }
 
-        .feature-bullet .bullet-check {
-            flex-shrink: 0;
-            width: 1.25rem;
-            height: 1.25rem;
-            margin-top: 0.1rem;
+        .feature-kicker {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
             color: #c7b18f;
         }
 
-        /* Showcase video frames */
-        .showcase-video {
+        .feature-title {
+            font-size: clamp(2rem, 4.2vw, 3.25rem);
+            font-weight: 900;
+            letter-spacing: -0.035em;
+            line-height: 1.02;
+            margin: 0.9rem 0 1.1rem;
+        }
+
+        .feature-copy {
+            color: #8a8a8a;
+            font-size: 1rem;
+            line-height: 1.75;
+            max-width: 32rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin: 1.75rem 0 0;
+            padding: 0;
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.86);
+        }
+
+        .inline-code {
+            display: inline-block;
+            margin: 0 0.1rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 0.4rem;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+            font-size: 0.82em;
+            font-weight: 700;
+            color: #e6d6bb;
+            white-space: nowrap;
+        }
+
+        .feature-list li::before {
+            content: '-';
+            flex-shrink: 0;
+            color: #c7b18f;
+            font-weight: 700;
+        }
+
+        .feature-media {
             position: relative;
+            border-radius: 1.75rem;
+            padding: clamp(1.25rem, 3vw, 2.5rem);
+            background:
+                radial-gradient(120% 90% at 85% 0%, rgba(199, 177, 143, 0.14), transparent 60%),
+                linear-gradient(160deg, #121212, #080808);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+        }
+
+        /* Real product screenshots, one image per theme, crossfaded by the theme switch. */
+        .shot-stage {
+            --accent: #c7b18f;
+            --dot: #c7b18f;
+            position: relative;
+            isolation: isolate;
+        }
+
+        .shot-stage::before {
+            content: '';
+            position: absolute;
+            inset: 8% 6%;
+            z-index: -1;
+            border-radius: 50%;
+            background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 32%, transparent), transparent);
+            filter: blur(40px);
+            transition: background 0.6s ease;
+        }
+
+        @media (min-width: 900px) {
+            .feature-row.is-wide {
+                grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+                gap: 3.5rem;
+            }
+        }
+
+        .shot-stack {
+            position: relative;
+            display: grid;
+        }
+
+        .shot-stack img {
+            grid-area: 1 / 1;
             width: 100%;
+            height: auto;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .shot-stack img.is-active {
+            opacity: 1;
+        }
+
+        .shot-stack.is-cutout img {
+            filter: drop-shadow(0 40px 50px rgba(0, 0, 0, 0.65));
+        }
+
+        .shot-stack.is-window img {
+            border-radius: 0.85rem;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 50px 90px -30px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Theme arrows sit on the screenshot, left and right middle; the label sits under it. */
+        .shot-nav {
+            position: absolute;
+            top: 50%;
+            z-index: 2;
+            width: 2.25rem;
+            height: 2.25rem;
+            margin-top: -1.125rem;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.45);
+            color: rgba(255, 255, 255, 0.85);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.25s ease, background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+        }
+
+        .shot-nav.is-prev {
+            left: 0.75rem;
+        }
+
+        .shot-nav.is-next {
+            right: 0.75rem;
+        }
+
+        .shot-stage:hover .shot-nav,
+        .shot-nav:focus-visible {
+            opacity: 1;
+        }
+
+        @media (hover: none) {
+            .shot-nav {
+                opacity: 0.8;
+            }
+        }
+
+        .shot-nav:hover {
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+        }
+
+        .shot-nav:active {
+            transform: scale(0.94);
+        }
+
+        .shot-nav svg {
+            width: 0.95rem;
+            height: 0.95rem;
+        }
+
+        .shot-label {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.25rem;
+        }
+
+        .theme-current {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            min-width: 9.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .theme-current::before {
+            content: '';
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 999px;
+            background: var(--dot);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--dot) 22%, transparent);
+            transition: background 0.3s ease;
+        }
+
+        .theme-count {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Discord community card. */
+        .community-card {
+            border-radius: 1.1rem;
+            overflow: hidden;
+            background: #111214;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.85);
+        }
+
+        .community-banner {
+            height: 5.5rem;
+            background:
+                radial-gradient(80% 140% at 20% 0%, rgba(88, 101, 242, 0.55), transparent 70%),
+                radial-gradient(70% 120% at 100% 100%, rgba(199, 177, 143, 0.35), transparent 70%),
+                #18191c;
+        }
+
+        .community-head {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.9rem;
+            padding: 0 1.25rem;
+            margin-top: -1.25rem;
+        }
+
+        .community-avatar {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 1.1rem;
+            background: #0a0a0a;
+            border: 4px solid #111214;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .community-avatar img {
+            width: 2.4rem;
+            height: 2.4rem;
+        }
+
+        .community-meta {
+            padding-bottom: 0.25rem;
+            min-width: 0;
+        }
+
+        .community-name {
+            font-weight: 800;
+            font-size: 1.05rem;
+            letter-spacing: -0.01em;
+        }
+
+        .community-count {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.35rem 1rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.55);
+            font-weight: 600;
+        }
+
+        .community-count > span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .community-count > span::before {
+            content: '';
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 999px;
+            background: #80848e;
+        }
+
+        .community-count > .is-online::before {
+            background: #23a55a;
+        }
+
+        .community-count > [hidden] {
+            display: none;
+        }
+
+        /* Filled in from the live server (icon, banner) once the API answers. */
+        .community-banner.has-image {
+            height: auto;
+            aspect-ratio: 16 / 7;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .community-avatar.has-image img {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.8rem;
+            object-fit: cover;
+        }
+
+        /* Channel list mirrors the real server sidebar (categories, emoji names, muted channels). */
+        .community-channels {
+            max-height: 20rem;
+            overflow-y: auto;
+            margin-top: 0.9rem;
+            padding: 0 0.6rem 2rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+            -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent);
+            mask-image: linear-gradient(180deg, #000 82%, transparent);
+        }
+
+        .community-category {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 1rem 0.4rem 0.35rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .community-category:first-child {
+            padding-top: 0.4rem;
+        }
+
+        .community-category::after {
+            content: '';
+            width: 0.32rem;
+            height: 0.32rem;
+            margin-left: 0.2rem;
+            border-right: 1.5px solid currentColor;
+            border-bottom: 1.5px solid currentColor;
+            transform: rotate(45deg) translateY(-2px);
+        }
+
+        .community-channel {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.36rem 0.55rem;
+            border-radius: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.65);
+            white-space: nowrap;
+        }
+
+        .community-channel svg {
+            width: 1.15rem;
+            height: 1.15rem;
+            flex-shrink: 0;
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .community-channel .emoji {
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+
+        .community-channel .sep {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .community-channel.is-muted {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .community-channel.is-muted svg {
+            color: rgba(255, 255, 255, 0.22);
+        }
+
+        .community-channel.is-muted .emoji {
+            opacity: 0.45;
+        }
+
+        .community-channel.is-active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .community-join {
+            margin: 0.5rem 1.25rem 1.25rem;
+            width: calc(100% - 2.5rem);
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Showcase carousel. */
+        .showcase-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1.75rem;
+        }
+
+        /* Trailer: text on the left, the video on the right. */
+        .trailer-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        @media (min-width: 900px) {
+            .trailer-row {
+                grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr);
+                gap: 4rem;
+            }
+        }
+
+        .trailer-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 1.75rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .trailer-meta::before {
+            content: '';
+            width: 1.5rem;
+            height: 1px;
+            background: #c7b18f;
+        }
+
+        .showcase-trailer {
+            position: relative;
             aspect-ratio: 16 / 9;
             border-radius: 1.25rem;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: #000;
-            transition: all 0.4s ease;
+            cursor: pointer;
+            box-shadow: 0 50px 100px -45px rgba(199, 177, 143, 0.3), 0 40px 80px -40px rgba(0, 0, 0, 0.9);
+            transition: border-color 0.3s ease;
         }
 
-        .showcase-video iframe {
+        .showcase-trailer::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.45));
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .showcase-trailer:hover {
+            border-color: rgba(199, 177, 143, 0.4);
+        }
+
+        .showcase-trailer:hover::after {
+            opacity: 0.4;
+        }
+
+        .showcase-trailer .showcase-play {
+            z-index: 2;
+            width: 4.5rem;
+            height: 4.5rem;
+        }
+
+        .showcase-trailer .showcase-play svg {
+            width: 1.6rem;
+            height: 1.6rem;
+        }
+
+        .showcase-head {
+            margin-top: 6rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .showcase-subtitle {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        /* "More videos": a full-width strip that scrolls on its own, like a logo wall. */
+        .showcase-marquee {
+            position: relative;
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+        }
+
+        .showcase-track {
+            display: flex;
+            width: max-content;
+            animation: showcase-marquee var(--marquee-duration, 60s) linear infinite;
+        }
+
+        .showcase-marquee:hover .showcase-track,
+        .showcase-marquee:focus-within .showcase-track,
+        .showcase-track.is-playing {
+            animation-play-state: paused;
+        }
+
+        @keyframes showcase-marquee {
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .showcase-marquee {
+                overflow-x: auto;
+            }
+
+            .showcase-track {
+                animation: none;
+            }
+        }
+
+        .showcase-card {
+            flex: 0 0 auto;
+            width: clamp(250px, 26vw, 340px);
+            margin: 0 1.25rem 0 0;
+        }
+
+        .showcase-item {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #0a0a0a;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .showcase-item:hover {
+            border-color: rgba(199, 177, 143, 0.45);
+        }
+
+        .showcase-card figcaption {
+            display: grid;
+            gap: 0.35rem;
+            padding: 0.9rem 0.25rem 0;
+        }
+
+        .showcase-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.88rem;
+            font-weight: 700;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .showcase-author {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .showcase-author.is-official::after {
+            content: 'Official';
+            padding: 0.12rem 0.45rem;
+            border-radius: 999px;
+            background: rgba(199, 177, 143, 0.12);
+            border: 1px solid rgba(199, 177, 143, 0.3);
+            font-size: 0.58rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #c7b18f;
+        }
+
+        .yt-lazy img {
             width: 100%;
             height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s ease, opacity 0.3s ease;
             opacity: 0.85;
-            transition: all 0.4s ease;
         }
 
-        .showcase-video:hover {
-            border-color: rgba(199, 177, 143, 0.4);
-            box-shadow: 0 30px 80px -20px rgba(199, 177, 143, 0.2);
-        }
-
-        .showcase-video:hover iframe {
+        .yt-lazy:hover img {
+            transform: scale(1.04);
             opacity: 1;
-            transform: scale(1.03);
         }
 
-        .showcase-video .video-chip {
+        .yt-lazy iframe {
             position: absolute;
-            top: 0.75rem;
-            left: 0.75rem;
-            z-index: 2;
-            pointer-events: none;
-            padding: 0.35rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(0, 0, 0, 0.72);
-            backdrop-filter: blur(6px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.6rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
-            color: #c7b18f;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
         }
 
-        .showcase-title-row {
+        .showcase-play {
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(6px);
+            color: #fff;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-top: 0.25rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
         }
 
-        .showcase-title-row .video-label {
-            font-size: 0.7rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: rgba(255, 255, 255, 0.65);
+        .showcase-play svg {
+            width: 1.2rem;
+            height: 1.2rem;
         }
 
-        .showcase-title-row .video-label b {
-            color: #c7b18f;
+        .yt-lazy:hover .showcase-play {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.55);
+            transform: scale(1.08);
         }
 
         .info-label {
@@ -673,70 +1244,92 @@
             color: rgba(255, 255, 255, 0.4);
         }
 
-        /* FAQ accordion – matches glass-card language with gold accents. */
+        /* FAQ: intro on the left, a hairline accordion on the right. */
+        .faq-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 2.5rem;
+        }
+
+        @media (min-width: 900px) {
+            .faq-layout {
+                grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+                gap: 4.5rem;
+                align-items: start;
+            }
+
+            .faq-intro {
+                position: sticky;
+                top: 7rem;
+            }
+        }
+
+        .faq-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 2rem;
+        }
+
+        .faq-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.1rem;
+            border-radius: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .faq-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(199, 177, 143, 0.5);
+        }
+
+        .faq-link svg {
+            width: 0.95rem;
+            height: 0.95rem;
+        }
+
+        .faq-list {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
         .faq-item {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 1.25rem;
-            overflow: hidden;
-            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-        }
-
-        .faq-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .faq-item.is-open {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(199, 177, 143, 0.35);
-            box-shadow: 0 20px 50px -20px rgba(199, 177, 143, 0.18);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .faq-button {
             width: 100%;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.25rem;
             text-align: left;
-            padding: 1.25rem 1.25rem;
+            padding: 1.35rem 0.25rem;
             background: none;
             border: none;
             cursor: pointer;
-            color: white;
-        }
-
-        @media (min-width: 640px) {
-            .faq-button {
-                padding: 1.4rem 1.6rem;
-            }
-        }
-
-        .faq-num {
-            flex-shrink: 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            color: #c7b18f;
-            background: rgba(199, 177, 143, 0.1);
-            border: 1px solid rgba(199, 177, 143, 0.25);
-            border-radius: 999px;
-            padding: 0.35rem 0.65rem;
+            color: #fff;
         }
 
         .faq-question {
             flex: 1;
-            font-size: 0.95rem;
+            font-size: 1.02rem;
             font-weight: 700;
             letter-spacing: -0.01em;
             line-height: 1.4;
+            transition: color 0.2s ease;
         }
 
-        @media (min-width: 640px) {
-            .faq-question {
-                font-size: 1.02rem;
-            }
+        .faq-button:hover .faq-question {
+            color: #e6d6bb;
         }
 
         .faq-icon {
@@ -747,25 +1340,21 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.7);
+            transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
         }
 
         .faq-icon svg {
-            width: 0.9rem;
-            height: 0.9rem;
-            transition: transform 0.3s ease;
+            width: 0.85rem;
+            height: 0.85rem;
         }
 
         .faq-item.is-open .faq-icon {
-            background: #c7b18f;
-            border-color: #c7b18f;
-            color: black;
-        }
-
-        .faq-item.is-open .faq-icon svg {
             transform: rotate(45deg);
+            background: rgba(199, 177, 143, 0.12);
+            border-color: rgba(199, 177, 143, 0.45);
+            color: #c7b18f;
         }
 
         .faq-answer-wrap {
@@ -783,17 +1372,16 @@
         }
 
         .faq-answer {
-            padding: 0 1.25rem 1.35rem 1.25rem;
-            margin-left: 0;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.88rem;
-            line-height: 1.7;
+            max-width: 40rem;
+            padding: 0 0.25rem 1.5rem;
+            color: #8a8a8a;
+            font-size: 0.95rem;
+            line-height: 1.75;
         }
 
         @media (min-width: 640px) {
             .faq-answer {
-                padding: 0 1.6rem 1.5rem 1.6rem;
-                margin-left: 0;
+                padding-right: 3.25rem;
             }
         }
 
@@ -802,14 +1390,10 @@
             font-weight: 700;
         }
 
-        .faq-note {
-            margin-top: 0.75rem;
-            padding: 0.75rem 0.9rem;
-            border-radius: 0.8rem;
-            background: rgba(199, 177, 143, 0.07);
-            border: 1px solid rgba(199, 177, 143, 0.18);
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.65);
+        .faq-answer a {
+            color: #c7b18f;
+            text-decoration: underline;
+            text-underline-offset: 3px;
         }
     </style>
 </head>
@@ -817,8 +1401,6 @@
 <body class="antialiased">
     <script src="./js/discord/auth_loading.js"></script>
     <div class="bg-mesh"></div>
-    <div class="orb w-[30rem] h-[30rem] bg-[#c7b18f]" style="top: -10%; left: -15%;"></div>
-    <div class="orb w-[35rem] h-[35rem] bg-[#1a1a1a]" style="bottom: -20%; right: -10%; animation-delay: -7s;"></div>
 
     <div id="shared-topbar"></div>
     <script src="./js/html/topbar.js"></script>
@@ -828,7 +1410,7 @@
         <div class="relative z-10 flex flex-col items-center text-center">
             <h1 class="hacker-text text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-black leading-none mb-2 hero-animate">SHELDON</h1>
             <p class="max-w-2xl text-neutral-600 text-base md:text-xl mb-12 font-medium leading-relaxed hero-animate hero-animate-delay-1" data-i18n="hero.subtitle">
-                Get Project Sheldon today - Best & Only Freemium External.
+                A feature-rich Roblox developer tool with a free tier. Log in with Discord to download.
             </p>
             <div class="flex flex-col sm:flex-row items-center gap-3 w-auto justify-center hero-animate hero-animate-delay-2">
                 <button id="hero-cta" data-i18n="hero.download"
@@ -849,83 +1431,170 @@
                         d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                 </svg>
                 <span class="text-[0.6rem] font-bold uppercase tracking-widest text-neutral-400">
-                    <span id="discord-count" class="text-white">{member_count}</span> Discord Members
+                    <span id="discord-count" class="text-white">–</span> Discord Members
                 </span>
             </a>
         </div>
     </section>
 
-    <section class="py-20 px-6">
-        <div class="max-w-6xl mx-auto space-y-12">
+    <section class="py-24 px-6" style="overflow-x: clip;">
+        <div class="max-w-6xl mx-auto space-y-28 md:space-y-36">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
-                <div class="glass-card feature-card p-6 sm:p-8 md:p-12 rounded-[2rem] animate-on-scroll">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#c7b18f]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl md:text-3xl font-black mb-3 uppercase tracking-tight">UI & Features</h3>
-                    <p class="text-neutral-500 text-sm leading-relaxed mb-8">
-                        Project Sheldon features a straightforward, user-friendly interface designed to help users
-                        quickly find what they need without getting lost. It also includes a wide range of features,
-                        ensuring that everyone can enjoy it regardless of their preferred game genre.
-                    </p>
+            <div class="feature-row is-wide animate-on-scroll">
+                <div>
+                    <span class="feature-kicker">UI &amp; Features</span>
+                    <h2 class="feature-title">Everything in one menu.</h2>
+                    <p class="feature-copy">A straightforward menu that keeps every option a click away, so you find what you need without getting lost. The feature set covers every game genre, not just one.</p>
                 </div>
-
-                <div class="glass-card feature-card p-6 sm:p-8 md:p-12 rounded-[2rem] animate-on-scroll stagger-1">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#c7b18f]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 010 7.75"/>
-                        </svg>
+                <div class="shot-stage" data-theme-stage="sheldon" style="--accent: #8f7a4f; --dot: #8f7a4f;">
+                    <div class="shot-stack is-cutout">
+                        <img class="is-active" data-theme="dark" data-theme-name="Dark" data-theme-color="#8f7a4f" src="./ui/sheldon-dark.webp" width="1430" height="630" alt="The Sheldon menu in the dark theme, showing ESP settings">
+                        <img data-theme="blue" data-theme-name="Blue" data-theme-color="#4a8af4" src="./ui/sheldon-blue.webp" width="1430" height="630" alt="The Sheldon menu in the blue theme" loading="lazy" aria-hidden="true">
+                        <img data-theme="red" data-theme-name="Red" data-theme-color="#e5484d" src="./ui/sheldon-red.webp" width="1430" height="630" alt="The Sheldon menu in the red theme" loading="lazy" aria-hidden="true">
+                        <button type="button" class="shot-nav is-prev" data-theme-step="-1" aria-label="Previous menu theme"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+                        <button type="button" class="shot-nav is-next" data-theme-step="1" aria-label="Next menu theme"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
                     </div>
-                    <h3 class="text-2xl md:text-3xl font-black mb-3 uppercase tracking-tight">Community</h3>
-                    <p class="text-neutral-500 text-sm leading-relaxed mb-8">
-                        Project Sheldon is developed based on feedback from the community as well as my own ideas. I
-                        also do my best to implement requested features and fix any bugs that are reported.
-                    </p>
+                    <div class="shot-label"><span class="theme-current"><span class="theme-name">Dark</span><span class="theme-count">1 / 3</span></span></div>
                 </div>
             </div>
-            
 
-            <div class="glass-card p-6 md:p-10 rounded-[3rem] overflow-hidden animate-on-scroll stagger-2">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
-                    <div>
-                        <h4 class="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tighter">Showcases</h4>
-                        <p class="text-neutral-500 text-sm mt-3 max-w-lg leading-relaxed">
-                            Check Project Sheldon on Youtube so you can see it before trying it out! Ye
-                        </p>
+            <div class="feature-row is-flipped animate-on-scroll">
+                <div>
+                    <span class="feature-kicker">Loader</span>
+                    <h2 class="feature-title">Launch in one click.</h2>
+                    <p class="feature-copy">The loader finds your running Roblox, checks that your version is supported, and attaches Sheldon. It keeps itself up to date, so there is nothing to reinstall after an update.</p>
+                </div>
+                <div class="shot-stage" data-theme-stage="loader" style="--accent: #c7b18f;">
+                    <div class="shot-stack is-window">
+                        <img class="is-active" data-theme="midnight" data-theme-name="Midnight" data-theme-color="#c7b18f" src="./ui/loader-midnight.webp" width="1000" height="660" alt="The Sheldon loader in the midnight theme, showing a supported Roblox instance">
+                        <img data-theme="emerald" data-theme-name="Emerald" data-theme-color="#4fd1a0" src="./ui/loader-emerald.webp" width="1000" height="660" alt="The Sheldon loader in the emerald theme" loading="lazy" aria-hidden="true">
+                        <img data-theme="amethyst" data-theme-name="Amethyst" data-theme-color="#b58ae6" src="./ui/loader-amethyst.webp" width="1000" height="660" alt="The Sheldon loader in the amethyst theme" loading="lazy" aria-hidden="true">
+                        <button type="button" class="shot-nav is-prev" data-theme-step="-1" aria-label="Previous loader theme"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+                        <button type="button" class="shot-nav is-next" data-theme-step="1" aria-label="Next loader theme"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+                    </div>
+                    <div class="shot-label"><span class="theme-current"><span class="theme-name">Midnight</span><span class="theme-count">1 / 3</span></span></div>
+                </div>
+            </div>
+
+            <div class="feature-row animate-on-scroll">
+                <div>
+                    <span class="feature-kicker">Community</span>
+                    <h2 class="feature-title">Built with the people using it.</h2>
+                    <p class="feature-copy">Sheldon is shaped by community feedback as well as my own ideas. I do my best to add the features people ask for and fix the bugs they report.</p>
+                    <ul class="feature-list">
+                        <li><span>Request features and report bugs in <code class="inline-code">💡┃suggestions-bugs</code></span></li>
+                        <li>Updates and status posted on Discord</li>
+                        <li>Get help through a ticket</li>
+                    </ul>
+                </div>
+                <div class="feature-media">
+                    <div class="community-card">
+                        <div class="community-banner" data-discord-banner></div>
+                        <div class="community-head">
+                            <div class="community-avatar" data-discord-icon><img src="./favicon/icon.png" alt=""></div>
+                            <div class="community-meta">
+                                <div class="community-name" data-discord-name>Project Sheldon</div>
+                                <div class="community-count">
+                                    <span class="is-online" data-discord-online-wrap hidden><span data-discord-online>–</span> online</span>
+                                    <span><span data-discord-count>–</span> members</span>
+                                </div>
+                            </div>
+                        </div>
+                        <svg width="0" height="0" style="position: absolute;" aria-hidden="true">
+                            <symbol id="dc-text" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10 3 8 21M16 3l-2 18M4 8.5h17M3 15.5h17"/></symbol>
+                            <symbol id="dc-news" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M3 10v4h3l7 5V5l-7 5H3zM17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></symbol>
+                            <symbol id="dc-forum" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 5h12v9H8l-5 4V5zM18 9h3v12l-4-3h-6v-2"/></symbol>
+                            <symbol id="dc-stage" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7M5.5 18.5a9 9 0 0 1 0-13M18.5 5.5a9 9 0 0 1 0 13"/></g></symbol>
+                            <symbol id="dc-onboard" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/></g></symbol>
+                        </svg>
+                        <div class="community-channels" aria-hidden="true">
+                            <div class="community-category">· Status ·</div>
+                            <div class="community-channel is-muted"><svg><use href="#dc-text"/></svg><span class="emoji">🩹</span><span class="sep">|</span>roblox-updates</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">🟢</span><span class="sep">|</span>working</div>
+                            <div class="community-channel"><svg><use href="#dc-stage"/></svg><span class="emoji">🌐</span><span class="sep">|</span>projectsheldon.me</div>
+
+                            <div class="community-category">· Welcome ·</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">📜</span><span class="sep">|</span>readme</div>
+                            <div class="community-channel is-muted"><svg><use href="#dc-text"/></svg><span class="emoji">👋</span><span class="sep">|</span>welcome-n-boosts</div>
+                            <div class="community-channel"><svg><use href="#dc-onboard"/></svg><span class="emoji">🎭</span><span class="sep">|</span>roles</div>
+
+                            <div class="community-category">· Server ·</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">📕</span><span class="sep">|</span>rules</div>
+                            <div class="community-channel"><svg><use href="#dc-news"/></svg><span class="emoji">📢</span><span class="sep">|</span>announcements</div>
+                            <div class="community-channel"><svg><use href="#dc-news"/></svg><span class="emoji">📢</span><span class="sep">|</span>small-announcements</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">😳</span><span class="sep">|</span>community-help</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">😳</span><span class="sep">|</span>cool-stuff</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">🎉</span><span class="sep">|</span>giveaways</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">📊</span><span class="sep">|</span>polls</div>
+
+                            <div class="community-category">· Sheldon ·</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">🔔</span><span class="sep">|</span>updates</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">📥</span><span class="sep">|</span>download</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">📰</span><span class="sep">|</span>development</div>
+                            <div class="community-channel is-active"><svg><use href="#dc-text"/></svg><span class="emoji">📄</span><span class="sep">|</span>features</div>
+
+                            <div class="community-category">· Support ·</div>
+                            <div class="community-channel"><svg><use href="#dc-forum"/></svg><span class="emoji">💻</span><span class="sep">|</span>quick-help</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">📩</span><span class="sep">|</span>create-a-ticket</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">📖</span><span class="sep">|</span>history</div>
+                            <div class="community-channel"><svg><use href="#dc-text"/></svg><span class="emoji">🌐</span><span class="sep">|</span>community-help</div>
+                        </div>
+                        <button type="button" class="btn-discord community-join" onclick="RedirectToPlatform('discord_invite')">Join the Discord</button>
                     </div>
                 </div>
+            </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                    <div class="space-y-4 animate-on-scroll stagger-1">
-                        <div class="showcase-video group cursor-pointer">
-                            <iframe src="https://www.youtube.com/embed/9I19HYIgYPk?rel=0&modestbranding=1&playsinline=1"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowfullscreen></iframe>
-                        </div>
+            <div class="animate-on-scroll">
+                <div class="trailer-row">
+                    <div>
+                        <span class="feature-kicker">Official trailer</span>
+                        <h2 class="feature-title">See it running.</h2>
+                        <p class="feature-copy">A quick look at Sheldon in action, recorded by me. Want to see how other people use it? Check out the videos below.</p>
+                        <div class="trailer-meta">Official Trailer for Project Sheldon · Penguu</div>
                     </div>
+                    <div class="showcase-trailer yt-lazy" data-yt="K0QXjRLqbls" data-title="Official Trailer for Project Sheldon"></div>
+                </div>
 
-                    <div class="space-y-4 animate-on-scroll stagger-2">
-                        <div class="showcase-video group cursor-pointer">
-                            <iframe src="https://www.youtube.com/embed/B0awFbYrX9k?rel=0&modestbranding=1&playsinline=1"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowfullscreen></iframe>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4 animate-on-scroll stagger-3">
-                        <div class="showcase-video group cursor-pointer">
-                            <iframe src="https://www.youtube.com/embed/t4T-H4nwTC8?rel=0&modestbranding=1&playsinline=1"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowfullscreen></iframe>
-                        </div>
-                    </div>
+                <div class="showcase-head">
+                    <h3 class="showcase-subtitle">More videos</h3>
+                </div>
+                <!-- One <figure> per video: data-yt is the YouTube video ID, the caption is its title and channel.
+                     Add class="is-official" to the channel for videos from the Sheldon channel. -->
+                <div class="showcase-marquee">
+                <div class="showcase-track" id="showcase-track">
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="f_Dqv0e3db0"></div>
+                        <figcaption><span class="showcase-title">Sheldon's LuaVM Glowup #1</span><span class="showcase-author is-official">Penguu</span></figcaption>
+                    </figure>
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="9I19HYIgYPk"></div>
+                        <figcaption><span class="showcase-title">(FREE) SHELDON EXTERNAL | BEST FREE EXTERNAL FOR ROBLOX</span><span class="showcase-author">ZeroDetections</span></figcaption>
+                    </figure>
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="fiu4KqgOwJA"></div>
+                        <figcaption><span class="showcase-title">Project Sheldon (FREE) - The Best FREE External (Esp, Aimbot, Teleport) For Roblox in 2026</span><span class="showcase-author">relblx</span></figcaption>
+                    </figure>
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="CeUnxyt0z8Y"></div>
+                        <figcaption><span class="showcase-title">Is PROJECT SHELDON The BEST Free External in 2026?</span><span class="showcase-author">ForgeSC</span></figcaption>
+                    </figure>
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="RjjELtbyHVQ"></div>
+                        <figcaption><span class="showcase-title">Best FREE Roblox External Setup &amp; Showcase · SHELDON EXTERNAL</span><span class="showcase-author">MAINLINE Exploits</span></figcaption>
+                    </figure>
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="pzuglbLuw84"></div>
+                        <figcaption><span class="showcase-title">BEST FREEMIUM EXTERNAL | SHELDON EXTERNAL | DESYNC</span><span class="showcase-author">goomybear</span></figcaption>
+                    </figure>
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="B0awFbYrX9k"></div>
+                        <figcaption><span class="showcase-title">Using The BEST Free Roblox External | Sheldon</span><span class="showcase-author">FL Exploits</span></figcaption>
+                    </figure>
+                    <figure class="showcase-card">
+                        <div class="showcase-item yt-lazy" data-yt="t4T-H4nwTC8"></div>
+                        <figcaption><span class="showcase-title">BEST ROBLOX FREEMIUM EXTERNAL | SHELDON</span><span class="showcase-author is-official">Penguu</span></figcaption>
+                    </figure>
+                </div>
                 </div>
             </div>
 
@@ -942,47 +1611,126 @@
         </div>
     </section>
 
-    <section id="faq" class="py-10 sm:py-16 px-6">
-        <div class="max-w-3xl mx-auto">
-            <div class="text-center mb-10 animate-on-scroll">
-                <span class="info-label" style="text-align: center;">FAQ</span>
-                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase">Frequently asked<br>questions</h2>
-                <p class="text-neutral-500 text-sm sm:text-base mt-4 max-w-xl mx-auto leading-relaxed">Quick answers before you get Sheldon. Still stuck? Ask in the Discord server.</p>
+    <section id="faq" class="py-24 px-6">
+        <div class="max-w-6xl mx-auto faq-layout">
+            <div class="faq-intro animate-on-scroll">
+                <span class="feature-kicker">FAQ</span>
+                <h2 class="feature-title">Questions, answered.</h2>
+                <p class="feature-copy">The short version of what people ask before and after getting Sheldon. Still stuck? The guides walk through setup step by step, and the Discord is there for everything else.</p>
+                <div class="faq-links">
+                    <a class="faq-link" href="/guides/"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v16H6.5a2.5 2.5 0 0 0 0 5H20"/></svg>Read the guides</a>
+                    <button type="button" class="faq-link" onclick="RedirectToPlatform('discord_invite')"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>Ask on Discord</button>
+                </div>
             </div>
-            <div class="flex flex-col gap-3 sm:gap-4">
+
+            <div class="faq-list animate-on-scroll">
                 <div class="faq-item">
                     <button class="faq-button" aria-expanded="false">
-                        <span class="faq-num">01</span>
-                        <span class="faq-question">Can I inject scripts?</span>
+                        <span class="faq-question">Is Sheldon really free?</span>
                         <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
                     </button>
                     <div class="faq-answer-wrap">
                         <div class="faq-answer-inner">
-                            <p class="faq-answer">Yes, inside Sheldon. Sheldon includes a built in Lua executor made specifically for Sheldon functions around aimlock and ESP. It does not support full universal scripts, only what is built for Sheldon.</p>
+                            <p class="faq-answer">Yes. The free key has every feature. It shows a watermark in-app and doesn't come with the Discord buyer role. A paid license removes the watermark and adds the role. Everything else is the same, see <a href="#pricing">pricing</a>.</p>
                         </div>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-button" aria-expanded="false">
-                        <span class="faq-num">02</span>
                         <span class="faq-question">Will I get banned?</span>
                         <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
                     </button>
                     <div class="faq-answer-wrap">
                         <div class="faq-answer-inner">
-                            <p class="faq-answer">Sheldon is built to stay undetected so you can enjoy it in any game you want to dominate. That said, no software can promise zero risk. Blatant aim, obvious settings, or suspicious gameplay can still get you flagged.<span class="faq-note" style="display: block;"><strong>Keep in mind:</strong> you are always at risk if another player reports you, so we recommend using legit looking settings.</span></p>
+                            <p class="faq-answer">There is always a risk. Sheldon breaks Roblox's rules by nature, and undetected today doesn't mean undetected tomorrow, so nobody can promise you're safe. Blatant aim, obvious settings and player reports are what usually get people flagged, so <strong>keep your settings legit-looking</strong>.</p>
                         </div>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-button" aria-expanded="false">
-                        <span class="faq-num">03</span>
+                        <span class="faq-question">Can I run scripts?</span>
+                        <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                    <div class="faq-answer-wrap">
+                        <div class="faq-answer-inner">
+                            <p class="faq-answer">Yes, inside Sheldon. It has its own Lua environment, the LuaVM, built around Sheldon's features like ESP and aim. It doesn't run universal Roblox scripts, only scripts written for Sheldon. The <a href="/luavm/">LuaVM docs</a> cover everything it can do.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-button" aria-expanded="false">
                         <span class="faq-question">Can I hide Sheldon from recordings?</span>
                         <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
                     </button>
                     <div class="faq-answer-wrap">
                         <div class="faq-answer-inner">
-                            <p class="faq-answer">Yes. Sheldon has built in stream proof for both window and game capture. Your menu and visuals stay hidden in videos, streams, and screenshots, while everything stays fully visible to you in game.</p>
+                            <p class="faq-answer">Yes. Sheldon has built-in stream proof for both window and game capture. Your menu and visuals stay hidden in videos, streams and screenshots, while everything stays fully visible to you in game.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-button" aria-expanded="false">
+                        <span class="faq-question">Roblox updated and Sheldon stopped working. What now?</span>
+                        <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                    <div class="faq-answer-wrap">
+                        <div class="faq-answer-inner">
+                            <p class="faq-answer">That's expected. Sheldon breaks whenever Roblox updates and needs a fix before it works again. The loader shows whether your Roblox version is supported, and update status is posted on the Discord. Once the fix is out, the loader updates itself.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-button" aria-expanded="false">
+                        <span class="faq-question">Can I use my key on more than one PC?</span>
+                        <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                    <div class="faq-answer-wrap">
+                        <div class="faq-answer-inner">
+                            <p class="faq-answer">One device at a time. Your license locks to the device you first use it on, and you get a limited number of resets if you change PCs. Keys are personal, so sharing or lending them isn't allowed.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-button" aria-expanded="false">
+                        <span class="faq-question">When does my license time start?</span>
+                        <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                    <div class="faq-answer-wrap">
+                        <div class="faq-answer-inner">
+                            <p class="faq-answer">When you first claim or activate the key, not when you buy it. Unclaimed keys stay paused. Lifetime lasts as long as Sheldon is kept alive and updated.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-button" aria-expanded="false">
+                        <span class="faq-question">Can I get a refund?</span>
+                        <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                    <div class="faq-answer-wrap">
+                        <div class="faq-answer-inner">
+                            <p class="faq-answer">Licenses are digital and delivered instantly, so refunds aren't guaranteed. Each request is reviewed case by case, and crypto payments can't be reversed. Downtime after a Roblox update, an account ban or changing your mind aren't refund reasons. The <a href="/terms/">Terms of Service</a> have the full rules.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-button" aria-expanded="false">
+                        <span class="faq-question">Where can I buy keys safely?</span>
+                        <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                    <div class="faq-answer-wrap">
+                        <div class="faq-answer-inner">
+                            <p class="faq-answer">Here on the site, or from an authorized reseller listed in the <a href="/resellers/directory/">reseller directory</a>. Keys from DMs, random servers or other shops are at your own risk, and bad keys from them can't be replaced.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-button" aria-expanded="false">
+                        <span class="faq-question">How do I get help?</span>
+                        <span class="faq-icon"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                    <div class="faq-answer-wrap">
+                        <div class="faq-answer-inner">
+                            <p class="faq-answer">Start with the <a href="/guides/">guides</a>, they cover installing, keys and the most common problems. If that doesn't fix it, open a ticket in #create-a-ticket on the Discord.</p>
                         </div>
                     </div>
                 </div>
@@ -995,6 +1743,8 @@
     <script src="./js/util/recovery.js"></script>
     <script src="./js/util/language.js"></script>
     <script src="./js/html/render/canvas.js"></script>
+    <script src="./js/html/frontpage/showcase.js"></script>
+    <script src="./js/html/frontpage/themes.js"></script>
     <script type="module" src="./js/html/frontpage/index.js"></script>
     <script type="module" src="./js/discord/topbar_buttons.js"></script>
     <script type="module" src="./js/util/redirect.js"></script>

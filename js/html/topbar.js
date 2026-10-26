@@ -65,16 +65,16 @@
                 '<div class="flex items-center gap-6 min-w-0">' +
                     // First in the DOM so that on mobile, once both groups are
                     // flattened with display:contents, the order reads
-                    // hamburger / logo / account / discord / globe.
+                    // logo / hamburger / account / discord / globe.
+                    '<a href="/" class="logo-link flex items-center shrink-0" aria-label="Sheldon home">' +
+                        '<div class="logo-box w-7 h-7 flex items-center justify-center">' +
+                            '<img src="/favicon/icon.png" alt="Logo" class="w-7 h-7">' +
+                        '</div></a>' +
                     '<button class="mobile-menu-btn lg:hidden mobile-menu-btn-lead" onclick="toggleMobileMenu()" aria-label="Menu">' +
                         '<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
                             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />' +
                         '</svg>' +
                     '</button>' +
-                    '<a href="/" class="logo-link flex items-center shrink-0" aria-label="Sheldon home">' +
-                        '<div class="logo-box w-7 h-7 flex items-center justify-center">' +
-                            '<img src="/favicon/icon.png" alt="Logo" class="w-7 h-7">' +
-                        '</div></a>' +
                     '<div class="hidden lg:flex items-center gap-0.5 nav-tabs-desktop">' + drops + '</div>' +
                 '</div>' +
 
@@ -247,8 +247,9 @@
                 'border-bottom:1px solid rgba(255,255,255,.1)}' +
             '.mobile-menu.show{display:flex!important}' +
             // Mobile has no room for two groups, so flatten them into one flex row
-            // and let DOM order do the work: hamburger, logo, account, Discord,
-            // globe. The logo therefore sits on the right, after the buttons.
+            // and let DOM order do the work: logo, hamburger, account, Discord,
+            // globe. The auto margin on the hamburger pushes the account and
+            // buttons to the right edge.
             '@media (max-width:1023px){.nav-tabs-desktop{display:none!important}.mobile-menu-btn{display:block!important}' +
             '.nav-shell{justify-content:flex-end!important;gap:.5rem!important}' +
             '.nav-shell>div{display:contents}' +
