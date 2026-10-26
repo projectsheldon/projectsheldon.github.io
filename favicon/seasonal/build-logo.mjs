@@ -2,14 +2,14 @@
 //
 // Everything this writes is the Sheldon mark on transparency. `default` is the
 // bare mark; the seasonal ids put one vector accessory on it (Santa hat, bunny
-// ears, sunglasses, witch hat), drawn in the mark's own thick-outline style so it
+// ears, sunglasses, pumpkin), drawn in the mark's own thick-outline style so it
 // still reads at 16px. The Discord embed art is NOT seasonal: one card all year.
 //
 //   logo-<s>.png           256px mark for in-page use
 //   favicon-<s>.ico        multi-size icon (16/32/48), PNG entries
 //   apple-touch-<s>.png    180px mark for the iOS home screen
 //   icon-<s>-512.png       512px mark, high-dpi and in-page use
-//   discord-<s>.png        512px, padded so Discord's circle crop never clips a prop
+//   discord-<s>.png        512px on the gradient tile, fitted inside Discord's circle crop
 //
 //   node build-logo.mjs [outDir] [--only=halloween]
 
@@ -151,7 +151,7 @@ function markSvg(size, crop) {
 }
 
 // ---------------------------------------------------------------- seasonal props
-// Drawn on a 512 canvas. `brain` is [ink height, ink top]: the hats need the
+// Drawn on a 512 canvas. `brain` is [ink height, ink top, x shift]: the hats need the
 // mark shrunk and pushed down to make room; the sunglasses sit on a full-size mark.
 // `back` is painted under the mark (the ears go behind it), `front` over it.
 const INK = "#1c1c1c";
@@ -184,33 +184,87 @@ const PROPS = {
 <g clip-path="url(#lens)" fill="#ffffff" opacity=".35"><path d="M110 270 L170 184 L196 184 L136 270 Z"/><path d="M280 270 L340 184 L366 184 L306 270 Z"/></g>`
     },
     halloween: {
-        brain: [392, 116],
+        brain: [452, 0],
         back: "",
-        front: `<g transform="rotate(-6 256 130)">
-<defs><clipPath id="cone"><path d="M154 132 C184 92 206 52 226 22 C244 -2 296 -6 340 30 C306 22 284 40 300 70 L358 132 Z"/></clipPath></defs>
-<path d="M154 132 C184 92 206 52 226 22 C244 -2 296 -6 340 30 C306 22 284 40 300 70 L358 132 Z" fill="#4a3468"/>
-<path d="M214 40 C228 20 250 10 272 10" fill="none" stroke="#7a5aa6" stroke-width="12" stroke-linecap="round"/>
-<rect x="120" y="88" width="280" height="36" fill="#f28c28" clip-path="url(#cone)"/>
-<path d="M154 132 C184 92 206 52 226 22 C244 -2 296 -6 340 30 C306 22 284 40 300 70 L358 132 Z" fill="none" stroke="${INK}" stroke-width="12" stroke-linejoin="round"/>
-<rect x="238" y="90" width="36" height="32" rx="4" fill="none" stroke="#ffd36b" stroke-width="8" clip-path="url(#cone)"/>
-<ellipse cx="256" cy="138" rx="200" ry="32" fill="#4a3468" stroke="${INK}" stroke-width="12"/></g>`
+        front: `<g transform="translate(-34 -18) translate(380 404) scale(0.8) translate(-380 -404)"><path d="M372 318 C368 292 374 274 394 260 L410 274 C396 286 392 300 394 320 Z" fill="#5d8a2f" stroke="${INK}" stroke-width="12" stroke-linejoin="round"/>
+<ellipse cx="380" cy="404" rx="124" ry="90" fill="#f28c28" stroke="${INK}" stroke-width="12"/>
+<ellipse cx="380" cy="404" rx="58" ry="90" fill="none" stroke="#c9661a" stroke-width="9"/>
+<path d="M300 340 C282 370 282 440 300 470 M460 340 C478 370 478 440 460 470" fill="none" stroke="#c9661a" stroke-width="9" stroke-linecap="round"/>
+<ellipse cx="380" cy="404" rx="124" ry="90" fill="none" stroke="${INK}" stroke-width="12"/>
+<g fill="#ffd36b" stroke="${INK}" stroke-width="8" stroke-linejoin="round">
+<path d="M318 392 L352 392 L335 360 Z"/><path d="M408 392 L442 392 L425 360 Z"/>
+<path d="M310 420 Q380 474 450 420 L432 422 L420 436 L404 424 L390 440 L374 424 L358 438 L344 424 L330 434 Z"/></g></g>`
     }
 };
 
-// `pad` widens the viewBox on every side, in 512-canvas units.
-function seasonSvg(id, size, pad = 0) {
-    if (id === "default" && !pad) return markSvg(size);
+const GLOW = { default: "#e8b767", christmas: "#e63c52", easter: "#63e0bd", summer: "#ffc23d", halloween: "#ff8a1f" };
+
+// The old tile: near-black diagonal gradient with a seasonal glow behind the
+// mark. Only the Discord render gets it; the favicon and logos stay transparent.
+function background(id, pad) {
+    const box = `x="${-pad}" y="${-pad}" width="${512 + 2 * pad}" height="${512 + 2 * pad}"`;
+    return `<defs><linearGradient id="tileBg" x1="0%" y1="0%" x2="30%" y2="100%">` +
+        `<stop offset="0%" stop-color="#191920"/><stop offset="100%" stop-color="#07070a"/></linearGradient>` +
+        `<radialGradient id="tileGlow" cx="50%" cy="42%" r="62%">` +
+        `<stop offset="0%" stop-color="${GLOW[id]}" stop-opacity="0.55"/>` +
+        `<stop offset="58%" stop-color="${GLOW[id]}" stop-opacity="0.12"/>` +
+        `<stop offset="100%" stop-color="${GLOW[id]}" stop-opacity="0"/></radialGradient></defs>` +
+        `<rect ${box} fill="url(#tileBg)"/><rect ${box} fill="url(#tileGlow)"/>`;
+}
+
+// The mark plus its prop, laid out on the 512 canvas exactly as PROPS describes,
+// optionally wrapped in a transform.
+function composeSvg(id, size, transform = "", discord = false) {
     const mark = fs.readFileSync(SOURCE).toString("base64");
     const p = PROPS[id];
     const { minX, maxX, minY, maxY } = CROP.ink;
-    const [h, top] = p.brain;
+    const [h, top, dx = 0] = p.brain;
     const s = h / (maxY - minY);
-    const x = (512 - (maxX - minX) * s) / 2 - minX * s;
+    const x = (512 - (maxX - minX) * s) / 2 - minX * s + dx;
     const y = top - minY * s;
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${-pad} ${-pad} ${512 + 2 * pad} ${512 + 2 * pad}">` +
-        p.back +
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">` +
+        (discord ? background(id, 0) : "") +
+        `<g transform="${transform}">` + p.back +
         `<image href="data:image/png;base64,${mark}" x="${x}" y="${y}" width="${SRC.width * s}" height="${SRC.height * s}"/>` +
-        p.front + `</svg>`;
+        p.front + `</g></svg>`;
+}
+
+// Props make every composition a different shape (a hat adds height, the pumpkin
+// sits off to one side), so placing them by hand left some icons high or off to the
+// left. Each one is rendered once and its real ink is measured. The final render
+// puts the brain on the vertical centre line (a prop hanging off one side must not
+// drag the brain sideways) and centres the ink vertically; icons fill the canvas
+// like the bare mark, Discord renders fit the ink inside the circle crop.
+const MEASURED = new Map();
+function measure(id) {
+    if (MEASURED.has(id)) return MEASURED.get(id);
+    const svgPath = path.join(WORK, `measure-${id}.svg`);
+    const pngPath = path.join(WORK, `measure-${id}.png`);
+    fs.writeFileSync(svgPath, composeSvg(id, 512));
+    shot(svgPath, pngPath, 512);
+    const img = decodeRgba(pngPath);
+    const b = inkBounds(img);
+    const cx = 256 + (PROPS[id].brain[2] || 0);
+    const cy = (b.minY + b.maxY + 1) / 2;
+    let r = 0;
+    for (let py = b.minY; py <= b.maxY; py++) {
+        for (let px = b.minX; px <= b.maxX; px++) {
+            if (img.px[(py * img.width + px) * img.channels + 3] <= 8) continue;
+            r = Math.max(r, Math.hypot(px + 0.5 - cx, py + 0.5 - cy));
+        }
+    }
+    const m = { cx, cy, w: 2 * Math.max(cx - b.minX, b.maxX + 1 - cx), h: b.maxY - b.minY + 1, r };
+    MEASURED.set(id, m);
+    return m;
+}
+
+const DISCORD_FILL = 0.86;
+
+function seasonSvg(id, size, discord = false) {
+    const m = measure(id);
+    const k = discord ? (256 * DISCORD_FILL) / m.r : 512 / Math.max(m.w, m.h);
+    const t = `translate(${256 - m.cx * k} ${256 - m.cy * k}) scale(${k})`;
+    return composeSvg(id, size, t, discord);
 }
 
 // ---------------------------------------------------------------- rasterise
@@ -244,9 +298,9 @@ function shot(svgPath, pngPath, size) {
 }
 
 // Renders one size and returns the PNG bytes.
-function render(name, size, id, pad = 0) {
+function render(name, size, id, discord = false) {
     const svgPath = path.join(WORK, `${name}.svg`);
-    fs.writeFileSync(svgPath, seasonSvg(id, size, pad));
+    fs.writeFileSync(svgPath, seasonSvg(id, size, discord));
     return shot(svgPath, path.join(WORK, `${name}.png`), size);
 }
 
@@ -295,7 +349,7 @@ for (const id of picked) {
     const logoSvgPath = path.join(WORK, `logo-${id}.svg`);
     fs.writeFileSync(logoSvgPath, seasonSvg(id, LOGO_SIZE));
     shot(logoSvgPath, path.join(OUT, `logo-${id}.png`), LOGO_SIZE);
-    fs.writeFileSync(path.join(OUT, `discord-${id}.png`), render(`discord-${id}`, ICON_SIZE, id, 48));
+    fs.writeFileSync(path.join(OUT, `discord-${id}.png`), render(`discord-${id}`, ICON_SIZE, id, true));
 
     // Big to small, so the ico can be assembled from real renders.
     const sizes = [...new Set([ICON_SIZE, APPLE_SIZE, ...ICO_SIZES])].sort((a, b) => b - a);

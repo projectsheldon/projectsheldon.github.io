@@ -1,7 +1,7 @@
 // Points the site icon at the current season.
 //
 // The favicon, the iOS touch icon and the in-page logo are swapped for the
-// seasonal render (Santa hat, bunny ears, sunglasses, witch hat, or the bare mark).
+// seasonal render (Santa hat, bunny ears, sunglasses, pumpkin, or the bare mark).
 // The Discord embed art (og-image.png) is NOT touched: one card all year.
 //
 // Browsers cache a favicon by URL far past any HTTP max-age, so every
@@ -30,7 +30,7 @@ const date = forced ? new Date(`${forced}T12:00:00Z`) : new Date();
 const season = resolveSeason(date);
 
 // Bump when build-logo.mjs output changes inside one season, so the stamps move.
-const ART_REV = 1;
+const ART_REV = 3;
 
 const stamp = `${season}-${date.getUTCFullYear()}r${ART_REV}`;
 const variants = path.join(HERE, "variants");

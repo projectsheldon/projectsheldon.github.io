@@ -9,7 +9,7 @@ accessory for each season, and the same id is used everywhere:
 | `christmas` | Santa hat   | 1 Dec – 6 Jan                 |
 | `easter`    | bunny ears  | Easter − 9 days → Easter + 16 |
 | `summer`    | sunglasses  | 21 Jun – 31 Aug               |
-| `halloween` | witch hat   | 1 Oct – 5 Nov                 |
+| `halloween` | pumpkin     | 1 Oct – 5 Nov                 |
 
 The Discord embed art (`favicon/og-image.png`) is **not** seasonal. It is one
 card all year, built from `variants/og-default.*`.
