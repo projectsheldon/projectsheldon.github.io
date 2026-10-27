@@ -1462,6 +1462,69 @@
         }
 
         /* ---------- settings ---------- */
+        .set-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 16px 18px;
+            border-top: 1px solid var(--dash-line);
+            flex-wrap: wrap;
+        }
+
+        .card-head--plain + .set-row {
+            margin-top: 10px;
+        }
+
+        .set-row-copy {
+            flex: 1 1 320px;
+            min-width: 0;
+        }
+
+        .set-row-copy h3 {
+            margin: 0;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #e8e8e8;
+        }
+
+        .set-row-copy p {
+            margin: 3px 0 0;
+            font-size: 12.5px;
+            color: var(--dash-mut);
+            line-height: 1.5;
+        }
+
+        .set-row-extra {
+            padding: 0 18px;
+        }
+
+        .set-row-extra:has(#dash-link-live:not([hidden])),
+        .set-row-extra:has(#dash-link-done:not([hidden])) {
+            padding-bottom: 18px;
+        }
+
+        .set-row-extra .form-msg {
+            margin: 0 0 14px;
+        }
+
+        .set-row-msg {
+            margin: -6px 18px 16px;
+        }
+
+        .pin-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pin-form .pin-field {
+            height: 34px;
+            width: 170px;
+            font-size: 14px;
+            letter-spacing: .2em;
+        }
+
         .settings-col {
             display: flex;
             flex-direction: column;
@@ -2136,19 +2199,28 @@
                                 <div class="fact"><dt>Balance</dt><dd id="dash-profile-balance">–</dd></div>
                             </dl>
                         </div>
+                        <div class="card-foot">
+                            <span>Signing out only ends this browser's session. Your licenses and the app keep working.</span>
+                            <button type="button" id="dash-signout-btn" class="btn btn-sm btn-danger">Sign out</button>
+                        </div>
                     </section>
 
                     <section class="card" id="connections-devices">
                         <div class="card-head card-head--plain">
                             <div>
-                                <h2 class="card-title">Sign in on another device</h2>
-                                <p class="card-desc">Show a one-time QR code and PIN, then scan it on the new device. It signs in as you without a Discord login.</p>
+                                <h2 class="card-title">Devices</h2>
+                                <p class="card-desc">Sign in on another device without a Discord login.</p>
                             </div>
                         </div>
-                        <div class="card-body" id="dash-link-card">
-                            <div id="dash-link-idle">
-                                <p class="usage-caption">Nothing is shown until you ask for a code, so it is safe to open this page while streaming.</p>
+                        <div class="set-row">
+                            <div class="set-row-copy">
+                                <h3>Show a sign-in code</h3>
+                                <p>Get a one-time QR code and PIN on this screen, then scan it on the new device. Nothing shows until you ask, so it is safe while streaming.</p>
                             </div>
+                            <button type="button" id="dash-link-device-btn" class="btn btn-sm">Generate code</button>
+                        </div>
+                        <div class="set-row-extra" id="dash-link-card">
+                            <div id="dash-link-idle"></div>
                             <div id="dash-link-live" hidden>
                                 <div class="link-live">
                                     <div class="qr-frame"><canvas id="dash-link-qr" width="120" height="120" role="img" aria-label="Link QR code"></canvas></div>
@@ -2160,7 +2232,7 @@
                                             <button type="button" class="link-btn" id="dash-link-refresh">New code</button>
                                             <button type="button" class="link-btn" id="dash-link-hide">Hide</button>
                                         </div>
-                                        <p class="usage-caption" style="margin-top:10px;">Scanning the QR fills the PIN in by itself.</p>
+                                        <p class="usage-caption" style="margin-top:10px;">Scanning the QR fills the PIN in by itself. Codes work once.</p>
                                     </div>
                                 </div>
                             </div>
@@ -2173,41 +2245,17 @@
                             </div>
                             <p id="dash-link-card-msg" class="form-msg" role="status" aria-live="polite"></p>
                         </div>
-                        <div class="card-foot">
-                            <span>Codes work once and expire after a few minutes.</span>
-                            <button type="button" id="dash-link-device-btn" class="btn btn-sm">Generate code</button>
-                        </div>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-head card-head--plain">
-                            <div>
-                                <h2 class="card-title">Approve a sign-in</h2>
-                                <p class="card-desc">Another screen shows a PIN on its login page? Type it here and this browser approves it.</p>
+                        <div class="set-row">
+                            <div class="set-row-copy">
+                                <h3>Approve a sign-in</h3>
+                                <p>Another screen shows a PIN on its login page? Type it here to approve it. Only approve PINs you can see yourself.</p>
+                            </div>
+                            <div class="pin-form">
+                                <input type="text" id="dash-link-pin" class="field pin-field" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" spellcheck="false" aria-label="PIN from the other device">
+                                <button type="button" id="dash-link-pin-btn" class="btn btn-sm btn-primary">Approve</button>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <input type="text" id="dash-link-pin" class="field pin-field" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" spellcheck="false" aria-label="PIN from the other device">
-                            <p id="dash-link-pin-msg" class="form-msg" role="status" aria-live="polite"></p>
-                        </div>
-                        <div class="card-foot">
-                            <span>Only approve PINs you can see on your own screen.</span>
-                            <button type="button" id="dash-link-pin-btn" class="btn btn-sm btn-primary">Approve</button>
-                        </div>
-                    </section>
-
-                    <section class="card card--danger">
-                        <div class="card-head card-head--plain">
-                            <div>
-                                <h2 class="card-title">Sign out</h2>
-                                <p class="card-desc">End the session in this browser. Your licenses and the Sheldon app are not affected.</p>
-                            </div>
-                        </div>
-                        <div class="card-body" style="padding-top:6px;"></div>
-                        <div class="card-foot">
-                            <span>You can sign back in with Discord at any time.</span>
-                            <button type="button" id="dash-signout-btn" class="btn btn-sm btn-danger">Sign out</button>
-                        </div>
+                        <p id="dash-link-pin-msg" class="form-msg set-row-msg" role="status" aria-live="polite"></p>
                     </section>
 
                 </div>

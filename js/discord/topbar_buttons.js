@@ -35,13 +35,11 @@ function ensureAccountMenuStyles()
 }
 #user-dropdown-menu.sheldon-acct-menu.open{opacity:1;transform:none;transition:opacity 150ms ease-out,transform 150ms ease-out;}
 #user-dropdown-menu.sheldon-acct-menu.closing{opacity:0;transform:translateY(-3px);transition:opacity 110ms ease-in,transform 110ms ease-in;}
-#user-dropdown-menu .acct-head{display:flex;align-items:center;gap:11px;padding:10px 10px 12px;}
+#user-dropdown-menu .acct-head{display:flex;align-items:center;gap:11px;padding:10px 10px 8px;}
 #user-dropdown-menu .acct-avatar,#user-dropdown-menu .acct-avatar-fallback{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;border:1px solid rgba(199,177,143,0.35);}
 #user-dropdown-menu .acct-avatar-fallback{display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#e9dcc3;background:linear-gradient(135deg,#4a4136,#2a2620);}
 #user-dropdown-menu .acct-name{font-size:13.5px;font-weight:650;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #user-dropdown-menu .acct-handle{font-size:12px;color:#7a7a7a;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#user-dropdown-menu .acct-balance{display:flex;align-items:center;justify-content:space-between;margin:0 4px 6px;padding:8px 10px;border-radius:9px;background:rgba(199,177,143,0.07);border:1px solid rgba(199,177,143,0.14);font-size:12px;color:#a3a3a3;}
-#user-dropdown-menu .acct-balance b{font:600 12.5px 'JetBrains Mono',monospace;color:#c7b18f;}
 #user-dropdown-menu .acct-sep{height:1px;background:rgba(255,255,255,0.07);margin:5px 4px;}
 #user-dropdown-menu .acct-item{display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 10px;border:0;border-radius:8px;background:none;color:#d4d4d4;text-decoration:none;font:500 13px 'Inter',sans-serif;cursor:pointer;text-align:left;box-sizing:border-box;transition:background .12s ease,color .12s ease;}
 #user-dropdown-menu .acct-item svg{flex:none;width:16px;height:16px;color:#8a8a8a;transition:color .12s ease;}
@@ -367,10 +365,6 @@ async function RenderAccountMenu()
 
     const esc = s => window.escapeHtml ? window.escapeHtml(s) : String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
     const handle = user && user.username ? '@' + user.username : '';
-    const balance = user && user.balance !== undefined ? Number(user.balance || 0).toFixed(1) : null;
-    // On the dashboard itself the tab links switch tabs in place via the hash.
-    const onDash = location.pathname.replace(/\/+$/, '') === '/dashboard';
-    const dashHref = tab => (onDash ? '' : '/dashboard/') + (tab ? '#' + tab : '');
 
     menu.innerHTML = `
         <div class="acct-head">
@@ -380,19 +374,11 @@ async function RenderAccountMenu()
                 ${handle && handle.slice(1) !== name ? `<div class="acct-handle">${esc(handle)}</div>` : '<div class="acct-handle">Signed in with Discord</div>'}
             </div>
         </div>
-        ${balance !== null ? `<div class="acct-balance"><span>Balance</span><b>${esc(balance)} credits</b></div>` : ''}
+        <div class="acct-sep" role="separator"></div>
 
-        <a href="${onDash ? '#' : '/dashboard/'}" class="acct-item" role="menuitem" data-acct-tab="overview">
+        <a href="/dashboard/" class="acct-item" role="menuitem">
             ${accountMenuIcon('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>')}
             <span>Dashboard</span>
-        </a>
-        <a href="${dashHref('licenses')}" class="acct-item" role="menuitem" data-acct-tab="licenses">
-            ${accountMenuIcon('<circle cx="8" cy="15" r="4"/><path d="M10.85 12.15L19 4M18 5l2 2M15 8l2 2"/>')}
-            <span>Licenses</span>
-        </a>
-        <a href="${dashHref('settings')}" class="acct-item" role="menuitem" data-acct-tab="settings">
-            ${accountMenuIcon('<circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>')}
-            <span>Settings</span>
         </a>
         <button id="account-menu-link-device" class="acct-item" role="menuitem">
             ${accountMenuIcon('<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>')}
@@ -406,15 +392,6 @@ async function RenderAccountMenu()
         </button>
     `;
 
-    menu.querySelectorAll('[data-acct-tab]').forEach(a => a.addEventListener('click', e =>
-    {
-        if(!onDash) return;
-        e.preventDefault();
-        const tab = a.dataset.acctTab;
-        if(window.DashBridge && typeof window.DashBridge.switchTab === 'function') window.DashBridge.switchTab(tab);
-        else location.hash = tab === 'overview' ? '' : tab;
-        ToggleAccountMenu(false);
-    }));
 
     const signOutBtn = document.getElementById('account-menu-signout');
     if(signOutBtn) signOutBtn.addEventListener('click', SignOut);
