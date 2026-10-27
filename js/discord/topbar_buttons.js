@@ -27,34 +27,30 @@ function ensureAccountMenuStyles()
     st.id = 'account-menu-styles';
     st.textContent = `
 #user-dropdown-menu.sheldon-acct-menu{
-  position:fixed;width:300px;z-index:10000;display:none;
-  background:linear-gradient(160deg,rgba(38,34,28,0.96),rgba(20,20,22,0.97));
-  backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);
-  border:1px solid rgba(199,177,143,0.22);border-radius:18px;padding:14px;
-  box-shadow:0 24px 60px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.07);
-  opacity:0;transform:scale(0.94) translateY(-6px);transform-origin:top right;
+  position:fixed;width:272px;z-index:10000;display:none;box-sizing:border-box;
+  background:#141416;border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:6px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.6),0 2px 8px rgba(0,0,0,0.35);
+  font-family:'Inter',sans-serif;
+  opacity:0;transform:translateY(-4px);transform-origin:top right;
 }
-#user-dropdown-menu.sheldon-acct-menu.open{
-  opacity:1;transform:scale(1) translateY(0);
-  transition:opacity 180ms ease-out,transform 180ms ease-out;
-}
-#user-dropdown-menu.sheldon-acct-menu.closing{
-  opacity:0;transform:scale(0.96) translateY(-4px);
-  transition:opacity 140ms ease-in,transform 140ms ease-in;
-}
-#user-dropdown-menu .acct-head{display:flex;align-items:center;gap:12px;padding:6px 4px 13px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:10px;}
-#user-dropdown-menu .acct-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:none;border:2px solid rgba(199,177,143,0.55);box-shadow:0 0 0 3px rgba(199,177,143,0.12);}
-#user-dropdown-menu .acct-avatar-fallback{width:42px;height:42px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#e9dcc3;background:linear-gradient(135deg,#4a4136,#2a2620);border:2px solid rgba(199,177,143,0.45);}
-#user-dropdown-menu .acct-name{font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.01em;}
-#user-dropdown-menu .acct-sub{font-size:9.5px;color:#c7b18f;text-transform:uppercase;letter-spacing:0.16em;font-weight:800;margin-top:3px;display:flex;align-items:center;gap:6px;}
-#user-dropdown-menu .acct-sub::before{content:"";width:6px;height:6px;border-radius:50%;background:#7ee2a8;box-shadow:0 0 8px rgba(126,226,168,0.9);}
-#user-dropdown-menu .acct-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:rgba(255,255,255,0.85);text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease;font-family:'Inter',sans-serif;box-sizing:border-box;}
-#user-dropdown-menu .acct-item:hover,#user-dropdown-menu .acct-item:focus-visible{background:rgba(199,177,143,0.12);border-color:rgba(199,177,143,0.35);color:#fff;outline:none;transform:translateX(2px);}
-#user-dropdown-menu .acct-item.danger:hover,#user-dropdown-menu .acct-item.danger:focus-visible{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.35);color:#fca5a5;}
-#user-dropdown-menu .acct-item svg{flex:none;opacity:0.75;}
-#user-dropdown-menu .acct-cookie{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);}
-#user-dropdown-menu .acct-cookie-btn{width:100%;padding:9px 0;border-radius:10px;border:1px dashed rgba(199,177,143,0.4);background:rgba(199,177,143,0.07);color:#c7b18f;font-size:10.5px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:background .16s ease;}
-#user-dropdown-menu .acct-cookie-btn:hover{background:rgba(199,177,143,0.15);}
+#user-dropdown-menu.sheldon-acct-menu.open{opacity:1;transform:none;transition:opacity 150ms ease-out,transform 150ms ease-out;}
+#user-dropdown-menu.sheldon-acct-menu.closing{opacity:0;transform:translateY(-3px);transition:opacity 110ms ease-in,transform 110ms ease-in;}
+#user-dropdown-menu .acct-head{display:flex;align-items:center;gap:11px;padding:10px 10px 12px;}
+#user-dropdown-menu .acct-avatar,#user-dropdown-menu .acct-avatar-fallback{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;border:1px solid rgba(199,177,143,0.35);}
+#user-dropdown-menu .acct-avatar-fallback{display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#e9dcc3;background:linear-gradient(135deg,#4a4136,#2a2620);}
+#user-dropdown-menu .acct-name{font-size:13.5px;font-weight:650;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#user-dropdown-menu .acct-handle{font-size:12px;color:#7a7a7a;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#user-dropdown-menu .acct-balance{display:flex;align-items:center;justify-content:space-between;margin:0 4px 6px;padding:8px 10px;border-radius:9px;background:rgba(199,177,143,0.07);border:1px solid rgba(199,177,143,0.14);font-size:12px;color:#a3a3a3;}
+#user-dropdown-menu .acct-balance b{font:600 12.5px 'JetBrains Mono',monospace;color:#c7b18f;}
+#user-dropdown-menu .acct-sep{height:1px;background:rgba(255,255,255,0.07);margin:5px 4px;}
+#user-dropdown-menu .acct-item{display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 10px;border:0;border-radius:8px;background:none;color:#d4d4d4;text-decoration:none;font:500 13px 'Inter',sans-serif;cursor:pointer;text-align:left;box-sizing:border-box;transition:background .12s ease,color .12s ease;}
+#user-dropdown-menu .acct-item svg{flex:none;width:16px;height:16px;color:#8a8a8a;transition:color .12s ease;}
+#user-dropdown-menu .acct-item:hover,#user-dropdown-menu .acct-item:focus-visible{background:rgba(255,255,255,0.06);color:#fff;outline:none;}
+#user-dropdown-menu .acct-item:hover svg,#user-dropdown-menu .acct-item:focus-visible svg{color:#c7b18f;}
+#user-dropdown-menu .acct-item .acct-hint{margin-left:auto;font:500 11px 'JetBrains Mono',monospace;color:#5f5f5f;}
+#user-dropdown-menu .acct-item.danger:hover,#user-dropdown-menu .acct-item.danger:focus-visible{background:rgba(248,113,113,0.1);color:#fca5a5;}
+#user-dropdown-menu .acct-item.danger:hover svg,#user-dropdown-menu .acct-item.danger:focus-visible svg{color:#fca5a5;}
+#user-dropdown-menu .acct-cookie .acct-item{color:#8a8a8a;font-size:12.5px;}
 @media (prefers-reduced-motion: reduce){
   #user-dropdown-menu.sheldon-acct-menu.open,#user-dropdown-menu.sheldon-acct-menu.closing{transition:none;transform:none;}
 }`;
@@ -228,9 +224,9 @@ function ToggleAccountMenu(show, opts)
         if(trigger)
         {
             const rect = trigger.getBoundingClientRect();
-            const w = 300;
-            menu.style.left = Math.max(8, Math.min(rect.right - (w - 40), window.innerWidth - w - 8)) + 'px';
-            menu.style.top = (rect.bottom + 10) + 'px';
+            const w = 272;
+            menu.style.left = Math.max(8, Math.min(rect.right - w, window.innerWidth - w - 8)) + 'px';
+            menu.style.top = (rect.bottom + 8) + 'px';
             menu.style.right = 'auto';
         }
         menu.style.display = 'block';
@@ -311,9 +307,11 @@ function appendCookieSettingsButton(menu)
     wrap.className = 'acct-cookie';
 
     const btn = document.createElement('button');
-    btn.textContent = status === 'declined' ? 'Cookie settings \u2014 declined' : 'Cookie settings';
+    btn.innerHTML = accountMenuIcon('<path d="M12 2a10 10 0 1010 10 4 4 0 01-5-5 4 4 0 01-5-5"/><path d="M8.5 8.5v.01M16 15.5v.01M12 12v.01M11 17v.01M7 14v.01"/>') +
+        `<span>Cookie settings</span>${status === 'declined' ? '<span class="acct-hint">declined</span>' : ''}`;
     btn.title = 'Show the cookie / fingerprint consent prompt again';
-    btn.className = 'acct-cookie-btn';
+    btn.className = 'acct-item';
+    btn.setAttribute('role', 'menuitem');
     btn.addEventListener('click', () =>
     {
         try { window.SheldonCookies?.ShowCookiePrompt?.(); } catch(e) {}
@@ -367,30 +365,56 @@ async function RenderAccountMenu()
         ? `<img class="acct-avatar" src="${user.avatar}" alt="">`
         : `<div class="acct-avatar-fallback">${window.escapeHtml ? window.escapeHtml(initial) : initial}</div>`;
 
+    const esc = s => window.escapeHtml ? window.escapeHtml(s) : String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const handle = user && user.username ? '@' + user.username : '';
+    const balance = user && user.balance !== undefined ? Number(user.balance || 0).toFixed(1) : null;
+    // On the dashboard itself the tab links switch tabs in place via the hash.
+    const onDash = location.pathname.replace(/\/+$/, '') === '/dashboard';
+    const dashHref = tab => (onDash ? '' : '/dashboard/') + (tab ? '#' + tab : '');
+
     menu.innerHTML = `
         <div class="acct-head">
             ${avatar}
             <div style="min-width:0;">
-                <div class="acct-name">${window.escapeHtml ? window.escapeHtml(name) : name}</div>
-                <div class="acct-sub">Account Menu</div>
+                <div class="acct-name">${esc(name)}</div>
+                ${handle && handle.slice(1) !== name ? `<div class="acct-handle">${esc(handle)}</div>` : '<div class="acct-handle">Signed in with Discord</div>'}
             </div>
         </div>
+        ${balance !== null ? `<div class="acct-balance"><span>Balance</span><b>${esc(balance)} credits</b></div>` : ''}
 
-        <div style="display:flex;flex-direction:column;gap:6px;">
-            <a href="/dashboard/" class="acct-item" role="menuitem">
-                ${accountMenuIcon('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>')}
-                <span>Dashboard</span>
-            </a>
-            <button id="account-menu-link-device" class="acct-item" role="menuitem">
-                ${accountMenuIcon('<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/>')}
-                <span>Link new device</span>
-            </button>
-            <button id="account-menu-signout" class="acct-item danger" role="menuitem">
-                ${accountMenuIcon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>')}
-                <span>Sign out</span>
-            </button>
-        </div>
+        <a href="${onDash ? '#' : '/dashboard/'}" class="acct-item" role="menuitem" data-acct-tab="overview">
+            ${accountMenuIcon('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>')}
+            <span>Dashboard</span>
+        </a>
+        <a href="${dashHref('licenses')}" class="acct-item" role="menuitem" data-acct-tab="licenses">
+            ${accountMenuIcon('<circle cx="8" cy="15" r="4"/><path d="M10.85 12.15L19 4M18 5l2 2M15 8l2 2"/>')}
+            <span>Licenses</span>
+        </a>
+        <a href="${dashHref('settings')}" class="acct-item" role="menuitem" data-acct-tab="settings">
+            ${accountMenuIcon('<circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>')}
+            <span>Settings</span>
+        </a>
+        <button id="account-menu-link-device" class="acct-item" role="menuitem">
+            ${accountMenuIcon('<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>')}
+            <span>Link new device</span>
+        </button>
+        <div class="acct-sep" role="separator"></div>
+        <div id="acct-cookie-slot"></div>
+        <button id="account-menu-signout" class="acct-item danger" role="menuitem">
+            ${accountMenuIcon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>')}
+            <span>Sign out</span>
+        </button>
     `;
+
+    menu.querySelectorAll('[data-acct-tab]').forEach(a => a.addEventListener('click', e =>
+    {
+        if(!onDash) return;
+        e.preventDefault();
+        const tab = a.dataset.acctTab;
+        if(window.DashBridge && typeof window.DashBridge.switchTab === 'function') window.DashBridge.switchTab(tab);
+        else location.hash = tab === 'overview' ? '' : tab;
+        ToggleAccountMenu(false);
+    }));
 
     const signOutBtn = document.getElementById('account-menu-signout');
     if(signOutBtn) signOutBtn.addEventListener('click', SignOut);
@@ -415,7 +439,20 @@ async function RenderAccountMenu()
         } catch(e) {}
     });
 
-    appendCookieSettingsButton(menu);
+    appendCookieSettingsButton(menu.querySelector('#acct-cookie-slot') || menu);
+
+    // Arrow keys walk the items like a native menu.
+    menu.onkeydown = e =>
+    {
+        if(!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+        const items = [...menu.querySelectorAll('.acct-item')];
+        if(!items.length) return;
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement);
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1
+            : e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
+        items[next].focus();
+    };
 }
 
 function attachProfileTrigger()

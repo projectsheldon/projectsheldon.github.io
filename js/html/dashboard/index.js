@@ -46,7 +46,7 @@ function formatLastSeen(ts) {
     if (diff < 60 * 60 * 1000) return Math.floor(diff / 60000) + 'm ago';
     if (diff < 24 * 60 * 60 * 1000) return Math.floor(diff / 3600000) + 'h ago';
     if (diff < 30 * 24 * 60 * 60 * 1000) return Math.floor(diff / 86400000) + 'd ago';
-    return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return formatDate(ts);
 }
 
 // Athens YYYY-MM-DD from a timestamp (the server buckets by Europe/Athens).
@@ -85,19 +85,15 @@ function sparklineSvg(values, w, h) {
 }
 
 const SPARK_HINT = 'Each point is one day in the activity range below. The percentage compares the last 7 days of usage with the 7 days before that.';
-const INFO_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
 
-// The sparkline is decorative, so the explanation lives on a focusable wrapper
-// plus an explicit hint row - native title alone is unreachable by keyboard.
-function sparklineBlock(values, delta) {
+// The sparkline is decorative, so the explanation lives on a focusable wrapper.
+function sparklineBlock(values) {
     return `
         <span class="dash-spark-wrap" tabindex="0" role="img"
               aria-label="${escapeHtml(SPARK_HINT)}"
               title="${escapeHtml(SPARK_HINT)}">
             ${sparklineSvg(values)}
         </span>
-        ${deltaHtml(delta)}
-        <span class="dash-spark-hint" title="${escapeHtml(SPARK_HINT)}">${INFO_ICON}Daily usage, last ${values.length} days</span>
     `;
 }
 
@@ -116,65 +112,64 @@ function last7vsPrev7(daily) {
 function deltaHtml(delta) {
     if (!delta) return '';
     if (delta.dir === 'flat') return `<span class="dash-delta flat" title="${escapeHtml(SPARK_HINT)}">– no change</span>`;
-    const arrow = delta.dir === 'up' ? '▲' : '▼';
-    return `<span class="dash-delta ${delta.dir}" title="${escapeHtml(SPARK_HINT)}">${arrow} ${Math.abs(delta.pct)}% last 7d</span>`;
+    const arrow = delta.dir === 'up' ? '↑' : '↓';
+    return `<span class="dash-delta ${delta.dir}" title="${escapeHtml(SPARK_HINT)}">${arrow} ${Math.abs(delta.pct)}% 7d</span>`;
 }
 
+function memberAge(ms) {
+    if (!ms || ms <= 0) return '';
+    const days = Math.floor((Date.now() - ms) / 86400000);
+    if (days < 1) return 'joined today';
+    if (days < 60) return days + (days === 1 ? ' day' : ' days') + ' ago';
+    const months = Math.floor(days / 30.4);
+    if (months < 24) return months + ' months ago';
+    return Math.floor(months / 12) + ' years ago';
+}
+
+// One hairline strip of four facts: usage (with its trend), licenses, wallet, tenure.
 function renderStats() {
     const { user, memberSince, usage } = state.data;
     const daily = (state.data.activity && state.data.activity.daily) || [];
-    const dailySeconds = daily.map(d => Number(d.seconds) || 0);
+    const licenses = state.data.licenses || [];
+    const active = licenses.filter(isActiveLicense).length;
+    const delta = last7vsPrev7(daily);
 
-    // Balance and member age are both small, static facts, so they share one card
-    // split by a hairline instead of each taking a quarter of the row.
-    const cards = [
-        { label: 'Total usage', value: formatHours((usage && usage.totalSeconds) || 0), cls: 'gold', sub: 'all time', spark: dailySeconds, delta: last7vsPrev7(daily) },
+    const tiles = [
         {
-            cells: [
-                { label: 'Balance', value: Number(user.balance || 0).toFixed(1), cls: 'gold', sub: 'wallet credits' },
-                { label: 'Member since', value: formatDate(memberSince), compact: true }
-            ]
+            label: 'Total usage',
+            aside: deltaHtml(delta),
+            value: escapeHtml(formatHours((usage && usage.totalSeconds) || 0)),
+            extra: daily.length > 1 ? sparklineBlock(daily.map(d => Number(d.seconds) || 0)) : '',
+            sub: 'all time'
+        },
+        {
+            label: 'Active licenses',
+            value: `${active}<small>/ ${licenses.length}</small>`,
+            subHtml: licenses.length ? '<button type="button" data-goto="licenses">View licenses →</button>' : '<a href="/checkout/">Get a license →</a>'
+        },
+        {
+            label: 'Balance',
+            value: `${escapeHtml(Number((user && user.balance) || 0).toFixed(1))}<small>credits</small>`,
+            sub: 'wallet credits'
+        },
+        {
+            label: 'Member since',
+            value: escapeHtml(formatDate(memberSince)),
+            text: true,
+            sub: memberAge(memberSince)
         }
     ];
 
     const stats = document.getElementById('dash-stats');
-    stats.innerHTML = '';
-    cards.forEach(card => {
-        const el = document.createElement('div');
-        el.className = card.cells ? 'dash-stat dash-stat--split' : 'dash-stat';
-        // `cells` means one card split into hairline-separated halves.
-        (card.cells || [card]).forEach(part => {
-            const host = card.cells ? document.createElement('div') : el;
-            if (card.cells) {
-                host.className = 'dash-stat-cell';
-                el.appendChild(host);
-            }
-            renderStatCell(host, part);
-        });
-        stats.appendChild(el);
-    });
-}
-
-function renderStatCell(host, card) {
-    const label = document.createElement('span');
-    label.className = 'dash-stat-label';
-    label.textContent = card.label;
-
-    const value = document.createElement('div');
-    value.className = 'dash-stat-value' + (card.cls ? ' ' + card.cls : '') + (card.compact ? ' compact' : '');
-    value.textContent = card.value;
-
-    host.appendChild(label);
-    host.appendChild(value);
-
-    if (card.spark && card.spark.length) host.insertAdjacentHTML('beforeend', sparklineBlock(card.spark, card.delta));
-    else if (card.delta) host.insertAdjacentHTML('beforeend', deltaHtml(card.delta));
-    if (card.sub) {
-        const sub = document.createElement('span');
-        sub.className = 'dash-stat-sub';
-        sub.textContent = card.sub;
-        host.appendChild(sub);
-    }
+    stats.innerHTML = tiles.map(t => `
+        <div class="stat">
+            <span class="stat-label"><span>${escapeHtml(t.label)}</span>${t.aside || ''}</span>
+            <div class="stat-value${t.text ? ' is-text' : ''}">${t.value}</div>
+            ${t.extra || ''}
+            ${t.subHtml ? `<span class="stat-sub">${t.subHtml}</span>` : (t.sub ? `<span class="stat-sub">${escapeHtml(t.sub)}</span>` : '')}
+        </div>
+    `).join('');
+    stats.querySelectorAll('[data-goto]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.goto)));
 }
 
 // ---------- progress-bar runner ----------
@@ -197,8 +192,8 @@ function renderStatCell(host, card) {
 // Canvas rather than CSS animation because the dino, the obstacles and the
 // scroll have to share one clock, and a canvas costs nothing while paused.
 const RUNNER = (() => {
-    const TRACK_H = 64;
-    const GROUND_PAD = 9;
+    const TRACK_H = 80;
+    const GROUND_PAD = 11;
     const MARGIN = 8;
 
     // Lane scale for Chrome's art (dino stands ~26px tall here).
@@ -213,13 +208,19 @@ const RUNNER = (() => {
     const DINO_W = 44, DINO_H = 47, DUCK_W = 59;
     const SMALL_W = 17, SMALL_H = 35, LARGE_W = 25, LARGE_H = 50;
     const BIRD_W = 46, BIRD_H = 40;
-    // Bird lanes (dest top edge): high clears standing, mid + low need a duck.
-    const BIRD_BANDS = [8, 19, 22];
+    // Bird lanes (dest top edge) with ground at 69 and a 26px dino, matching
+    // Chrome's three heights: the high bird flies over a standing dino, the mid
+    // bird has to be ducked, the low bird has to be jumped.
+    const BIRD_BANDS = [{ y: 15, w: 1 }, { y: 33, w: 1.2 }, { y: 47, w: 1 }];
 
     const SPEED = 300;      // logical px per second
-    const GRAVITY = 2000;
-    const JUMP_V = -341;    // apex 29px: clears the tall cactus, head stays in lane
-    const FAST_DROP_V = 1050; // down-while-airborne slam, like Chrome's speed drop
+    const GRAVITY = 2400;
+    const JUMP_V = -449;    // apex 42px: clears every cactus group and the low bird
+    const FAST_DROP_V = 1100; // down-while-airborne slam, like Chrome's speed drop
+    // Every gap leaves a full jump plus a reaction beat after the previous
+    // obstacle, so no spawn sequence can be impossible.
+    const MIN_GAP_S = 0.72;
+    const MAX_GAP_S = 1.35;
     const DEATH_MS = 2000;  // game-over pause before the run restarts
     const DEATH_FLASH_MS = 500; // red tint at the start of game over
     const PHYSICS_STEP = 1 / 120;
@@ -269,21 +270,44 @@ const RUNNER = (() => {
 
     // ---- Chrome sprite sheet (recolored tints of dino-sprite.png) ----
     // The dark sheet art is recolored once at load so it reads on the dark
-    // lane; gold for the finished sprint, red for the death flash.
+    // lane; gold for the finished sprint, red for the death flash. Chrome's
+    // sheet wraps every sprite in an opaque white halo (and paints the eye
+    // white); tinting the raw alpha turned that halo into a thick outline and
+    // filled the eye in, so only the dark ink is kept before tinting.
     const SPR_URL = '/js/html/dashboard/dino-sprite-2x.png';
     const SPR_IMG = new Image();
     const TINTS = { light: '#f2e7cd', gold: '#1d1913', red: '#ff9d8a' };
     const tintSheets = {};
     let sheetReady = false;
 
+    function inkOnly(img) {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const g = c.getContext('2d');
+        g.drawImage(img, 0, 0);
+        try {
+            const data = g.getImageData(0, 0, c.width, c.height);
+            const px = data.data;
+            for (let i = 0; i < px.length; i += 4) {
+                const lum = (px[i] * 299 + px[i + 1] * 587 + px[i + 2] * 114) / 1000;
+                if (lum > 150) px[i + 3] = 0;
+                else if (lum > 110) px[i + 3] = Math.round(px[i + 3] * (150 - lum) / 40);
+            }
+            g.putImageData(data, 0, 0);
+        } catch (e) {}
+        return c;
+    }
+
     function buildTints() {
         if (!SPR_IMG.complete || !SPR_IMG.naturalWidth || sheetReady) return;
+        const ink = inkOnly(SPR_IMG);
         for (const key of Object.keys(TINTS)) {
             const c = document.createElement('canvas');
-            c.width = SPR_IMG.naturalWidth;
-            c.height = SPR_IMG.naturalHeight;
+            c.width = ink.width;
+            c.height = ink.height;
             const g = c.getContext('2d');
-            g.drawImage(SPR_IMG, 0, 0);
+            g.drawImage(ink, 0, 0);
             g.globalCompositeOperation = 'source-in';
             g.fillStyle = TINTS[key];
             g.fillRect(0, 0, c.width, c.height);
@@ -468,6 +492,9 @@ const RUNNER = (() => {
             const w = track.getBoundingClientRect().width;
             if (!w) return;
             const dpr = Math.min(2, window.devicePixelRatio || 1);
+            // Anything still queued past the new right edge would land on top of
+            // the next spawn, so a narrower lane drops it.
+            if (w < s.w) s.obstacles = s.obstacles.filter(o => o.x < w);
             s.w = w;
             canvas.width = Math.round(w * dpr);
             canvas.height = Math.round(TRACK_H * dpr);
@@ -589,28 +616,31 @@ const RUNNER = (() => {
             return false;
         }
 
+        // Every obstacle moves at the lane speed (birds used to fly 15% faster
+        // and could catch up with the cactus in front of them, leaving a jump
+        // and a duck at the same spot). The next spawn waits for this
+        // obstacle's width plus a fixed jump-and-react window.
         function spawnObstacle() {
-            let w, minGapCfg;
-            if (Math.random() < 0.32) {
+            let w;
+            const lastBird = s.obstacles.length && s.obstacles[s.obstacles.length - 1].kind === 'bird';
+            if (s.dist > 900 && !lastBird && Math.random() < 0.28) {
                 const band = BIRD_BANDS[(Math.random() * BIRD_BANDS.length) | 0];
                 w = BIRD_W * SCALE;
-                minGapCfg = 150;
                 s.obstacles.push({
                     kind: 'bird',
                     x: s.w + 12,
-                    y: band,
+                    y: band.y,
                     w, h: BIRD_H * SCALE,
                     boxes: BIRD_BOXES,
-                    speed: Math.round(SPEED * 1.15)
+                    gapScale: band.w
                 });
             } else {
-                const large = Math.random() < 0.45;
+                const large = Math.random() < 0.4;
                 const r = Math.random();
-                const size = r < 0.5 ? 1 : (r < 0.8 ? 2 : 3);
+                const size = large ? (r < 0.65 ? 1 : 2) : (r < 0.5 ? 1 : (r < 0.82 ? 2 : 3));
                 const unitW = large ? LARGE_W : SMALL_W;
                 const unitH = large ? LARGE_H : SMALL_H;
                 w = unitW * size * SCALE;
-                minGapCfg = 120;
                 s.obstacles.push({
                     kind: 'cactus',
                     large, size,
@@ -620,11 +650,9 @@ const RUNNER = (() => {
                     boxes: groupBoxes(large ? LARGE_BOXES : SMALL_BOXES, unitW, size)
                 });
             }
-            // Chrome's gap formula at our px/frame pace: room scales with width.
-            const perFrame = SPEED / 60;
-            const minGap = Math.round(w * perFrame + minGapCfg * 0.6);
-            const maxGap = Math.round(minGap * 1.5);
-            s.spawnIn = (minGap + Math.random() * (maxGap - minGap)) / SPEED;
+            const last = s.obstacles[s.obstacles.length - 1];
+            const gap = MIN_GAP_S * (last.gapScale || 1) + Math.random() * (MAX_GAP_S - MIN_GAP_S);
+            s.spawnIn = (w + 24) / SPEED + gap;
         }
 
         function step(dt, now) {
@@ -642,7 +670,7 @@ const RUNNER = (() => {
                     s.spawnIn -= dt;
                     if (s.spawnIn <= 0) spawnObstacle();
                     for (const o of s.obstacles) {
-                        o.x -= (o.speed || SPEED) * dt;
+                        o.x -= SPEED * dt;
                     }
                     if (checkCollision()) die(now);
                     s.obstacles = s.obstacles.filter(o => o.x + o.w > -30);
@@ -692,11 +720,21 @@ const RUNNER = (() => {
 
         // Mouse clicks jump at once. Touch is tap-to-jump, hold-to-duck:
         // a quick tap jumps on release, holding past 180ms ducks instead.
+        // preventDefault on pointerdown also blocks the browser's own focus, and
+        // the keyboard handlers live on the track – so ducking with the arrow key
+        // never worked after a click. Focus it explicitly.
         let holdTimer = 0;
+        track.addEventListener('focus', () => track.classList.add('is-armed'));
+        track.addEventListener('blur', () => {
+            track.classList.remove('is-armed');
+            s.keyDuck = false;
+        });
         track.addEventListener('pointerdown', e => {
             e.preventDefault();
+            try { track.focus({ preventScroll: true }); } catch (err) { track.focus(); }
             if (s.dead) return;
             if (e.pointerType === 'mouse') {
+                if (e.button !== 0) return;
                 hop();
                 return;
             }
@@ -722,17 +760,20 @@ const RUNNER = (() => {
             track.addEventListener('pointercancel', up);
         });
         track.addEventListener('keydown', e => {
-            if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'ArrowUp' || e.key === 'Enter') {
+            if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'ArrowUp' || e.code === 'KeyW' || e.key === 'Enter') {
                 e.preventDefault();
-                hop();
+                if (!e.repeat || s.grounded) hop();
             } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
                 e.preventDefault();
-                if (!e.repeat) pressDuck();
+                pressDuck();
+            } else if (e.key === 'Escape') {
+                track.blur();
             }
         });
         track.addEventListener('keyup', e => {
             if (e.code === 'ArrowDown' || e.code === 'KeyS') s.keyDuck = false;
         });
+        track.addEventListener('contextmenu', e => e.preventDefault());
         window.addEventListener('blur', () => {
             s.keyDuck = false;
             s.touchDuck = false;
@@ -795,18 +836,25 @@ function renderUsageProgress() {
     const pct = Math.min(100, Math.round((seconds / threshold) * 100));
     const rewarded = sessionStorage.getItem('usage_reward') === '1';
 
-    // Say what the bar is for, then the exact progress, in one sentence.
+    let title;
     let caption;
     const goalReached = !rewarded && doneHours >= totalHours;
+    const left = Math.max(0, totalHours - doneHours);
     if (rewarded) {
-        caption = `Free key claimed. Your counter has reset – reach ${totalHours} hours again this week for the next one. (${doneHours}/${totalHours} hours completed)`;
-    } else if (doneHours >= totalHours) {
-        caption = `Goal reached. Claim your free license now – no ad needed. (${doneHours}/${totalHours} hours completed)`;
+        title = 'Free license claimed';
+        caption = `Your counter has reset. Reach ${totalHours} hours again for the next one.`;
+    } else if (goalReached) {
+        title = 'Goal reached';
+        caption = 'Claim your free license now – no ad needed.';
     } else {
-        caption = `Use Sheldon for ${totalHours} hours this week to earn a free license, no ad required. (${doneHours}/${totalHours} hours completed)`;
+        title = 'Earn a free license';
+        caption = `Use Sheldon for ${totalHours} hours in a week and the license is yours, no ad required. ${left} ${left === 1 ? 'hour' : 'hours'} to go.`;
     }
 
-    document.getElementById('dash-usage-ratio').textContent = `${doneHours} / ${totalHours} hours`;
+    document.getElementById('dash-usage-title').textContent = title;
+    document.getElementById('dash-usage-done').textContent = doneHours;
+    document.getElementById('dash-usage-total').textContent = `/ ${totalHours} h`;
+    document.getElementById('dash-usage-pct').textContent = `${pct}% complete`;
     document.getElementById('dash-usage-fill').style.width = pct + '%';
     RUNNER.setProgress(pct);
     document.getElementById('dash-usage-caption').textContent = caption;
@@ -819,7 +867,7 @@ function renderUsageProgress() {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = 'Claim free license';
-            btn.style.cssText = 'display:inline-block;background:#c7b18f;color:#050505;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;border:0;cursor:pointer;border-radius:10px;padding:10px 18px;';
+            btn.className = 'btn btn-primary';
             btn.addEventListener('click', async () => {
                 btn.disabled = true;
                 const original = btn.textContent;
@@ -946,8 +994,7 @@ function barChartHtml(buckets, opts) {
     const last = buckets.length - 1;
 
     const bars = buckets.map((b, i) => {
-        const hours = (Number(b.seconds) || 0) / 3600;
-        const h = b.seconds > 0 ? Math.max((hours / (max / 3600)) * 100, 4) : 0;
+        const h = b.seconds > 0 ? Math.max((b.seconds / max) * 100, 3) : 0;
         const cls = b.seconds > 0 ? 'bar' : 'bar bar-empty';
         const today = b.seconds > 0 && i === last && opts.highlightLast !== false ? ' bar-today' : '';
         const sub = b.sessions > 0 ? b.sessions + ' session' + (b.sessions === 1 ? '' : 's') : '';
@@ -958,13 +1005,13 @@ function barChartHtml(buckets, opts) {
         `;
     }).join('');
 
+    // Y-axis labels sit on the gridlines, so the bars read as hours without a hover.
+    const tick = f => hasData ? `<em>${escapeHtml(formatHours(max * f))}</em>` : '';
     return `
         <div class="stats-chart">
-            ${hasData ? `<span class="chart-max">Peak: ${escapeHtml(formatHours(max))} · Lowest: ${escapeHtml(formatHours(Math.min(...buckets.map(b => Number(b.seconds) || 0))))}</span>` : ''}
-            <span class="chart-gridline" style="top:25%"></span>
-            <span class="chart-gridline" style="top:50%"></span>
-            <span class="chart-gridline" style="top:75%"></span>
-            <span class="chart-gridline chart-gridline-base"></span>
+            <span class="chart-gridline" style="top:0">${tick(1)}</span>
+            <span class="chart-gridline" style="top:50%">${tick(.5)}</span>
+            <span class="chart-gridline chart-gridline-base"><em>0</em></span>
             ${bars}
         </div>
     `;
@@ -1091,9 +1138,9 @@ function emptyStateHtml(text) {
 function hourlyWrapHtml(label, items) {
     return `
         <div class="hourly-wrap">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding-bottom:.6rem;margin-bottom:.5rem;border-bottom:1px solid var(--dash-line);">
-                <span class="panel-meta">${escapeHtml(label)} &mdash; hourly</span>
-                <button class="hourly-back">← back</button>
+            <div class="hourly-head">
+                <span class="panel-meta" style="margin:0;">${escapeHtml(label)} – by hour</span>
+                <button class="btn btn-sm hourly-back">← Back to days</button>
             </div>
             ${barChartHtml(items, { highlightLast: false })}
             ${chartAxisHtml(items)}
@@ -1195,22 +1242,41 @@ function fallbackCopy(val, done) {
 }
 
 function licenseStatusBadge(status) {
-    return `<span class="license-status ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+    return `<span class="status ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+}
+
+function relativeDays(ms) {
+    const days = Math.round((ms - Date.now()) / 86400000);
+    if (days === 0) return 'today';
+    if (days > 0) return days === 1 ? 'in 1 day' : `in ${days} days`;
+    return days === -1 ? '1 day ago' : `${-days} days ago`;
+}
+
+function licenseMatches(lic, q) {
+    if (!q) return true;
+    return String(lic.key || '').toLowerCase().includes(q) || String(lic.product || '').toLowerCase().includes(q);
 }
 
 // The page sub-line is shared by both tabs: licenses shows live counts there,
 // overview keeps its own copy. Anything that renders data must go through this so
 // the licenses numbers never leak onto the overview tab.
+function displayName() {
+    const u = state.user;
+    return (u && (u.globalName || u.username)) || '';
+}
+
 function setPageSub() {
     const sub = document.getElementById('dash-page-sub');
+    const title = document.getElementById('dash-page-title');
     if (!sub) return;
     if (state.tab === 'settings') {
-        sub.textContent = 'Devices and account settings';
+        sub.textContent = 'Your account, devices and session';
         return;
     }
     if (state.tab !== 'licenses') {
-        // the stat row no longer carries a card, so the ban state lives here
-        sub.textContent = (state.data && state.data.banned) ? 'Access revoked on this account' : 'Your usage, stats and licenses';
+        const name = displayName();
+        if (title) title.textContent = name ? `Welcome back, ${name}` : 'Overview';
+        sub.textContent = (state.data && state.data.banned) ? 'Access revoked on this account' : 'Your weekly goal, usage and activity';
         return;
     }
     const licenses = (state.data && state.data.licenses) || [];
@@ -1219,23 +1285,46 @@ function setPageSub() {
         return;
     }
     const active = licenses.filter(isActiveLicense).length;
-    const shown = licenses.filter(l => {
-        if (state.filter === 'active') return isActiveLicense(l);
-        if (state.filter === 'inactive') return !isActiveLicense(l);
-        return true;
-    }).length;
-    sub.textContent = `${shown} shown · ${active} active · ${licenses.length - active} inactive`;
+    sub.textContent = `${active} active of ${licenses.length}`;
 }
+
+function copyButton(value, label) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.innerHTML = copyIcon + checkIcon;
+    btn.addEventListener('click', () => {
+        copyKey(btn, value);
+        if (window.NotifySuccess) window.NotifySuccess(label.replace(/^Copy /, '').replace(/^./, c => c.toUpperCase()) + ' copied');
+    });
+    return btn;
+}
+
+const LICENSE_COLS = [
+    { label: 'Key', width: '31%' },
+    { label: 'Product', width: '16%' },
+    { label: 'Status', width: '12%' },
+    { label: 'Expires', width: '15%', num: true },
+    { label: 'Created', width: '13%', num: true },
+    { label: 'Last active', width: '13%', num: true }
+];
 
 function renderLicenses() {
     const list = document.getElementById('dash-license-list');
     if (!list || !state.data) return;
 
     const licenses = state.data.licenses || [];
+    const counts = { all: licenses.length, active: licenses.filter(isActiveLicense).length };
+    counts.inactive = counts.all - counts.active;
+    document.querySelectorAll('[data-count]').forEach(el => { el.textContent = counts[el.dataset.count]; });
+
+    const q = (state.query || '').trim().toLowerCase();
     const filtered = licenses.filter(l => {
-        if (state.filter === 'active') return isActiveLicense(l);
-        if (state.filter === 'inactive') return !isActiveLicense(l);
-        return true;
+        if (state.filter === 'active' && !isActiveLicense(l)) return false;
+        if (state.filter === 'inactive' && isActiveLicense(l)) return false;
+        return licenseMatches(l, q);
     }).sort((a, b) => {
         const sa = isActiveLicense(a) ? 0 : 1;
         const sb = isActiveLicense(b) ? 0 : 1;
@@ -1247,10 +1336,14 @@ function renderLicenses() {
 
     list.innerHTML = '';
     if (filtered.length === 0) {
-        const p = document.createElement('p');
-        p.className = 'empty';
-        p.textContent = licenses.length === 0 ? 'No licenses found.' : 'No licenses match this filter.';
-        list.appendChild(p);
+        const none = licenses.length === 0;
+        list.innerHTML = `
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15L19 4M18 5l2 2M15 8l2 2"/></svg>
+                <b>${none ? 'No licenses yet' : 'Nothing matches'}</b>
+                <span>${none ? 'Keys you buy or earn show up here.' : 'Try another filter or search.'}</span>
+                ${none ? '<a class="btn btn-primary btn-sm" href="/checkout/">Buy a license</a>' : ''}
+            </div>`;
         return;
     }
 
@@ -1258,90 +1351,121 @@ function renderLicenses() {
     table.className = 'dash-table';
     table.id = 'dash-license-table';
     table.setAttribute('data-resizable', '');
-    table.style.minWidth = '760px';
 
     const colgroup = document.createElement('colgroup');
-    ['27%', '13%', '10%', '14%', '14%', '15%', '7%'].forEach(w => {
+    LICENSE_COLS.forEach(c => {
         const col = document.createElement('col');
-        col.style.width = w;
+        col.style.width = c.width;
         colgroup.appendChild(col);
     });
     table.appendChild(colgroup);
 
     const thead = document.createElement('thead');
     const headRow = document.createElement('tr');
-    [
-        { label: 'Key' },
-        { label: 'Product' },
-        { label: 'Status' },
-        { label: 'Expires', cls: 'td-num' },
-        { label: 'Created', cls: 'td-num' },
-        { label: 'Last activity', cls: 'td-num' },
-        { label: '' }
-    ].forEach(cell => {
+    LICENSE_COLS.forEach(c => {
         const th = document.createElement('th');
-        th.className = 'is-sticky';
-        th.textContent = cell.label;
-        if (cell.cls) th.classList.add(cell.cls);
+        th.textContent = c.label;
+        if (c.num) th.classList.add('td-num');
         headRow.appendChild(th);
     });
     thead.appendChild(headRow);
     table.appendChild(thead);
 
+    const cell = (label, cls) => {
+        const td = document.createElement('td');
+        td.dataset.label = label;
+        if (cls) td.className = cls;
+        return td;
+    };
+
     const tbody = document.createElement('tbody');
     filtered.forEach(lic => {
         const tr = document.createElement('tr');
 
-        const tdKey = document.createElement('td');
-        tdKey.className = 'td-mono';
-        tdKey.textContent = lic.key;
-        tdKey.title = lic.key;
+        const tdKey = cell('Key', 'td-key');
+        const keyWrap = document.createElement('div');
+        keyWrap.className = 'key-cell';
+        const code = document.createElement('code');
+        code.textContent = lic.key;
+        code.title = lic.key;
+        keyWrap.append(code, copyButton(lic.key, 'Copy license key'));
+        tdKey.appendChild(keyWrap);
 
-        const tdProd = document.createElement('td');
+        const tdProd = cell('Product');
         tdProd.textContent = lic.product || 'License';
 
-        const tdStatus = document.createElement('td');
+        const tdStatus = cell('Status');
         tdStatus.innerHTML = licenseStatusBadge(licenseStatus(lic));
 
-        const tdExp = document.createElement('td');
-        tdExp.className = 'td-num';
-        tdExp.textContent = lic.expires_at === -1 ? 'Never' : formatDate(lic.expires_at);
+        const tdExp = cell('Expires', 'td-num');
+        const expWrap = document.createElement('span');
+        expWrap.textContent = lic.expires_at === -1 ? 'Never' : formatDate(lic.expires_at);
+        if (lic.expires_at !== -1 && ['active', 'expired'].includes(licenseStatus(lic))) {
+            const rel = document.createElement('span');
+            rel.className = 'td-sub';
+            rel.textContent = relativeDays(lic.expires_at);
+            expWrap.appendChild(rel);
+        }
+        tdExp.appendChild(expWrap);
 
-        const tdCr = document.createElement('td');
-        tdCr.className = 'td-num';
+        const tdCr = cell('Created', 'td-num');
         tdCr.textContent = formatDate(lic.created_at);
 
-        const tdLa = document.createElement('td');
-        tdLa.className = 'td-num';
+        const tdLa = cell('Last active', 'td-num');
         tdLa.textContent = formatLastSeen(lic.last_activity);
 
-        const tdCopy = document.createElement('td');
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-btn';
-        copyBtn.title = 'Copy key';
-        copyBtn.dataset.key = lic.key;
-        copyBtn.innerHTML = copyIcon + checkIcon;
-        copyBtn.addEventListener('click', function () {
-            copyKey(this, this.dataset.key);
-            if (window.NotifySuccess) window.NotifySuccess('License key copied');
-        });
-        tdCopy.appendChild(copyBtn);
-
-        tr.append(tdKey, tdProd, tdStatus, tdExp, tdCr, tdLa, tdCopy);
+        tr.append(tdKey, tdProd, tdStatus, tdExp, tdCr, tdLa);
         tbody.appendChild(tr);
     });
     table.appendChild(tbody);
     list.appendChild(table);
 
-    if (window.ResizableColumns) window.ResizableColumns.attach(table);
+    if (window.ResizableColumns) window.ResizableColumns.attach(table, 'cols_dash_licenses_v2');
+}
+
+// Settings – the account card is filled from the session user plus the dashboard payload.
+function renderAccount() {
+    const u = state.user;
+    const name = displayName() || 'Account';
+    const avatar = document.getElementById('dash-profile-avatar');
+    const raw = (u && u.avatar) || '';
+    const src = /^https:\/\/cdn\.discordapp\.com\//.test(raw) ? raw
+        : (/^(a_)?[a-f0-9]{16,}$/i.test(raw) && u.id ? `https://cdn.discordapp.com/avatars/${u.id}/${raw}.png?size=128` : '');
+    if (avatar) {
+        if (src) {
+            const img = document.createElement('img');
+            img.className = 'profile-avatar';
+            img.src = src;
+            img.alt = '';
+            img.id = 'dash-profile-avatar';
+            avatar.replaceWith(img);
+        } else {
+            avatar.textContent = name.charAt(0).toUpperCase();
+        }
+    }
+    const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    set('dash-profile-name', name);
+    set('dash-profile-handle', u && u.username ? '@' + u.username : '');
+    const idEl = document.getElementById('dash-profile-id');
+    if (idEl && u && u.id) {
+        idEl.innerHTML = '';
+        const code = document.createElement('code');
+        code.textContent = u.id;
+        idEl.append(code, copyButton(u.id, 'Copy Discord ID'));
+    }
+    if (state.data) {
+        set('dash-profile-since', formatDate(state.data.memberSince));
+        set('dash-profile-balance', Number((state.data.user && state.data.user.balance) || 0).toFixed(1) + ' credits');
+    }
 }
 
 // Data loading
 
 async function loadDashboard(extra) {
     const token = DiscordAuth.GetSessionToken();
-    const user = await DiscordAuth.GetUser();
+    const user = state.user || await DiscordAuth.GetUser();
     if (!token || !user) return null;
+    state.user = user;
 
     const body = {
         discordId: user.id,
@@ -1370,7 +1494,7 @@ function showError(message) {
         list.innerHTML = '';
         const p = document.createElement('p');
         p.className = 'empty';
-        p.textContent = message || 'Failed to load.';
+        p.textContent = message || 'Failed to load. Refresh to try again.';
         list.appendChild(p);
     }
 }
@@ -1388,6 +1512,8 @@ async function loadAll() {
         renderUsageProgress();
         renderChart(chart);
         renderLicenses();
+        renderAccount();
+        setPageSub();
     } catch (e) {
         console.error('Dashboard load failed:', e);
         showError();
@@ -1413,7 +1539,12 @@ async function reloadActivity() {
 
 // Tabs
 
-function switchTab(tab) {
+const TABS = ['overview', 'licenses', 'settings'];
+
+// The hash mirrors the tab, so /dashboard/#licenses and #settings (used by the
+// account menu) open straight onto that tab.
+function switchTab(tab, opts) {
+    if (!TABS.includes(tab)) tab = 'overview';
     state.tab = tab;
     document.querySelectorAll('.nav-tab[data-tab]').forEach(b => {
         const on = b.dataset.tab === tab;
@@ -1421,16 +1552,22 @@ function switchTab(tab) {
         if (on) b.setAttribute('aria-current', 'page');
         else b.removeAttribute('aria-current');
     });
-    document.getElementById('tab-overview').classList.toggle('hidden', tab !== 'overview');
-    document.getElementById('tab-licenses').classList.toggle('hidden', tab !== 'licenses');
-    document.getElementById('tab-settings').classList.toggle('hidden', tab !== 'settings');
-    // The header search is always there; only the license filter is tab-specific.
-    document.getElementById('dash-license-tools').hidden = tab !== 'licenses';
-    // table-heavy tabs use the full available width
-    document.getElementById('dash-reader').classList.toggle('is-wide', tab === 'licenses');
+    TABS.forEach(t => document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab));
     document.getElementById('dash-page-title').textContent = tab === 'licenses' ? 'Licenses' : (tab === 'settings' ? 'Settings' : 'Overview');
     setPageSub();
+    if (!opts || opts.updateHash !== false) {
+        const hash = tab === 'overview' ? '' : '#' + tab;
+        if (location.hash !== hash) history.replaceState(null, '', location.pathname + location.search + hash);
+    }
 }
+
+function tabFromHash() {
+    const t = location.hash.replace('#', '');
+    return TABS.includes(t) ? t : 'overview';
+}
+
+switchTab(tabFromHash(), { updateHash: false });
+window.addEventListener('hashchange', () => switchTab(tabFromHash(), { updateHash: false }));
 
 // Sidebar – desktop collapse to an icon rail, mobile off-canvas drawer.
 
@@ -1586,6 +1723,25 @@ document.querySelectorAll('.dash-filter-btn').forEach(btn => {
         renderLicenses();
     });
 });
+
+const licenseSearch = document.getElementById('dash-license-search');
+if (licenseSearch) {
+    licenseSearch.addEventListener('input', () => {
+        state.query = licenseSearch.value;
+        if (state.data) renderLicenses();
+    });
+}
+
+const signOutBtn = document.getElementById('dash-signout-btn');
+if (signOutBtn) {
+    signOutBtn.addEventListener('click', async () => {
+        signOutBtn.disabled = true;
+        signOutBtn.textContent = 'Signing out…';
+        try { await DiscordAuth.Logout(); } catch (e) {}
+        try { DiscordAuth.DeleteSessionToken(); } catch (e) {}
+        window.location.href = '/';
+    });
+}
 
 const rangeInput = document.getElementById('dash-activity-range');
 if (rangeInput) {
@@ -1783,20 +1939,6 @@ if (endInput) {
     });
 })();
 
-// Settings – Connections subtab bar (same tokens as the license filter).
-document.querySelectorAll('[data-connsub-btn]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-connsub-btn]').forEach(b => {
-            const on = b === btn;
-            b.classList.toggle('active', on);
-            b.setAttribute('aria-selected', on ? 'true' : 'false');
-        });
-        document.querySelectorAll('[data-connsub-panel]').forEach(p => {
-            p.style.display = p.dataset.connsubPanel === btn.dataset.connsubBtn ? 'flex' : 'none';
-        });
-    });
-});
-
 // Settings – "Link a device": approve the logged-OUT device's PIN with this
 // browser's session, so the other screen signs in through its own poll.
 const linkPinInput = document.getElementById('dash-link-pin');
@@ -1812,7 +1954,7 @@ if (linkPinBtn) {
         const say = (msg, ok) => {
             if (linkPinMsg) {
                 linkPinMsg.textContent = msg;
-                linkPinMsg.style.color = ok ? 'var(--dash-ok)' : '';
+                linkPinMsg.classList.toggle('is-ok', !!ok);
             }
         };
         const pin = (linkPinInput ? linkPinInput.value : '').replace(/[^0-9A-Z]/g, '');

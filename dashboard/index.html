@@ -377,99 +377,248 @@
             justify-content: space-between;
             gap: 1rem;
             flex-wrap: wrap;
+            padding: 4px 0 6px;
         }
 
-        .ta-eyebrow {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: var(--dash-gold);
-            margin: 0 0 .35rem;
+        .page-head-actions {
             display: flex;
             align-items: center;
-            gap: .5rem;
-        }
-
-        .ta-eyebrow::after {
-            content: '';
-            height: 1px;
-            flex: 0 0 2.2rem;
-            background: rgba(199, 177, 143, .35);
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .ta-page-title {
-            font-size: 21px;
+            font-size: 24px;
             font-weight: 700;
-            letter-spacing: -.01em;
+            letter-spacing: -.02em;
             color: #fff;
             margin: 0;
             line-height: 1.2;
         }
 
         .page-sub {
-            font-size: 12px;
-            color: var(--dash-dim);
-            margin: .25rem 0 0;
+            font-size: 13px;
+            color: var(--dash-mut);
+            margin: .3rem 0 0;
         }
 
-        /* ---------- panels ---------- */
-        .panel {
+        /* ---------- cards ---------- */
+        .card {
             background: var(--dash-panel);
             border: 1px solid var(--dash-line);
-            border-radius: var(--dash-r-lg);
-            padding: 1.1rem 1.2rem;
+            border-radius: 14px;
+            min-width: 0;
         }
 
-        .panel--flush {
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .panel-head {
+        .card-head {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             justify-content: space-between;
-            gap: .75rem;
-            margin-bottom: 16px;
+            gap: 12px;
+            padding: 15px 18px;
+            border-bottom: 1px solid var(--dash-line);
             flex-wrap: wrap;
         }
 
-        .panel-title {
-            margin: 0;
-            font-size: .72rem;
-            font-weight: 700;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            color: #d6d6d6;
-            display: flex;
-            align-items: center;
-            gap: .5rem;
+        .card-head--plain {
+            border-bottom: 0;
+            padding-bottom: 4px;
         }
 
-        .panel-title svg {
-            width: 14px;
-            height: 14px;
+        .card-title {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -.005em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title svg {
+            width: 15px;
+            height: 15px;
             color: var(--dash-gold);
             flex: none;
         }
 
-        .panel-meta {
-            font-size: 11px;
-            color: var(--dash-dim);
-            font-family: 'JetBrains Mono', monospace;
+        .card-desc {
+            margin: 3px 0 0;
+            font-size: 12.5px;
+            color: var(--dash-mut);
+            line-height: 1.5;
         }
 
-        .panel-tools {
+        .card-body {
+            padding: 18px;
+        }
+
+        .card-foot {
             display: flex;
             align-items: center;
-            gap: .5rem;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 18px;
+            border-top: 1px solid var(--dash-line);
+            background: rgba(255, 255, 255, .018);
+            border-radius: 0 0 14px 14px;
+            font-size: 12px;
+            color: var(--dash-dim);
             flex-wrap: wrap;
         }
 
-        /* Dropdowns use the admin-panel widget (enhanced-select.js): native
-           selects are upgraded to the custom trigger + menu, so only the date
-           input keeps native styling here – same toolbar look as /admin. */
+        .card-foot > span {
+            min-width: 0;
+        }
+
+        .card--danger {
+            border-color: rgba(248, 113, 113, .22);
+        }
+
+        .card--danger .card-foot {
+            border-top-color: rgba(248, 113, 113, .16);
+            background: rgba(248, 113, 113, .035);
+        }
+
+        .tools {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ---------- buttons ---------- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 9px;
+            border: 1px solid var(--dash-line-2);
+            background: rgba(255, 255, 255, .04);
+            color: #e8e8e8;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .15s, border-color .15s, color .15s, opacity .15s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, .08);
+            border-color: rgba(255, 255, 255, .2);
+            color: #fff;
+        }
+
+        .btn svg {
+            width: 15px;
+            height: 15px;
+            flex: none;
+        }
+
+        .btn-primary {
+            background: var(--dash-gold);
+            border-color: transparent;
+            color: #15120d;
+        }
+
+        .btn-primary:hover {
+            background: #d8c6a6;
+            border-color: transparent;
+            color: #15120d;
+        }
+
+        .btn-danger {
+            color: #fca5a5;
+            border-color: rgba(248, 113, 113, .3);
+            background: rgba(248, 113, 113, .07);
+        }
+
+        .btn-danger:hover {
+            color: #fff;
+            border-color: rgba(248, 113, 113, .55);
+            background: rgba(248, 113, 113, .18);
+        }
+
+        .btn-sm {
+            height: 30px;
+            padding: 0 11px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .btn:disabled {
+            opacity: .55;
+            cursor: default;
+        }
+
+        .link-btn {
+            background: none;
+            border: 0;
+            padding: 0;
+            color: var(--dash-mut);
+            font: 600 12px 'Inter', sans-serif;
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-color: rgba(255, 255, 255, .2);
+            text-underline-offset: 3px;
+        }
+
+        .link-btn:hover {
+            color: #fff;
+            text-decoration-color: currentColor;
+        }
+
+        /* ---------- segmented control ---------- */
+        .seg {
+            display: inline-flex;
+            gap: 2px;
+            padding: 3px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--dash-line);
+            border-radius: 9px;
+        }
+
+        .seg-btn {
+            height: 26px;
+            padding: 0 10px;
+            border: 0;
+            border-radius: 6px;
+            background: none;
+            color: var(--dash-mut);
+            font: 600 12px 'Inter', sans-serif;
+            white-space: nowrap;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color .15s, background .15s;
+        }
+
+        .seg-btn:hover {
+            color: #fff;
+        }
+
+        .seg-btn.active {
+            background: rgba(255, 255, 255, .1);
+            color: #fff;
+        }
+
+        .seg-count {
+            font: 600 10.5px 'JetBrains Mono', monospace;
+            color: var(--dash-dim);
+        }
+
+        .seg-btn.active .seg-count {
+            color: var(--dash-gold);
+        }
+
+        /* Dropdowns use the admin-panel widget (enhanced-select.js). */
         .esel .esel-menu {
             width: max-content !important;
             min-width: 0;
@@ -521,169 +670,189 @@
             filter: invert(78%) sepia(18%) saturate(600%) hue-rotate(1deg) brightness(92%);
         }
 
-        input[type="date"].stats-select::-webkit-calendar-picker-indicator:hover {
-            opacity: .85;
+        .field {
+            height: 34px;
+            padding: 0 11px;
+            background: rgba(0, 0, 0, .25);
+            border: 1px solid var(--dash-line-2);
+            border-radius: 9px;
+            color: #fff;
+            font: 500 13px 'Inter', sans-serif;
+            outline: none;
+            transition: border-color .15s, background .15s;
+        }
+
+        .field::placeholder {
+            color: var(--dash-dim);
+        }
+
+        .field:hover {
+            border-color: rgba(255, 255, 255, .22);
+        }
+
+        .field:focus {
+            border-color: var(--dash-gold);
+            background: rgba(0, 0, 0, .35);
+        }
+
+        .search-field {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .search-field svg {
+            position: absolute;
+            left: 10px;
+            width: 14px;
+            height: 14px;
+            color: var(--dash-dim);
+            pointer-events: none;
+        }
+
+        .search-field .field {
+            padding-left: 31px;
+            width: 230px;
         }
 
         .empty {
-            padding: 2.2rem 1rem;
+            padding: 2.4rem 1rem;
             text-align: center;
             color: var(--dash-dim);
             font-size: .82rem;
         }
 
-        /* ---------- stat cards ---------- */
-        .dash-stats {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            align-items: start;
-            gap: 16px;
-        }
-
-        .dash-stat {
-            background: var(--dash-panel);
-            border: 1px solid var(--dash-line);
-            border-radius: var(--dash-r-lg);
-            padding: .85rem 1rem;
-            min-width: 0;
-            transition: border-color .15s, background .15s;
-        }
-
-        .dash-stat:hover {
-            background: var(--dash-panel-2);
-            border-color: var(--dash-line-2);
-        }
-
-        .dash-stat-label {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: .12em;
-            color: var(--dash-dim);
-            font-weight: 700;
-            display: block;
-        }
-
-        .dash-stat-value {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -.01em;
-            margin-top: .2rem;
-            color: #fff;
-            line-height: 1.2;
-        }
-
-        .dash-stat-value.gold {
-            color: var(--dash-gold);
-        }
-
-        .dash-stat-value.compact {
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 0;
-            margin-top: .45rem;
-            white-space: nowrap;
-        }
-
-        .dash-stat-sub {
-            display: block;
-            margin-top: .25rem;
-            font-size: 11px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, .35);
-        }
-
-        /* Two facts in one card, split by the same hairline the panels use
-           (mirrors /admin's .now-strip). `align-items: start` on the row above
-           keeps this card at its own height instead of stretching it to match
-           the sparkline card. */
-        .dash-stat--split {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            padding: 0;
-        }
-
-        .dash-stat-cell {
+        .empty-state {
             display: flex;
             flex-direction: column;
-            padding: .85rem 1rem;
-            min-width: 0;
-        }
-
-        .dash-stat-cell + .dash-stat-cell {
-            border-left: 1px solid var(--dash-line);
-        }
-
-        .dash-spark {
-            display: block;
-            width: 100%;
-            height: 26px;
-            margin-top: .5rem;
-        }
-
-        .dash-delta {
-            display: inline-flex;
             align-items: center;
-            gap: 3px;
-            margin-top: .4rem;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: .03em;
+            gap: 6px;
+            padding: 44px 20px;
+            text-align: center;
         }
 
-        /* More usage is the goal here, so "up" gets the brand gold and a drop stays
-           quiet instead of raising a false red alarm. */
-        .dash-delta.up { color: var(--dash-gold); }
-        .dash-delta.down { color: rgba(255, 255, 255, .3); }
-        .dash-delta.flat { color: rgba(255, 255, 255, .35); }
+        .empty-state svg {
+            width: 26px;
+            height: 26px;
+            color: #4d4d4d;
+            margin-bottom: 4px;
+        }
 
-        /* ---------- weekly goal (leads the page) ---------- */
-        .usage-card {
+        .empty-state b {
+            color: #e8e8e8;
+            font-size: 13.5px;
+            font-weight: 600;
+        }
+
+        .empty-state span {
+            color: var(--dash-dim);
+            font-size: 12.5px;
+        }
+
+        .empty-state .btn {
+            margin-top: 10px;
+        }
+
+        /* ---------- weekly goal ---------- */
+        .goal {
             position: relative;
             overflow: hidden;
-            border-color: rgba(199, 177, 143, .28);
+            border-color: rgba(199, 177, 143, .2);
             background:
-                linear-gradient(180deg, rgba(199, 177, 143, .09) 0%, rgba(199, 177, 143, 0) 70%),
+                radial-gradient(120% 160% at 0% 0%, rgba(199, 177, 143, .09), transparent 55%),
                 var(--dash-panel);
-            padding: 1.15rem 1.3rem 1.3rem;
+            padding: 18px;
         }
 
-        .usage-card-top {
+        .goal-top {
             display: flex;
-            align-items: flex-start;
+            align-items: flex-end;
             justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 16px;
+            gap: 16px;
+            margin-bottom: 14px;
             flex-wrap: wrap;
         }
 
-        .usage-card-copy {
+        .goal-copy {
             min-width: 0;
             flex: 1 1 22rem;
         }
 
-        .usage-ratio {
+        .kicker {
             margin: 0;
-            font-size: 15px;
-            font-weight: 800;
-            letter-spacing: -.01em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
             color: var(--dash-gold);
-            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .kicker svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .goal-title {
+            margin: 7px 0 3px;
+            font-size: 16px;
+            font-weight: 650;
+            color: #fff;
+            letter-spacing: -.01em;
+        }
+
+        .usage-caption {
+            margin: 0;
+            font-size: 12.5px;
+            color: var(--dash-mut);
+            line-height: 1.5;
+        }
+
+        .goal-num {
+            text-align: right;
             white-space: nowrap;
         }
 
-        /* Doubles as the runner's lane, so it needs real height and a target.
-           Borderless lane on purpose: no outline, no inset shadow, no hover
-           ring – just the surface the runner lives on. */
+        .goal-num b {
+            font-size: 30px;
+            font-weight: 750;
+            line-height: 1;
+            color: #fff;
+            letter-spacing: -.03em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .goal-num span {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--dash-dim);
+            margin-left: 2px;
+        }
+
+        .goal-num small {
+            display: block;
+            margin-top: 6px;
+            font: 600 11px 'JetBrains Mono', monospace;
+            color: var(--dash-gold);
+        }
+
+        /* Doubles as the runner's lane, so it needs real height and a target. */
         .usage-track {
             position: relative;
-            height: 64px;
-            background: rgba(255, 255, 255, .05);
-            border: 0;
+            height: 80px;
+            background: rgba(0, 0, 0, .22);
+            border: 1px solid var(--dash-line);
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: none;
             cursor: pointer;
             touch-action: manipulation;
+            transition: border-color .15s;
+        }
+
+        .usage-track:hover {
+            border-color: rgba(255, 255, 255, .12);
         }
 
         .usage-track:focus,
@@ -691,12 +860,15 @@
             outline: none;
         }
 
+        .usage-track:focus-visible,
+        .usage-track.is-armed {
+            border-color: rgba(199, 177, 143, .4);
+        }
+
         .usage-fill {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #ab9673 0%, var(--dash-gold) 60%, #d5c39f 100%);
-            border-radius: 12px 0 0 12px;
-            box-shadow: 0 0 14px rgba(199, 177, 143, .45);
+            background: linear-gradient(90deg, rgba(171, 150, 115, .85) 0%, rgba(199, 177, 143, .95) 70%, #d9c8a6 100%);
             transition: width .55s var(--dash-ease);
         }
 
@@ -709,80 +881,214 @@
             pointer-events: none;
         }
 
-        .usage-caption {
-            font-size: 12.5px;
-            color: var(--dash-mut);
-            margin: .7rem 0 0;
-            line-height: 1.5;
-        }
-
-        /* ---------- sparkline tooltip ---------- */
-        .dash-spark-wrap {
-            display: block;
-            margin-top: .55rem;
-            border-radius: 6px;
-        }
-
-        .dash-spark-wrap:hover {
-            background: rgba(255, 255, 255, .03);
-        }
-
-        .dash-spark-hint {
+        .goal-foot {
             display: flex;
             align-items: center;
-            gap: 4px;
-            margin-top: .45rem;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: .02em;
-            color: rgba(255, 255, 255, .3);
-            cursor: help;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 10px;
+            font-size: 11.5px;
+            color: var(--dash-dim);
+            flex-wrap: wrap;
         }
 
-        .dash-spark-hint svg {
-            width: 11px;
-            height: 11px;
-            flex: none;
+        .keys {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
         }
 
-        /* ---------- activity ---------- */
-        .kpi-strip {
-            display: flex;
-            border: 1px solid var(--dash-line);
-            border-radius: var(--dash-r-lg);
+        .keys kbd {
+            font: 600 10px 'JetBrains Mono', monospace;
+            color: var(--dash-mut);
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--dash-line-2);
+            border-bottom-width: 2px;
+            border-radius: 5px;
+            padding: 0 5px;
+            line-height: 16px;
+        }
+
+        .keys-touch {
+            display: none;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .keys-desktop { display: none; }
+            .keys-touch { display: inline-flex; }
+        }
+
+        #dash-usage-action:empty {
+            display: none;
+        }
+
+        /* ---------- stat strip ---------- */
+        .stat-strip {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             background: var(--dash-panel);
+            border: 1px solid var(--dash-line);
+            border-radius: 14px;
             overflow: hidden;
         }
 
-        .kpi {
-            padding: .7rem .95rem;
-            border-right: 1px solid var(--dash-line);
+        .stat {
+            padding: 16px 18px;
             min-width: 0;
-            flex: 1;
+            border-left: 1px solid var(--dash-line);
         }
 
-        .kpi:last-child {
-            border-right: 0;
+        .stat:first-child {
+            border-left: 0;
+        }
+
+        .stat-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--dash-mut);
+        }
+
+        .stat-value {
+            margin-top: 7px;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.15;
+            color: #fff;
+            letter-spacing: -.02em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-value small {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dash-dim);
+            letter-spacing: 0;
+            margin-left: 3px;
+        }
+
+        .stat-value.is-text {
+            font-size: 18px;
+            padding-top: 4px;
+        }
+
+        .stat-sub {
+            display: block;
+            margin-top: 6px;
+            font-size: 11.5px;
+            color: var(--dash-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-sub a,
+        .stat-sub button {
+            color: var(--dash-gold);
+            text-decoration: none;
+            background: none;
+            border: 0;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .stat-sub a:hover,
+        .stat-sub button:hover {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .dash-spark {
+            display: block;
+            width: 100%;
+            height: 26px;
+            margin-top: 8px;
+        }
+
+        .dash-delta {
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .dash-delta.up { color: var(--dash-gold); }
+        .dash-delta.down { color: var(--dash-dim); }
+        .dash-delta.flat { color: var(--dash-dim); }
+
+        .skel {
+            border-radius: 6px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .09), rgba(255, 255, 255, .03));
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+        }
+
+        .skel-bar {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03)) !important;
+            background-size: 200% 100% !important;
+            animation: shimmer 1.2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        /* ---------- activity ---------- */
+        .panel-meta {
+            margin: 3px 0 0;
+            font-size: 11.5px;
+            color: var(--dash-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            padding: 16px 18px 6px;
+        }
+
+        .kpi-row:empty {
+            display: none;
+        }
+
+        .kpi {
+            min-width: 0;
+            padding: 0 16px;
+            border-left: 1px solid var(--dash-line);
+        }
+
+        .kpi:first-child {
+            padding-left: 0;
+            border-left: 0;
         }
 
         .kpi-label {
             display: block;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            color: var(--dash-dim);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--dash-mut);
         }
 
         .kpi-value {
             display: block;
+            margin-top: 4px;
             font-size: 19px;
             font-weight: 700;
-            letter-spacing: -.01em;
-            margin-top: 4px;
+            color: #fff;
+            letter-spacing: -.015em;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
         }
 
         .kpi-value.accent {
@@ -791,51 +1097,24 @@
 
         .kpi-sub {
             display: block;
-            font-size: 10.5px;
+            margin-top: 2px;
+            font: 500 11px 'JetBrains Mono', monospace;
             color: var(--dash-dim);
-            font-family: 'JetBrains Mono', monospace;
-            margin-top: 3px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .stats-views {
-            display: flex;
-            gap: .25rem;
-            border-bottom: 1px solid var(--dash-line);
-            margin: 16px 0;
-            overflow-x: auto;
-        }
-
-        .stats-view-tab {
-            background: none;
-            border: 0;
-            border-bottom: 2px solid transparent;
-            color: var(--dash-mut);
-            font-size: .75rem;
-            font-weight: 600;
-            padding: .55rem .8rem;
-            cursor: pointer;
-            white-space: nowrap;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .stats-view-tab:hover {
-            color: #fff;
-        }
-
-        .stats-view-tab.active {
-            color: var(--dash-gold);
-            border-bottom-color: var(--dash-gold);
+        #dash-activity-chart {
+            padding: 14px 18px 16px;
         }
 
         .stats-chart {
             display: flex;
             align-items: flex-end;
-            gap: 3px;
+            gap: 4px;
             height: 220px;
-            padding-top: 22px;
+            margin: 10px 0 0 42px;
             position: relative;
         }
 
@@ -848,20 +1127,20 @@
             pointer-events: none;
         }
 
-        .stats-chart .chart-gridline-base {
-            bottom: 0;
-            background: rgba(255, 255, 255, .14);
+        .stats-chart .chart-gridline em {
+            position: absolute;
+            right: calc(100% + 9px);
+            top: 0;
+            transform: translateY(-50%);
+            font: 500 10px 'JetBrains Mono', monospace;
+            font-style: normal;
+            color: var(--dash-dim);
+            white-space: nowrap;
         }
 
-        .stats-chart .chart-max {
-            position: absolute;
-            top: 0;
-            left: 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            color: var(--dash-mut);
-            pointer-events: none;
-            z-index: 2;
+        .stats-chart .chart-gridline-base {
+            bottom: 0;
+            background: rgba(255, 255, 255, .13);
         }
 
         .bar-col {
@@ -875,52 +1154,53 @@
             position: relative;
             z-index: 1;
             cursor: pointer;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .bar-col:hover {
+            background: rgba(255, 255, 255, .025);
         }
 
         .bar-col .bar {
             width: 100%;
-            max-width: 36px;
+            max-width: 34px;
             min-height: 3px;
-            background: linear-gradient(180deg, #e6d5ae 0%, var(--dash-gold) 60%, rgba(199, 177, 143, .45) 100%);
-            border-radius: 6px 6px 2px 2px;
+            background: linear-gradient(180deg, #e2d1ad 0%, var(--dash-gold) 55%, rgba(199, 177, 143, .55) 100%);
+            border-radius: 5px 5px 1px 1px;
             transition: height .45s var(--dash-ease), filter .13s;
         }
 
         .bar-col:hover .bar {
-            filter: brightness(1.25);
+            filter: brightness(1.18);
         }
 
         .bar-col .bar.bar-today {
-            background: linear-gradient(180deg, #fff7e3 0%, var(--dash-gold) 55%, #a0813d 100%);
-            box-shadow: 0 0 14px rgba(199, 177, 143, .35);
+            background: linear-gradient(180deg, #fff6e0 0%, #d8c39d 55%, rgba(199, 177, 143, .7) 100%);
         }
 
         .bar-col .bar.bar-empty {
-            background: rgba(255, 255, 255, .1);
+            background: rgba(255, 255, 255, .08);
         }
 
         .chart-empty {
-            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 120px;
+            min-height: 200px;
         }
 
         .chart-empty svg {
             width: 28px;
             height: 28px;
             color: #4a4a4a;
-            margin-bottom: .5rem;
         }
 
         .chart-axis {
             display: flex;
-            justify-content: space-between;
-            margin-top: 6px;
-            font-size: 10px;
-            color: #8a8a8a;
-            font-family: 'JetBrains Mono', monospace;
+            gap: 4px;
+            margin: 8px 0 0 42px;
+            font: 500 10px 'JetBrains Mono', monospace;
+            color: var(--dash-dim);
             white-space: nowrap;
         }
 
@@ -928,27 +1208,18 @@
             flex: 1;
             min-width: 0;
             text-align: center;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .chart-axis span.is-start {
-            text-align: left;
-        }
-
-        .chart-axis span.is-end {
-            text-align: right;
+            overflow: visible;
         }
 
         .bar-tooltip {
             position: fixed;
             z-index: 9999;
             pointer-events: none;
-            background: rgba(8, 9, 13, .96);
+            background: rgba(14, 14, 16, .97);
             border: 1px solid var(--dash-line-2);
-            border-radius: 8px;
+            border-radius: 9px;
             padding: 8px 11px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, .5);
             opacity: 0;
             visibility: hidden;
             transition: opacity .12s;
@@ -956,129 +1227,81 @@
             font-family: 'Inter', sans-serif;
         }
 
+        .bar-tooltip p {
+            margin: 0;
+        }
+
         .bar-tooltip-label {
-            font-size: 10px;
+            font-size: 11px;
             color: var(--dash-mut);
-            letter-spacing: .05em;
-            text-transform: uppercase;
-            margin-bottom: 2px;
+            margin-bottom: 2px !important;
         }
 
         .bar-tooltip-count {
             font-size: 15px;
-            font-weight: 800;
+            font-weight: 700;
             color: #fff;
         }
 
         .bar-tooltip-sub {
-            font-size: 10px;
-            color: var(--dash-mut);
-            margin-top: 2px;
+            font-size: 11px;
+            color: var(--dash-dim);
+            margin-top: 2px !important;
         }
 
         .hourly-wrap {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
             animation: hourlyIn .2s ease;
         }
 
+        .hourly-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
         @keyframes hourlyIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: none; }
         }
 
-        .hourly-back {
-            border: 1px solid var(--dash-line-2);
-            background: none;
-            border-radius: 8px;
-            color: var(--dash-mut);
-            font-size: .72rem;
-            font-weight: 700;
-            font-family: 'Inter', sans-serif;
-            padding: .3rem .7rem;
-            cursor: pointer;
-        }
-
-        .hourly-back:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, .06);
-        }
-
-        /* ---------- tables ---------- */
-        .dash-table-wrap {
-            overflow: auto;
-            max-height: calc(100vh - 260px);
-        }
-
-        /* Fullscreen table mode: the licenses panel owns the rest of the viewport,
-           sticky header up top, the row list scrolls inside it (same trick as the
-           admin panel's license table). */
-        .panel--fullscreen {
-            display: flex;
-            flex-direction: column;
-            min-height: calc(100vh - 220px);
-        }
-
-        .panel--fullscreen .dash-table-wrap {
-            flex: 1;
-            min-height: 300px;
-            max-height: none;
-        }
-
-        .page-head-actions {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            flex-wrap: wrap;
-        }
-
-        /* `.page-head-actions { display: flex }` outranks the UA `[hidden]` rule, so
-           state this explicitly instead of relying on Tailwind's preflight. */
-        .page-head-actions[hidden] {
-            display: none;
+        /* ---------- licenses ---------- */
+        .lic-table-wrap {
+            overflow-x: auto;
         }
 
         .dash-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
+            min-width: 720px;
         }
 
         .dash-table th {
+            position: relative;
             text-align: left;
-            padding: .7rem .9rem;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: .1em;
-            text-transform: uppercase;
+            padding: 9px 14px;
+            font-size: 11.5px;
+            font-weight: 500;
             color: var(--dash-dim);
-            background: #151518;
-            border-bottom: 1px solid var(--dash-line-2);
+            background: rgba(255, 255, 255, .015);
+            border-bottom: 1px solid var(--dash-line);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            position: relative;
             user-select: none;
         }
 
-        .dash-table th.is-sticky {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        /* beats `.dash-table th { text-align: left }` on specificity */
         .dash-table th.td-num {
             text-align: right;
         }
 
+        /* Resizable, but quiet: the handle only shows while the header row is hovered. */
         .dash-table th .col-resizer {
             position: absolute;
             right: 0;
             top: 0;
-            width: 7px;
+            width: 9px;
             height: 100%;
             cursor: col-resize;
             z-index: 3;
@@ -1087,29 +1310,29 @@
         .dash-table th .col-resizer::after {
             content: '';
             position: absolute;
-            right: 2px;
-            top: 20%;
-            bottom: 20%;
+            right: 4px;
+            top: 30%;
+            bottom: 30%;
             width: 1px;
-            background: rgba(255, 255, 255, .08);
-            transition: background .15s, width .15s;
+            background: transparent;
+            transition: background .15s;
+        }
+
+        .dash-table thead:hover .col-resizer::after {
+            background: rgba(255, 255, 255, .14);
         }
 
         .dash-table th .col-resizer:hover::after,
         .dash-table th .col-resizer.is-dragging::after {
             background: var(--dash-gold);
-            width: 2px;
-            right: 2px;
-        }
-
-        .dash-table th:last-child .col-resizer {
-            display: none;
+            top: 15%;
+            bottom: 15%;
         }
 
         .dash-table td {
-            padding: .7rem .9rem;
-            font-size: .8rem;
-            color: #dcdcdc;
+            padding: 11px 14px;
+            font-size: 13px;
+            color: #d9d9d9;
             border-bottom: 1px solid var(--dash-line);
             vertical-align: middle;
             overflow: hidden;
@@ -1117,26 +1340,16 @@
             white-space: nowrap;
         }
 
-        .dash-table td:last-child {
-            overflow: visible;
-        }
-
         .dash-table tbody tr {
             transition: background .1s;
         }
 
         .dash-table tbody tr:hover {
-            background: rgba(255, 255, 255, .025);
+            background: rgba(255, 255, 255, .022);
         }
 
         .dash-table tbody tr:last-child td {
             border-bottom: 0;
-        }
-
-        .dash-table .td-mono {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            color: #fff;
         }
 
         .td-num {
@@ -1144,41 +1357,91 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .license-status {
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 700;
-            border: 1px solid;
-            white-space: nowrap;
+        .td-sub {
+            display: block;
+            margin-top: 1px;
+            font-size: 11px;
+            color: var(--dash-dim);
         }
 
-        .license-status.active { background: rgba(6, 78, 59, .5); color: #4ade80; border-color: rgba(22, 101, 52, .5); }
-        .license-status.expired { background: rgba(69, 10, 10, .5); color: #f87171; border-color: rgba(153, 27, 27, .5); }
-        .license-status.banned { background: rgba(69, 10, 10, .5); color: #f87171; border-color: rgba(153, 27, 27, .5); }
-        .license-status.disabled { background: rgba(69, 26, 3, .5); color: #facc15; border-color: rgba(161, 98, 7, .5); }
+        .key-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .key-cell code {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font: 500 12.5px 'JetBrains Mono', monospace;
+            color: #fff;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #d9d9d9;
+        }
+
+        .status::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            flex: none;
+        }
+
+        .status.active::before { background: var(--dash-ok); box-shadow: 0 0 0 3px rgba(52, 211, 153, .14); }
+        .status.expired::before { background: #6e6e6e; }
+        .status.banned::before { background: var(--dash-bad); box-shadow: 0 0 0 3px rgba(248, 113, 113, .14); }
+        .status.disabled::before { background: var(--dash-warn); }
+        .status.expired { color: var(--dash-mut); }
 
         .copy-btn {
-            color: rgba(255, 255, 255, .35);
+            color: var(--dash-dim);
             cursor: pointer;
-            padding: 6px;
-            border-radius: 8px;
-            transition: color .15s, background .15s;
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
             background: transparent;
             border: 0;
             display: inline-flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
-            flex-shrink: 0;
+            flex: none;
+            opacity: 0;
+            transition: color .15s, background .15s, opacity .15s;
+        }
+
+        .dash-table tr:hover .copy-btn,
+        .copy-btn:focus-visible,
+        .copy-btn.success {
+            opacity: 1;
+        }
+
+        @media (hover: none) {
+            .copy-btn { opacity: 1; }
         }
 
         .copy-btn:hover {
             color: #fff;
-            background: rgba(255, 255, 255, .07);
+            background: rgba(255, 255, 255, .08);
+        }
+
+        .copy-btn svg {
+            width: 14px;
+            height: 14px;
         }
 
         .copy-btn.success {
             color: var(--dash-gold);
-            background: rgba(199, 177, 143, .12);
         }
 
         .copy-btn .check-icon {
@@ -1198,56 +1461,180 @@
             transform: scale(1);
         }
 
-        /* ---------- segmented filter ---------- */
-        .dash-filter {
-            display: inline-flex;
-            gap: 3px;
-            background: rgba(255, 255, 255, .04);
-            border: 1px solid var(--dash-line);
-            border-radius: 10px;
-            padding: 3px;
+        /* ---------- settings ---------- */
+        .settings-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 820px;
+            width: 100%;
         }
 
-        .dash-filter-btn {
-            border: none;
-            background: none;
-            color: var(--dash-mut);
-            font-family: 'Inter', sans-serif;
-            font-size: .74rem;
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .profile-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex: none;
+            background: linear-gradient(135deg, #4a4136, #2a2620);
+            border: 1px solid rgba(199, 177, 143, .35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
             font-weight: 700;
-            padding: .4rem .85rem;
-            border-radius: 7px;
-            cursor: pointer;
+            color: #e9dcc3;
+        }
+
+        .profile-name {
+            font-size: 16px;
+            font-weight: 650;
+            color: #fff;
             white-space: nowrap;
-            transition: color .15s, background .15s;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .dash-filter-btn:hover {
+        .profile-handle {
+            font-size: 12.5px;
+            color: var(--dash-dim);
+            margin-top: 1px;
+        }
+
+        .facts {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-top: 18px;
+            border: 1px solid var(--dash-line);
+            border-radius: 11px;
+            overflow: hidden;
+        }
+
+        .fact {
+            padding: 11px 14px;
+            border-left: 1px solid var(--dash-line);
+            min-width: 0;
+        }
+
+        .fact:first-child {
+            border-left: 0;
+        }
+
+        .fact dt {
+            font-size: 11.5px;
+            color: var(--dash-dim);
+        }
+
+        .fact dd {
+            margin: 3px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e8e8e8;
+            min-width: 0;
+        }
+
+        .fact dd code {
+            font: 500 12px 'JetBrains Mono', monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fact .copy-btn {
+            opacity: 1;
+            width: 22px;
+            height: 22px;
+        }
+
+        .link-live {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .qr-frame {
+            padding: 9px;
+            border-radius: 12px;
+            background: #efe6d4;
+            flex: none;
+            line-height: 0;
+        }
+
+        .qr-frame canvas {
+            display: block;
+            border-radius: 4px;
+        }
+
+        .pin-label {
+            font-size: 11.5px;
+            color: var(--dash-dim);
+        }
+
+        .pin-code {
+            margin-top: 4px;
+            font: 700 26px 'JetBrains Mono', monospace;
+            letter-spacing: .08em;
             color: #fff;
         }
 
-        .dash-filter-btn.active {
-            background: rgba(255, 255, 255, .1);
-            color: #fff;
+        .pin-meta {
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 12px;
+            color: var(--dash-dim);
+            font-variant-numeric: tabular-nums;
         }
 
-        /* ---------- skeleton ---------- */
-        .skel {
-            border-radius: 6px;
-            background: linear-gradient(90deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .09), rgba(255, 255, 255, .03));
-            background-size: 200% 100%;
-            animation: shimmer 1.2s infinite;
+        .done-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e8e8e8;
+            font-size: 13.5px;
+            font-weight: 600;
         }
 
-        .skel-bar {
-            background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03)) !important;
-            background-size: 200% 100% !important;
-            animation: shimmer 1.2s infinite;
+        .done-line svg {
+            width: 18px;
+            height: 18px;
+            color: var(--dash-ok);
         }
 
-        @keyframes shimmer {
-            0% { background-position: 200% center; }
-            100% { background-position: -200% center; }
+        .form-msg {
+            margin: 10px 0 0;
+            font-size: 12.5px;
+            color: var(--dash-mut);
+            min-height: 18px;
+        }
+
+        .form-msg:empty {
+            display: none;
+        }
+
+        .form-msg.is-ok {
+            color: var(--dash-ok);
+        }
+
+        .pin-field {
+            width: 220px;
+            max-width: 100%;
+            height: 42px;
+            text-align: center;
+            font: 600 16px 'JetBrains Mono', monospace;
+            letter-spacing: .28em;
+            text-transform: uppercase;
         }
 
         /* ---------- command palette ---------- */
@@ -1270,7 +1657,7 @@
         .cmdp {
             width: 100%;
             max-width: 560px;
-            background: #0d0d0d;
+            background: #111113;
             border: 1px solid var(--dash-line-2);
             border-radius: 16px;
             box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
@@ -1320,6 +1707,26 @@
             max-height: 340px;
             overflow-y: auto;
             padding: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(199, 177, 143, .28) transparent;
+        }
+
+        .cmdp-list::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .cmdp-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .cmdp-list::-webkit-scrollbar-thumb {
+            background: rgba(199, 177, 143, .22);
+            border: 3px solid #111113;
+            border-radius: 10px;
+        }
+
+        .cmdp-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(199, 177, 143, .45);
         }
 
         .cmdp-empty {
@@ -1411,8 +1818,6 @@
             height: 18px;
         }
 
-        /* Desktop collapsed = slim icon rail, exactly like /admin: only the width
-           and the label visibility change, the footer button just flips its icon. */
         @media (min-width: 901px) {
             .sidebar-backdrop {
                 display: none;
@@ -1435,7 +1840,6 @@
                 padding: .5rem;
             }
 
-            /* the rail is narrower, so the active marker tracks its own padding */
             .dash-sidebar.collapsed .nav-tab.active::before {
                 left: -8.8px;
             }
@@ -1445,10 +1849,6 @@
                 padding-inline: .55rem;
             }
 
-            /* auto margins split the rail's leftover half pixel, so the gaps match */
-            /* auto margins land the button on the same x the expanded sidebar uses; the
-               negative right margin hands back the pixel the sidebar's 1px border
-               takes, the same trick the nav uses to reach the edge. */
             .dash-sidebar.collapsed .sidebar-footer {
                 margin-right: -1px;
             }
@@ -1471,6 +1871,12 @@
             .hourly-wrap { animation: none; }
         }
 
+        @media (max-width: 1100px) {
+            .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .stat:nth-child(3) { border-left: 0; }
+            .stat:nth-child(n + 3) { border-top: 1px solid var(--dash-line); }
+        }
+
         @media (max-width: 900px) {
             .dash-sidebar {
                 transform: translateX(-100%);
@@ -1488,14 +1894,6 @@
                 padding: calc(var(--dash-topbar-h) + 20px) 16px 40px;
             }
 
-            .panel--fullscreen {
-                min-height: 0;
-            }
-
-            .panel--fullscreen .dash-table-wrap {
-                min-height: 0;
-            }
-
             .site-footer {
                 margin-left: 0;
             }
@@ -1504,19 +1902,36 @@
                 display: inline-flex;
             }
 
-            .dash-table-wrap {
-                max-height: none;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
             .cmdp-overlay { padding-top: 10vh; }
         }
 
+        @media (max-width: 700px) {
+            .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; }
+            .kpi:nth-child(3) { padding-left: 0; border-left: 0; }
+            .facts { grid-template-columns: 1fr; }
+            .fact { border-left: 0; border-top: 1px solid var(--dash-line); }
+            .fact:first-child { border-top: 0; }
+            .search-field, .search-field .field { width: 100%; }
+            .card-head .tools { width: 100%; }
+
+            /* Licenses collapse into one card per key. */
+            .dash-table { min-width: 0; }
+            .dash-table colgroup, .dash-table thead { display: none; }
+            .dash-table, .dash-table tbody, .dash-table tr, .dash-table td { display: block; width: 100%; }
+            .dash-table tr { padding: 12px 16px; border-bottom: 1px solid var(--dash-line); }
+            .dash-table tbody tr:last-child { border-bottom: 0; }
+            .dash-table td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4px 0; border: 0; text-align: right; white-space: normal; }
+            .dash-table td::before { content: attr(data-label); color: var(--dash-dim); font-size: 12px; text-align: left; flex: none; }
+            .dash-table td.td-key { padding-bottom: 8px; }
+            .dash-table td.td-key::before { display: none; }
+            .td-sub { display: inline; margin-left: 6px; }
+        }
+
         @media (max-width: 560px) {
-            .dash-stats { grid-template-columns: 1fr; }
-            .kpi-strip { flex-wrap: wrap; }
-            .kpi { flex: 1 1 50%; border-bottom: 1px solid var(--dash-line); }
+            .stat-strip { grid-template-columns: 1fr; }
+            .stat { border-left: 0; border-top: 1px solid var(--dash-line); }
+            .stat:first-child { border-top: 0; }
+            .goal-num { text-align: left; }
         }
     </style>
 </head>
@@ -1587,72 +2002,70 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
                     </button>
                     <div style="min-width:0;">
-                        <p class="ta-eyebrow">Account</p>
                         <h1 id="dash-page-title" class="ta-page-title">Overview</h1>
                         <p id="dash-page-sub" class="page-sub">Your usage, stats and licenses</p>
                     </div>
                 </div>
-                <div class="page-head-actions">
-                    <span id="dash-license-tools" hidden>
-                        <div class="dash-filter" role="tablist" aria-label="License filter">
-                            <button class="dash-filter-btn active" data-filter="all" role="tab" aria-selected="true">All</button>
-                            <button class="dash-filter-btn" data-filter="active" role="tab" aria-selected="false">Active</button>
-                            <button class="dash-filter-btn" data-filter="inactive" role="tab" aria-selected="false">Inactive</button>
-                        </div>
-                    </span>
+                <div class="page-head-actions" id="dash-head-actions">
+                    <a class="btn btn-primary" href="/checkout/">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Buy a license
+                    </a>
                 </div>
             </header>
 
             <!-- Overview tab -->
             <div id="tab-overview" class="dash-tab">
 
-                <!-- Weekly goal: the one action worth surfacing, so it leads the page. -->
-                <div class="panel usage-card" id="dash-usage-card" style="display:none;">
-                    <div class="usage-card-top">
-                        <div class="usage-card-copy">
-                            <p class="panel-title">
+                <section class="card goal" id="dash-usage-card" style="display:none;">
+                    <div class="goal-top">
+                        <div class="goal-copy">
+                            <p class="kicker">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                Free license goal
+                                Weekly goal
                             </p>
+                            <h2 class="goal-title" id="dash-usage-title">Earn a free license</h2>
                             <p class="usage-caption" id="dash-usage-caption"></p>
                         </div>
-                        <p class="usage-ratio"><span id="dash-usage-ratio">0 / 10 hours</span></p>
+                        <div class="goal-num">
+                            <b id="dash-usage-done">0</b><span id="dash-usage-total">/ 12 h</span>
+                            <small id="dash-usage-pct">0% complete</small>
+                        </div>
                     </div>
-                    <div class="usage-track" id="dash-usage-track" tabindex="0" aria-describedby="dash-usage-caption" title="Click or press space to jump, hold or press down to duck">
+                    <div class="usage-track" id="dash-usage-track" tabindex="0" role="application" aria-label="Weekly goal progress. Mini game: press space or up to jump, down to duck." aria-describedby="dash-usage-caption">
                         <div class="usage-fill" id="dash-usage-fill"></div>
                         <canvas class="usage-runner-canvas" id="dash-usage-canvas" aria-hidden="true"></canvas>
                     </div>
-                    <div id="dash-usage-action" style="display:none;margin-top:12px;"></div>
+                    <div class="goal-foot">
+                        <span class="keys keys-desktop">Click the lane to play · <kbd>Space</kbd> or <kbd>↑</kbd> jump · <kbd>↓</kbd> duck</span>
+                        <span class="keys keys-touch">Tap the lane to jump · hold to duck</span>
+                        <span>Counted over a rolling 7-day window</span>
+                    </div>
+                    <div id="dash-usage-action" style="margin-top:14px;"></div>
+                </section>
+
+                <div class="stat-strip" id="dash-stats">
+                    <div class="stat"><div class="skel" style="width:45%;height:11px;"></div><div class="skel" style="width:60%;height:24px;margin-top:10px;"></div><div class="skel" style="width:100%;height:20px;margin-top:10px;"></div></div>
+                    <div class="stat"><div class="skel" style="width:45%;height:11px;"></div><div class="skel" style="width:50%;height:24px;margin-top:10px;"></div></div>
+                    <div class="stat"><div class="skel" style="width:45%;height:11px;"></div><div class="skel" style="width:40%;height:24px;margin-top:10px;"></div></div>
+                    <div class="stat"><div class="skel" style="width:45%;height:11px;"></div><div class="skel" style="width:70%;height:24px;margin-top:10px;"></div></div>
                 </div>
 
-                <div class="dash-stats" id="dash-stats">
-                    <div class="dash-stat">
-                        <div class="skel" style="width:58%;height:10px;"></div>
-                        <div class="skel" style="width:75%;height:22px;margin-top:10px;"></div>
-                        <div class="skel" style="width:100%;height:26px;margin-top:8px;"></div>
-                    </div>
-                    <div class="dash-stat dash-stat--split">
-                        <div class="dash-stat-cell">
-                            <div class="skel" style="width:55%;height:10px;"></div>
-                            <div class="skel" style="width:70%;height:22px;margin-top:10px;"></div>
-                        </div>
-                        <div class="dash-stat-cell">
-                            <div class="skel" style="width:62%;height:10px;"></div>
-                            <div class="skel" style="width:78%;height:22px;margin-top:10px;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-head">
+                <section class="card">
+                    <div class="card-head">
                         <div style="min-width:0;">
-                            <h3 class="panel-title">
+                            <h2 class="card-title">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                                 Activity
-                            </h3>
-                            <p class="panel-meta" id="dash-activity-date-range" style="margin-top:.35rem;">No data yet.</p>
+                            </h2>
+                            <p class="panel-meta" id="dash-activity-date-range">No data yet.</p>
                         </div>
-                        <div class="panel-tools">
+                        <div class="tools">
+                            <div class="seg" role="tablist" aria-label="Activity view">
+                                <button class="seg-btn stats-view-tab active" data-mode="daily" role="tab" aria-selected="true">Daily</button>
+                                <button class="seg-btn stats-view-tab" data-mode="weekly" role="tab" aria-selected="false">Weekly</button>
+                                <button class="seg-btn stats-view-tab" data-mode="cumulative" role="tab" aria-selected="false">Cumulative</button>
+                            </div>
                             <select id="dash-activity-range" class="stats-select" aria-label="Activity range">
                                 <option value="1">1 day</option>
                                 <option value="3">3 days</option>
@@ -1666,95 +2079,137 @@
                             <input type="date" id="dash-activity-end" class="stats-select" data-native aria-label="End date" style="max-width:9.5rem">
                         </div>
                     </div>
-
-                    <div class="kpi-strip" id="dash-activity-kpis"></div>
-
-                    <div class="stats-views" role="tablist" aria-label="Activity view">
-                        <button class="stats-view-tab active" data-mode="daily" role="tab" aria-selected="true">Daily</button>
-                        <button class="stats-view-tab" data-mode="weekly" role="tab" aria-selected="false">Weekly</button>
-                        <button class="stats-view-tab" data-mode="cumulative" role="tab" aria-selected="false">Cumulative</button>
-                    </div>
-
+                    <div class="kpi-row" id="dash-activity-kpis"></div>
                     <div id="dash-activity-chart"></div>
-                </div>
+                </section>
 
             </div>
 
             <!-- Licenses tab -->
             <div id="tab-licenses" class="dash-tab hidden">
-                <div class="panel panel--flush panel--fullscreen">
-                    <div id="dash-license-list" class="dash-table-wrap">
-                        <table class="dash-table" style="min-width:760px;">
-                            <thead>
-                                <tr>
-                                    <th class="is-sticky">Key</th><th class="is-sticky">Product</th><th class="is-sticky">Status</th><th class="is-sticky td-num">Expires</th><th class="is-sticky td-num">Created</th><th class="is-sticky td-num">Last activity</th><th class="is-sticky"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td><div class="skel" style="width:90%;height:12px;"></div></td><td><div class="skel" style="width:70%;height:12px;"></div></td><td><div class="skel" style="width:50%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td></td></tr>
-                                <tr><td><div class="skel" style="width:80%;height:12px;"></div></td><td><div class="skel" style="width:65%;height:12px;"></div></td><td><div class="skel" style="width:50%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td></td></tr>
-                                <tr><td><div class="skel" style="width:85%;height:12px;"></div></td><td><div class="skel" style="width:70%;height:12px;"></div></td><td><div class="skel" style="width:50%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td><div class="skel" style="width:60%;height:12px;"></div></td><td></td></tr>
-                            </tbody>
-                        </table>
+                <section class="card">
+                    <div class="card-head">
+                        <div class="seg" role="tablist" aria-label="License filter">
+                            <button class="seg-btn dash-filter-btn active" data-filter="all" role="tab" aria-selected="true">All <span class="seg-count" data-count="all"></span></button>
+                            <button class="seg-btn dash-filter-btn" data-filter="active" role="tab" aria-selected="false">Active <span class="seg-count" data-count="active"></span></button>
+                            <button class="seg-btn dash-filter-btn" data-filter="inactive" role="tab" aria-selected="false">Inactive <span class="seg-count" data-count="inactive"></span></button>
+                        </div>
+                        <div class="tools">
+                            <label class="search-field">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                <input type="search" id="dash-license-search" class="field" placeholder="Search keys or products" autocomplete="off" spellcheck="false" aria-label="Search licenses">
+                            </label>
+                        </div>
                     </div>
-                </div>
+                    <div id="dash-license-list" class="lic-table-wrap">
+                        <div class="card-body">
+                            <div class="skel" style="width:100%;height:14px;"></div>
+                            <div class="skel" style="width:92%;height:14px;margin-top:16px;"></div>
+                            <div class="skel" style="width:96%;height:14px;margin-top:16px;"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <!-- Settings tab -->
             <div id="tab-settings" class="dash-tab hidden">
-                <div class="dash-filter" role="tablist" aria-label="Settings sections" style="align-self:flex-start;">
-                    <button class="dash-filter-btn active" data-connsub-btn="connections" role="tab" aria-selected="true">Connections</button>
-                </div>
-                <div data-connsub-panel="connections" role="tabpanel" style="display:flex;flex-direction:column;gap:16px;min-width:0;">
-                    <div id="connections-devices" class="panel" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
-                    <section style="padding:1.1rem 1.2rem;">
-                        <div class="panel-head">
-                            <h3 class="panel-title">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-                                Linked devices
-                            </h3>
+                <div class="settings-col">
+
+                    <section class="card" id="dash-account-card">
+                        <div class="card-head card-head--plain">
+                            <div>
+                                <h2 class="card-title">Account</h2>
+                                <p class="card-desc">Your Sheldon account is tied to your Discord login.</p>
+                            </div>
                         </div>
-                        <p class="usage-caption" style="margin:0 0 14px;">Sign in on another browser by scanning a code from this device.</p>
-                        <div id="dash-link-card" style="position:relative;border-radius:12px;padding:15px 16px;color:#141210;background:linear-gradient(135deg,#e8d9bd 0%,#c7b18f 45%,#9d8a6c 100%);border:1px solid rgba(255,255,255,.25);max-width:400px;display:flex;flex-direction:column;">
-                            <small style="font-size:11px;font-weight:600;letter-spacing:.02em;opacity:.6;">Sheldon · Link key</small>
+                        <div class="card-body">
+                            <div class="profile">
+                                <div class="profile-avatar" id="dash-profile-avatar">?</div>
+                                <div style="min-width:0;">
+                                    <div class="profile-name" id="dash-profile-name">–</div>
+                                    <div class="profile-handle" id="dash-profile-handle"></div>
+                                </div>
+                            </div>
+                            <dl class="facts" style="margin-bottom:0;">
+                                <div class="fact"><dt>Discord ID</dt><dd id="dash-profile-id"><code>–</code></dd></div>
+                                <div class="fact"><dt>Member since</dt><dd id="dash-profile-since">–</dd></div>
+                                <div class="fact"><dt>Balance</dt><dd id="dash-profile-balance">–</dd></div>
+                            </dl>
+                        </div>
+                    </section>
+
+                    <section class="card" id="connections-devices">
+                        <div class="card-head card-head--plain">
+                            <div>
+                                <h2 class="card-title">Sign in on another device</h2>
+                                <p class="card-desc">Show a one-time QR code and PIN, then scan it on the new device. It signs in as you without a Discord login.</p>
+                            </div>
+                        </div>
+                        <div class="card-body" id="dash-link-card">
                             <div id="dash-link-idle">
-                                <button type="button" id="dash-link-device-btn" style="margin-top:10px;background:#141210;color:#e8d9bd;font-size:12px;font-weight:600;letter-spacing:-.01em;border:0;border-radius:8px;padding:7px 18px;cursor:pointer;">Generate code</button>
-                                <p style="font-size:11.5px;font-weight:500;opacity:.65;margin:8px 0 0;">Reveal a one-time QR and PIN when you are ready.</p>
+                                <p class="usage-caption">Nothing is shown until you ask for a code, so it is safe to open this page while streaming.</p>
                             </div>
                             <div id="dash-link-live" hidden>
-                                <canvas id="dash-link-qr" width="120" height="120" role="img" aria-label="Link QR code" style="margin:10px 0 6px;display:block;border-radius:6px;"></canvas>
-                                <div id="dash-link-code" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;letter-spacing:.08em;"></div>
-                                <div style="font-size:11.5px;font-weight:500;opacity:.65;margin-top:2px;">Scan this on the new device – the PIN fills in by itself.</div>
-                                <div id="dash-link-count" style="font-size:11px;font-weight:600;opacity:.55;margin-top:6px;font-variant-numeric:tabular-nums;"></div>
-                                <div style="margin-top:auto;display:flex;justify-content:flex-end;gap:14px;padding-top:8px;">
-                                    <button type="button" id="dash-link-refresh" style="background:none;border:0;padding:2px 0;font-size:11px;font-weight:600;letter-spacing:.01em;color:rgba(20,18,16,.6);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Refresh</button>
-                                    <button type="button" id="dash-link-hide" style="background:none;border:0;padding:2px 0;font-size:11px;font-weight:600;letter-spacing:.01em;color:rgba(20,18,16,.6);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Hide</button>
+                                <div class="link-live">
+                                    <div class="qr-frame"><canvas id="dash-link-qr" width="120" height="120" role="img" aria-label="Link QR code"></canvas></div>
+                                    <div style="min-width:0;">
+                                        <div class="pin-label">PIN</div>
+                                        <div class="pin-code" id="dash-link-code"></div>
+                                        <div class="pin-meta">
+                                            <span id="dash-link-count"></span>
+                                            <button type="button" class="link-btn" id="dash-link-refresh">New code</button>
+                                            <button type="button" class="link-btn" id="dash-link-hide">Hide</button>
+                                        </div>
+                                        <p class="usage-caption" style="margin-top:10px;">Scanning the QR fills the PIN in by itself.</p>
+                                    </div>
                                 </div>
                             </div>
                             <div id="dash-link-done" hidden>
-                                <p style="font-size:13px;font-weight:700;margin:10px 0 2px;">Linked – the new device is signed in as you.</p>
-                                <div style="margin-top:auto;display:flex;justify-content:flex-end;padding-top:8px;">
-                                    <button type="button" id="dash-link-hide-done" style="background:none;border:0;padding:2px 0;font-size:11px;font-weight:600;letter-spacing:.01em;color:rgba(20,18,16,.6);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Hide</button>
+                                <div class="done-line">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    Linked – the new device is signed in as you.
+                                    <button type="button" class="link-btn" id="dash-link-hide-done" style="margin-left:auto;">Done</button>
                                 </div>
                             </div>
-                            <p id="dash-link-card-msg" role="status" aria-live="polite" style="font-size:11.5px;font-weight:500;opacity:.75;margin:8px 0 0;min-height:14px;"></p>
+                            <p id="dash-link-card-msg" class="form-msg" role="status" aria-live="polite"></p>
+                        </div>
+                        <div class="card-foot">
+                            <span>Codes work once and expire after a few minutes.</span>
+                            <button type="button" id="dash-link-device-btn" class="btn btn-sm">Generate code</button>
                         </div>
                     </section>
-                    <section style="padding:1.1rem 1.2rem;border-top:1px solid var(--dash-line);">
-                        <div class="panel-head">
-                            <h3 class="panel-title">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                                Link a device
-                            </h3>
+
+                    <section class="card">
+                        <div class="card-head card-head--plain">
+                            <div>
+                                <h2 class="card-title">Approve a sign-in</h2>
+                                <p class="card-desc">Another screen shows a PIN on its login page? Type it here and this browser approves it.</p>
+                            </div>
                         </div>
-                        <p class="usage-caption" style="margin:0 0 14px;">Type the PIN from the logged-out screen – this device approves it.</p>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                            <input type="text" id="dash-link-pin" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" spellcheck="false" aria-label="Quick login PIN from the other device" style="flex:1 1 180px;max-width:260px;background:rgba(0,0,0,0.35);border:1px solid var(--dash-line-2);border-radius:10px;padding:10px 12px;color:#fff;font-size:15px;text-align:center;letter-spacing:4px;text-transform:uppercase;outline:none;font-family:'JetBrains Mono',monospace;">
-                            <button type="button" id="dash-link-pin-btn" style="display:inline-block;background:#c7b18f;color:#050505;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;border:0;cursor:pointer;border-radius:10px;padding:10px 18px;">Link</button>
+                        <div class="card-body">
+                            <input type="text" id="dash-link-pin" class="field pin-field" maxlength="9" placeholder="XXXX-XXXX" autocomplete="off" spellcheck="false" aria-label="PIN from the other device">
+                            <p id="dash-link-pin-msg" class="form-msg" role="status" aria-live="polite"></p>
                         </div>
-                        <p id="dash-link-pin-msg" class="usage-caption" style="margin:10px 0 0;min-height:18px;" role="status" aria-live="polite"></p>
+                        <div class="card-foot">
+                            <span>Only approve PINs you can see on your own screen.</span>
+                            <button type="button" id="dash-link-pin-btn" class="btn btn-sm btn-primary">Approve</button>
+                        </div>
                     </section>
-                    </div>
+
+                    <section class="card card--danger">
+                        <div class="card-head card-head--plain">
+                            <div>
+                                <h2 class="card-title">Sign out</h2>
+                                <p class="card-desc">End the session in this browser. Your licenses and the Sheldon app are not affected.</p>
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding-top:6px;"></div>
+                        <div class="card-foot">
+                            <span>You can sign back in with Discord at any time.</span>
+                            <button type="button" id="dash-signout-btn" class="btn btn-sm btn-danger">Sign out</button>
+                        </div>
+                    </section>
+
                 </div>
             </div>
 
