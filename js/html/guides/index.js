@@ -79,20 +79,33 @@ function renderCats()
 {
     const wrap = document.getElementById("guides-cats");
     const cats = [...new Set(allGuides.map(g => g.category).filter(Boolean))].sort();
-    wrap.innerHTML = "";
-    const all = document.createElement("button");
-    all.className = "chip" + (activeCat === "" ? " active" : "");
-    all.textContent = t("guides.all");
-    all.addEventListener("click", () => { activeCat = ""; renderCats(); renderGrid(); });
-    wrap.append(all);
-    for(const c of cats)
+    const key = cats.join("\n") + "|" + t("guides.all");
+    if(wrap.dataset.key !== key)
     {
-        const b = document.createElement("button");
-        b.className = "chip" + (activeCat === c ? " active" : "");
-        b.textContent = c;
-        b.addEventListener("click", () => { activeCat = c; renderCats(); renderGrid(); });
-        wrap.append(b);
+        wrap.dataset.key = key;
+        wrap.innerHTML = "";
+        const make = (label, value) =>
+        {
+            const b = document.createElement("button");
+            b.className = "chip";
+            b.dataset.cat = value;
+            b.textContent = label;
+            b.addEventListener("click", () =>
+            {
+                if(activeCat === value) return;
+                activeCat = value;
+                renderCats();
+                renderGrid();
+                b.classList.remove("pop");
+                void b.offsetWidth;
+                b.classList.add("pop");
+            });
+            wrap.append(b);
+        };
+        make(t("guides.all"), "");
+        for(const c of cats) make(c, c);
     }
+    for(const b of wrap.children) b.classList.toggle("active", b.dataset.cat === activeCat);
 }
 
 function cardHTML(g)
@@ -101,7 +114,7 @@ function cardHTML(g)
         `<span class="text-[0.6rem] font-bold text-neutral-500">#${esc(t)}</span>`).join(" ");
     const thumb = thumbFor(g);
     return `
-        <a href="./?slug=${encodeURIComponent(g.slug)}" class="guide-card glass-card rounded-[1.5rem] overflow-hidden flex flex-col">
+        <a href="./?slug=${encodeURIComponent(g.slug)}" data-slug="${esc(g.slug)}" class="guide-card glass-card rounded-[1.5rem] overflow-hidden flex flex-col">
             ${thumb ? `<div class="aspect-video overflow-hidden bg-black/40">
                 <img src="${esc(thumb)}" alt="" loading="lazy" class="w-full h-full object-cover">
             </div>` : ""}
@@ -125,8 +138,83 @@ function renderGrid()
     const rows = allGuides.filter(g =>
         (!activeCat || g.category === activeCat) &&
         (!q || (g.title + " " + g.excerpt + " " + (g.tags || []).join(" ")).toLowerCase().includes(q)));
-    grid.innerHTML = rows.map(cardHTML).join("");
     empty.classList.toggle("hidden", rows.length > 0);
+
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(reduce || !grid.children.length || !grid.animate)
+    {
+        grid.innerHTML = rows.map(cardHTML).join("");
+        return;
+    }
+
+    const existing = new Map();
+    for(const el of grid.children)
+        if(!el.dataset.leaving) existing.set(el.dataset.slug, el);
+
+    const before = new Map();
+    for(const [slug, el] of existing) before.set(slug, el.getBoundingClientRect());
+
+    const keep = new Set(rows.map(g => g.slug));
+    for(const [slug, el] of existing)
+    {
+        if(keep.has(slug)) continue;
+        el.dataset.leaving = "1";
+        const r = before.get(slug);
+        const gr = grid.getBoundingClientRect();
+        el.style.position = "absolute";
+        el.style.left = (r.left - gr.left) + "px";
+        el.style.top = (r.top - gr.top) + "px";
+        el.style.width = r.width + "px";
+        el.style.pointerEvents = "none";
+        const anim = el.animate(
+            [{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(0.92)" }],
+            { duration: 220, easing: "ease-out", fill: "forwards" });
+        anim.onfinish = () => el.remove();
+    }
+
+    grid.style.position = "relative";
+    const fresh = [];
+    let anchor = null;
+    for(const g of rows)
+    {
+        let el = existing.get(g.slug);
+        if(!el)
+        {
+            const tpl = document.createElement("template");
+            tpl.innerHTML = cardHTML(g).trim();
+            el = tpl.content.firstElementChild;
+            el.dataset.slug = g.slug;
+            fresh.push(el);
+        }
+        const next = anchor ? anchor.nextElementSibling : grid.firstElementChild;
+        let target = next;
+        while(target && target.dataset.leaving) target = target.nextElementSibling;
+        if(target !== el) grid.insertBefore(el, target);
+        anchor = el;
+    }
+
+    let i = 0;
+    for(const el of grid.children)
+    {
+        if(el.dataset.leaving) continue;
+        const old = before.get(el.dataset.slug);
+        if(old)
+        {
+            const now = el.getBoundingClientRect();
+            const dx = old.left - now.left;
+            const dy = old.top - now.top;
+            if(dx || dy)
+                el.animate(
+                    [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }],
+                    { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+        }
+        else
+        {
+            el.animate(
+                [{ opacity: 0, transform: "translateY(16px) scale(0.96)" }, { opacity: 1, transform: "translateY(0) scale(1)" }],
+                { duration: 380, delay: Math.min(i++, 8) * 40, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" });
+        }
+    }
 }
 
 async function loadList()
