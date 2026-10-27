@@ -114,6 +114,20 @@
         .guide-body p { margin: 0.9em 0; }
         .guide-body a { color: #c7b18f; text-decoration: underline; text-underline-offset: 3px; }
         .guide-body a:hover { color: white; }
+        /* A code chip that is really a URL keeps the chip look and gains the
+           same underline as every other link, so it reads as clickable at a
+           glance; the hover tint makes the whole chip feel interactive. */
+        .guide-body a.guide-code-link { text-decoration: none; }
+        .guide-body a.guide-code-link code {
+            text-decoration: underline; text-decoration-thickness: 1px;
+            text-decoration-color: rgba(199, 177, 143, .5); text-underline-offset: 3px;
+            transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+        }
+        .guide-body a.guide-code-link:hover code,
+        .guide-body a.guide-code-link:focus-visible code {
+            background: rgba(199, 177, 143, .22); color: white;
+            box-shadow: 0 0 0 1px rgba(199, 177, 143, .35);
+        }
         .guide-body ul, .guide-body ol { margin: 0.9em 0; padding-left: 1.5rem; }
         .guide-body li { margin: 0.35em 0; }
         .guide-body ul { list-style: disc; }

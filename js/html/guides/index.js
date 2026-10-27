@@ -263,6 +263,62 @@ function enhanceCallouts(root)
     });
 }
 
+// A URL is often given the inline-code treatment so it reads as a chip. The
+// code element itself is inert, so `projectsheldon.me` looked like a link but
+// did nothing. Turn a code span that is only a URL into a real link while
+// keeping the code styling. Whole-span matching keeps snippets such as
+// `game.Players` or `config.json` as plain code.
+const SITE_TLDS = new Set(("com net org io me gg co uk us ca au de fr nl se no fi dk es it pl pt ch at be ie nz za br mx ar cl ru ua tr gr il in jp kr cn hk tw sg ae sa app dev ai tv xyz info site online store shop link live cloud page blog wiki news tech space fun team group world zone life run sh ly to fm cc ws name pro biz mobi asia eu").split(" "));
+const BARE_URL = /^(?:www\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24})(?::\d{1,5})?(?:[/?#][^\s<>"']*)?$/i;
+
+function hrefForUrl(text)
+{
+    const value = String(text || "").trim();
+    if(!value) return "";
+    if(/^https?:\/\//i.test(value))
+    {
+        try
+        {
+            const u = new URL(value);
+            if(u.hostname && u.hostname.includes(".")) return u.href;
+        }
+        catch(e) {}
+        return "";
+    }
+    const m = value.match(BARE_URL);
+    if(!m || !SITE_TLDS.has(m[1].toLowerCase())) return "";
+    return "https://" + value;
+}
+
+function linkifyCode(root)
+{
+    root.querySelectorAll("code").forEach(code =>
+    {
+        if(code.closest("pre") || code.closest("a") || code.children.length) return;
+        const href = hrefForUrl(code.textContent);
+        if(!href) return;
+        const a = document.createElement("a");
+        a.className = "guide-code-link";
+        a.href = href;
+        code.replaceWith(a);
+        a.append(code);
+    });
+}
+
+// Links saved before the editor added the scheme (for example a bare
+// "projectsheldon.me") are relative to /guides/ in the browser. Repair them in
+// the reader so guides already in the database point at the right host.
+function fixBareHrefs(root)
+{
+    root.querySelectorAll("a[href]").forEach(a =>
+    {
+        const href = a.getAttribute("href") || "";
+        if(!href || /^[a-z][a-z0-9+.-]*:/i.test(href) || /^[\/#?]/.test(href)) return;
+        const fixed = hrefForUrl(href);
+        if(fixed) a.setAttribute("href", fixed);
+    });
+}
+
 function fixRelativeImgs(root)
 {
     root.querySelectorAll("img").forEach(img =>
@@ -332,6 +388,8 @@ async function loadReader()
         });
         const body = document.getElementById("guide-body");
         body.innerHTML = clean;
+        fixBareHrefs(body);
+        linkifyCode(body);
         fixRelativeImgs(body);
         enhanceCallouts(body);
         initLightbox(body);
