@@ -30,8 +30,40 @@ function formatHours(seconds) {
     if (s < 60) return Math.round(s) + 's';
     const h = s / 3600;
     if (h < 1) return Math.round(s / 60) + 'm';
-    if (h < 10) return h.toFixed(1) + 'h';
+    if (h < 10) return h.toFixed(1).replace(/\.0$/, '') + 'h';
     return Math.round(h) + 'h';
+}
+
+// Day label from the server's YYYY-MM-DD, with the year only when asked for –
+// ranges that cross New Year otherwise read "Oct 28 – Oct 27".
+function dayLabel(d, withYear) {
+    const m = d && /^(\d{4})-(\d{2})-(\d{2})$/.exec(d.date || '');
+    if (!m) return (d && d.label) || '';
+    const opts = { month: 'short', day: 'numeric', timeZone: 'UTC' };
+    if (withYear) opts.year = 'numeric';
+    return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString('en-US', opts);
+}
+
+function spansYears(daily) {
+    if (!daily || daily.length < 2) return false;
+    const a = String(daily[0].date || '').slice(0, 4);
+    const b = String(daily[daily.length - 1].date || '').slice(0, 4);
+    return !!a && !!b && a !== b;
+}
+
+// Round y-axis ticks (2h, 4h, 6h…) instead of fractions of the peak.
+const TICK_HOURS = [1 / 60, 5 / 60, 10 / 60, 15 / 60, .5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 2000, 5000];
+
+function niceScale(maxSeconds) {
+    const max = Math.max(1, maxSeconds);
+    let step = TICK_HOURS[TICK_HOURS.length - 1] * 3600;
+    for (const h of TICK_HOURS) {
+        if (max / (h * 3600) <= 4) { step = h * 3600; break; }
+    }
+    const top = Math.ceil(max / step) * step;
+    const ticks = [];
+    for (let v = step; v <= top + 1e-6; v += step) ticks.push(v);
+    return { top, ticks };
 }
 
 function formatDate(ms) {
@@ -923,7 +955,9 @@ function activityBuckets() {
             out.push({
                 seconds: chunk.reduce((a, d) => a + (Number(d.seconds) || 0), 0),
                 sessions: chunk.reduce((a, d) => a + (Number(d.sessions) || 0), 0),
-                label: (chunk[0] && chunk[0].label) || ('Week ' + (out.length + 1))
+                label: (chunk[0] && chunk[0].label) || ('Week ' + (out.length + 1)),
+                date: chunk[0] && chunk[0].date,
+                week: true
             });
         }
         return out;
@@ -933,7 +967,7 @@ function activityBuckets() {
         let run = 0;
         return daily.map(d => {
             run += Number(d.seconds) || 0;
-            return { seconds: run, sessions: 0, label: d.label };
+            return { seconds: run, sessions: 0, label: d.label, date: d.date };
         });
     }
 
@@ -959,22 +993,25 @@ function renderActivityKpis() {
 
     const total = daily.reduce((a, d) => a + (Number(d.seconds) || 0), 0);
     let peakSeconds = 0;
-    let peakLabel = '';
+    let peak = null;
     let active = 0;
     daily.forEach(d => {
         const s = Number(d.seconds) || 0;
         if (s > 0) active++;
         if (s > peakSeconds) {
             peakSeconds = s;
-            peakLabel = d.label;
+            peak = d;
         }
     });
 
-    const avg = daily.length ? total / daily.length : 0;
+    // Averaging over idle days says little on a sparse year (21m/day), so the
+    // headline is the average day you actually used it; the plain mean stays below.
+    const avgAll = daily.length ? total / daily.length : 0;
+    const avgActive = active ? total / active : 0;
     const cells = [
         { label: 'Total', value: formatHours(total), sub: daily.length + (daily.length === 1 ? ' day' : ' days'), accent: true },
-        { label: 'Peak day', value: peakSeconds > 0 ? formatHours(peakSeconds) : '–', sub: peakLabel || 'no activity' },
-        { label: 'Avg / day', value: total > 0 ? formatHours(avg) : '0s', sub: 'across range' },
+        { label: 'Peak day', value: peakSeconds > 0 ? formatHours(peakSeconds) : '–', sub: peak ? dayLabel(peak, spansYears(daily)) : 'no activity' },
+        { label: 'Avg / active day', value: active ? formatHours(avgActive) : '0m', sub: formatHours(avgAll) + ' over all days' },
         { label: 'Active days', value: active + ' / ' + daily.length, sub: total > 0 ? Math.round((active / daily.length) * 100) + '% of range' : '–' }
     ];
 
@@ -987,30 +1024,42 @@ function renderActivityKpis() {
     `).join('');
 }
 
+// Bar spacing shrinks with the bucket count: a fixed 4px gap ate the whole
+// width on a 365-day range and the bars collapsed to nothing.
+function barGap(n) {
+    if (n <= 31) return 4;
+    if (n <= 62) return 3;
+    if (n <= 120) return 2;
+    return 1;
+}
+
 function barChartHtml(buckets, opts) {
     opts = opts || {};
-    const max = Math.max(...buckets.map(b => b.seconds), 1);
     const hasData = buckets.some(b => b.seconds > 0);
+    const { top, ticks } = niceScale(Math.max(...buckets.map(b => b.seconds), 1));
     const last = buckets.length - 1;
+    const withYear = !!opts.withYear;
 
     const bars = buckets.map((b, i) => {
-        const h = b.seconds > 0 ? Math.max((b.seconds / max) * 100, 3) : 0;
+        const h = b.seconds > 0 ? Math.max((b.seconds / top) * 100, 1.5) : 0;
         const cls = b.seconds > 0 ? 'bar' : 'bar bar-empty';
         const today = b.seconds > 0 && i === last && opts.highlightLast !== false ? ' bar-today' : '';
         const sub = b.sessions > 0 ? b.sessions + ' session' + (b.sessions === 1 ? '' : 's') : '';
+        const label = b.date ? (b.week ? 'Week of ' : '') + dayLabel(b, withYear) : b.label;
         return `
             <div class="bar-col">
-                <div class="${cls}${today}" style="height:0" data-h="${h.toFixed(1)}" data-label="${escapeHtml(b.label)}" data-count="${escapeHtml(formatHours(b.seconds))}"${sub ? ` data-sub="${escapeHtml(sub)}"` : ''}${b.ts ? ` data-ts="${escapeHtml(b.ts)}"` : ''}${b.date ? ` data-date="${escapeHtml(b.date)}"` : ''}></div>
+                <div class="${cls}${today}" style="height:0" data-h="${h.toFixed(2)}" data-label="${escapeHtml(label)}" data-count="${escapeHtml(formatHours(b.seconds))}"${sub ? ` data-sub="${escapeHtml(sub)}"` : ''}${b.ts ? ` data-ts="${escapeHtml(b.ts)}"` : ''}${b.date && !b.week ? ` data-date="${escapeHtml(b.date)}"` : ''}></div>
             </div>
         `;
     }).join('');
 
-    // Y-axis labels sit on the gridlines, so the bars read as hours without a hover.
-    const tick = f => hasData ? `<em>${escapeHtml(formatHours(max * f))}</em>` : '';
+    const lines = hasData
+        ? ticks.map(v => `<span class="chart-gridline" style="top:${((1 - v / top) * 100).toFixed(2)}%"><em>${escapeHtml(formatHours(v))}</em></span>`).join('')
+        : '';
+    const dense = buckets.length > 90 ? ' is-dense' : '';
     return `
-        <div class="stats-chart">
-            <span class="chart-gridline" style="top:0">${tick(1)}</span>
-            <span class="chart-gridline" style="top:50%">${tick(.5)}</span>
+        <div class="stats-chart${dense}" style="--bar-gap:${barGap(buckets.length)}px">
+            ${lines}
             <span class="chart-gridline chart-gridline-base"><em>0</em></span>
             ${bars}
         </div>
@@ -1100,19 +1149,27 @@ function hourlyItems(hourly) {
 
 function dateRangeText(daily) {
     if (!Array.isArray(daily) || daily.length === 0 || !daily.some(d => (Number(d.seconds) || 0) > 0)) return 'No data yet.';
-    const first = daily[0].label;
-    const last = daily[daily.length - 1].label;
-    return first === last ? first : `${first} – ${last}`;
+    const first = daily[0];
+    const last = daily[daily.length - 1];
+    if (daily.length === 1) return dayLabel(last, true);
+    return `${dayLabel(first, spansYears(daily))} – ${dayLabel(last, true)}`;
 }
 
-// X-axis labels, thinned on long ranges.
-function chartAxisHtml(buckets) {
-    const step = Math.max(1, Math.ceil(buckets.length / 8));
-    const cells = buckets.map((b, i) => {
-        const isLast = i === buckets.length - 1;
-        const show = i % step === 0 || isLast;
-        const cls = i === 0 ? ' class="is-start"' : (isLast ? ' class="is-end"' : '');
-        return `<span${cls}>${show ? escapeHtml(b.label) : ''}</span>`;
+// X-axis labels are placed by position, not one cell per bucket, so a long
+// range gets a handful of evenly spaced dates that never spill out of the card.
+function chartAxisHtml(buckets, opts) {
+    const n = buckets.length;
+    if (!n) return '';
+    const withYear = !!(opts && opts.withYear);
+    const want = Math.min(n, n > 12 ? 6 : n);
+    const idx = want <= 1 ? [0] : [...new Set(Array.from({ length: want }, (_, k) => Math.round(k * (n - 1) / (want - 1))))];
+    const cells = idx.map((i, k) => {
+        const b = buckets[i];
+        const text = b.date ? dayLabel(b, withYear && (k === 0 || k === idx.length - 1)) : b.label;
+        const pos = ((i + .5) / n * 100).toFixed(2);
+        const cls = k === 0 && idx.length > 1 ? 'is-start' : (k === idx.length - 1 && idx.length > 1 ? 'is-end' : '');
+        const style = cls === 'is-end' ? 'right:0' : (cls === 'is-start' ? 'left:0' : `left:${pos}%`);
+        return `<span class="${cls}" style="${style}">${escapeHtml(text)}</span>`;
     }).join('');
     return `<div class="chart-axis">${cells}</div>`;
 }
@@ -1194,8 +1251,9 @@ function renderChart(el) {
         return;
     }
 
-    el.innerHTML = barChartHtml(buckets);
-    el.insertAdjacentHTML('beforeend', chartAxisHtml(buckets));
+    const withYear = spansYears(daily);
+    el.innerHTML = barChartHtml(buckets, { withYear });
+    el.insertAdjacentHTML('beforeend', chartAxisHtml(buckets, { withYear }));
     // Hourly drill-down only makes sense on the daily view.
     bindChartTooltips(el, state.view === 'daily' ? bar => expandHourly(Number(bar.dataset.ts), bar) : null);
     animateBars(el);

@@ -1112,7 +1112,7 @@
         .stats-chart {
             display: flex;
             align-items: flex-end;
-            gap: 4px;
+            gap: var(--bar-gap, 4px);
             height: 220px;
             margin: 10px 0 0 42px;
             position: relative;
@@ -1195,9 +1195,22 @@
             color: #4a4a4a;
         }
 
+        .stats-chart.is-dense .bar-col {
+            border-radius: 0;
+        }
+
+        .stats-chart.is-dense .bar-col .bar {
+            border-radius: 1px 1px 0 0;
+            min-height: 2px;
+        }
+
+        .stats-chart.is-dense .bar-col .bar.bar-empty {
+            background: transparent;
+        }
+
         .chart-axis {
-            display: flex;
-            gap: 4px;
+            position: relative;
+            height: 14px;
             margin: 8px 0 0 42px;
             font: 500 10px 'JetBrains Mono', monospace;
             color: var(--dash-dim);
@@ -1205,10 +1218,14 @@
         }
 
         .chart-axis span {
-            flex: 1;
-            min-width: 0;
-            text-align: center;
-            overflow: visible;
+            position: absolute;
+            top: 0;
+            transform: translateX(-50%);
+        }
+
+        .chart-axis span.is-start,
+        .chart-axis span.is-end {
+            transform: none;
         }
 
         .bar-tooltip {
