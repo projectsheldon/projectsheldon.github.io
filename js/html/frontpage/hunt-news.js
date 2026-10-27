@@ -11,12 +11,10 @@ const HUNT_LOOK = {
 };
 
 const HUNT_CSS = `
-.hunt-pill{display:inline-flex;align-items:center;gap:.55rem;margin-bottom:1.4rem;padding:.4rem .45rem .4rem .8rem;border-radius:999px;border:1px solid color-mix(in srgb,var(--hc) 40%,transparent);background:color-mix(in srgb,var(--hc) 9%,rgba(10,10,12,.6));color:#f3efe6;font-size:.78rem;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);transition:transform .2s,background .2s,border-color .2s;animation:huntPillIn .7s cubic-bezier(.22,1,.36,1) both}
-.hunt-pill:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--hc) 15%,rgba(10,10,12,.6));border-color:color-mix(in srgb,var(--hc) 65%,transparent)}
-.hunt-pill .hp-dot{width:7px;height:7px;border-radius:50%;background:var(--hc);box-shadow:0 0 0 0 var(--hc);animation:huntPulse 1.8s infinite}
+.hunt-pill{display:inline-flex;align-items:center;gap:.55rem;margin-bottom:1.4rem;padding:.4rem .45rem .4rem .9rem;border-radius:999px;border:0;background:color-mix(in srgb,var(--hc) 9%,rgba(10,10,12,.6));color:#f3efe6;font-size:.78rem;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);transition:transform .2s,background .2s;animation:huntPillIn .7s cubic-bezier(.22,1,.36,1) both}
+.hunt-pill:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--hc) 15%,rgba(10,10,12,.6))}
 .hunt-pill .hp-go{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .6rem;border-radius:999px;background:var(--hc);color:#140c05;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 @keyframes huntPillIn{from{opacity:0;transform:translateY(-8px)}}
-@keyframes huntPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--hc) 60%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .hunt-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.2rem;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:huntFade .25s ease}
 .hunt-modal.out{animation:huntFadeOut .2s ease forwards}
 @keyframes huntFade{from{opacity:0}}
@@ -41,7 +39,7 @@ const HUNT_CSS = `
 .hunt-card .hc-dc{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.12)}
 .hunt-card .hc-dc:hover{background:rgba(255,255,255,.06)}
 .hunt-card .hc-foot{margin-top:.9rem;font-size:.72rem;color:#6b6b6b}
-@media (prefers-reduced-motion:reduce){.hunt-pill,.hunt-pill .hp-dot,.hunt-card,.hunt-card .hc-emoji,.hunt-modal{animation:none}}
+@media (prefers-reduced-motion:reduce){.hunt-pill,.hunt-card,.hunt-card .hc-emoji,.hunt-modal{animation:none}}
 `;
 
 function huntDuration(h)
@@ -144,7 +142,7 @@ async function LoadHuntNews()
     pill.type = "button";
     pill.className = "hunt-pill";
     pill.style.setProperty("--hc", look.color);
-    pill.innerHTML = `<span class="hp-dot"></span><span>${look.emoji} ${look.title} hunt is live · win ${huntDuration(info.rewardHours)} free</span><span class="hp-go">How it works →</span>`;
+    pill.innerHTML = `<span>${look.emoji} ${look.title} hunt is live · win ${huntDuration(info.rewardHours)} free</span><span class="hp-go">How it works →</span>`;
     pill.addEventListener("click", () => openHuntModal(info, look));
     title.parentElement.insertBefore(pill, title);
 }
