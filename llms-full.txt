@@ -12,9 +12,9 @@ A Lua 5.4 environment that runs scripts inside the Sheldon overlay with direct a
 
 ### What runs
 
-Scripts are executed by a single `sol::state` on a worker thread. The environment is Lua 5.4, not Luau. Standard `base`, `math`, `table` and `string` libraries are available, and all of Lua 5.4's bitwise operators work without a `bit32` library.
+Scripts run in Lua 5.4, not Luau. The `base`, `math`, `table` and `string` libraries are available, and Lua 5.4's bitwise operators work without a `bit32` library.
 
-Two Luau conveniences are translated before the source reaches the Lua compiler: type ascriptions (`local part: Part = ...` and `value :: Type`) are stripped, and compound assignments (`+=`, `-=`, `*=`, `/=`, `%=`, `^=`, `..=`, `&=`, `|=`, `>=`) are expanded. The ascriptions are still read by the editor's autocomplete, so they are useful even though Lua never sees them.
+Scripts also accept two Luau conveniences: type ascriptions (`local part: Part = ...` and `value :: Type`) and compound assignments (`+=`, `-=`, `*=`, `/=`, `%=`, `^=`, `..=`, `&=`, `|=`, `>=`). Type ascriptions are ignored at runtime but are used by [Auto Complete](#/autocomplete).
 
 ### Entry points
 
@@ -55,9 +55,9 @@ print(Workspace.Gravity)
 
 ### Editor
 
-The script editor keeps multiple tabs, runs each tab as an independent slot, and exposes Execute, Stop, Restart, Save and Upload. Files can be marked Auto Execute per place or for the current session. The console below the editor receives `print`, `warn` and runtime errors.
+The script editor keeps multiple tabs, runs each tab independently, and exposes Execute, Stop, Restart, Save and Upload. Files can be marked Auto Execute per place or for the current session. The console below the editor receives `print`, `warn` and runtime errors.
 
-[Auto Complete](#/autocomplete) reads the live VM and the game's reflection table, so it lists instance children, writable and read-only properties, library functions, services, FFlags, key names and type names as you type.
+[Auto Complete](#/autocomplete) reads the current game and the Lua environment, so it lists instance children, writable and read-only properties, library functions, services, FFlags, key names and type names as you type.
 
 ### Minimal script
 
@@ -96,9 +96,9 @@ Copy output
 
 ## Auto Complete
 
-The editor completes against the live VM and the game's reflection table, not a fixed list of names.
+The editor completes against the current game and the Lua environment, not a fixed list of names.
 
-Completion is part of the script editor. It inspects the code around the cursor, resolves the expression on the left of a `.` or `:` against the running VM, and offers the members that expression actually has. Because instance properties come from the same reflection table the VM reads at runtime, the list includes properties that are not written into this documentation.
+Completion is part of the script editor. It offers the members of the value before a `.` or `:`. The list includes instance properties that are not written into this documentation, so it stays current with the game.
 
 ### Opening and accepting
 
@@ -142,7 +142,7 @@ Instance rows show child names with their class icon, functions with a function 
 
 ### Type hints
 
-Because the VM strips type ascriptions, they cost nothing at runtime and give completion something to work with when the value is not available yet:
+Type ascriptions are ignored at runtime, but completion uses them when the value is not available yet:
 
 ```lua
 local part: Part = game:GetService("Workspace").SomePart
@@ -163,7 +163,7 @@ for _, child in ipairs(game:GetService("Workspace"):GetChildren()) do
 end
 ```
 
-Locals assigned directly from the VM are inferred without an ascription, for example `local players = game:GetService("Players")`. Locals copied between names are followed for a few steps.
+Locals assigned from known game values are inferred without an ascription, for example `local players = game:GetService("Players")`.
 
 ### Snippets
 
@@ -193,7 +193,7 @@ The editor exposes two completion switches in the autocomplete settings:
 
 ### Relationship to Class Properties
 
-The old [Class Properties](#/class-properties) page listed a hand-picked subset of properties. That list went stale whenever a class gained a property, and it could not show children of the current game. This page replaces it: completion reads the VM's class map and live reflection data at edit time, so it lists every property the running build will accept, with read-only state and the correct class.
+The old **Class Properties** page listed a hand-picked subset of properties. That list went stale whenever a class gained a property, and it could not show children of the current game. This page replaces it: completion uses the current game, so it lists every property the game exposes and shows which ones are writable.
 
 ---
 
@@ -207,9 +207,9 @@ Built-in global functions available in the LuaVM environment.
 | **warn(...)** | Writes to the console with a `[warn]` prefix |
 | **error(...)** | Raises a Lua error with the formatted arguments |
 | **typeof(v)** | Like `type`, but returns `"Instance"` for wrapped Roblox instances instead of `"userdata"` |
-| **type(v)** | Lua's `type`, extended for GC addresses. A number that points at a live Luau object returns `"string"`, `"table"`, `"function"`, `"userdata"` or `"thread"` based on the object header. All other values behave normally. |
+| **type(v)** | Lua's `type`, extended for addresses returned by `cheat.getgc`. Those return `"string"`, `"table"`, `"function"`, `"userdata"` or `"thread"`. All other values behave normally. |
 | **hex(number)** | Formats an integer as an uppercase hex string, e.g. `0x7FF6A2C1` |
-| **tick()** | Returns `GetTickCount64()` – milliseconds since the system started, not a UNIX timestamp |
+| **tick()** | Returns milliseconds since the system started, not a UNIX timestamp |
 | **loadstring(source)** | Compiles source after stripping Luau type ascriptions. Returns `(function, nil)` or `(nil, error_message)` |
 | **getfenv([f])** | Returns the global table. The argument is accepted for compatibility but does not change the result |
 | **setfenv(f, env)** | No-op, kept for scripts that probe for it |
@@ -230,22 +230,21 @@ Appended to Lua's built-in `string` library:
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **string.regex(text, pattern)** | `string, string` | Returns `true` when the pattern matches. This uses C++ `std::regex` (ECMAScript syntax), not Lua patterns. Invalid patterns return `false`. |
+| **string.regex(text, pattern)** | `string, string` | Returns `true` when the pattern matches. It uses ECMAScript regular expressions, not Lua patterns. Invalid patterns return `false`. |
 
 #### Example
 
 ```lua
--- std::regex syntax: \d+, not Lua's %d+
+-- ECMAScript syntax: \d+, not Lua's %d+
 if string.regex("hello123", "\\d+") then
     print("contains digits")
 end
 
--- type() also recognizes external Roblox GC addresses
+-- type() also reports the type of addresses returned by getgc
 local gc = cheat.getgc()
 for _, t in next, gc do
     if type(t) == "table" then
-        -- t is a number (the table's memory address), but type()
-        -- reads the GC header and reports "table".
+        -- t is an address, but type() reports "table".
     end
 end
 ```
@@ -317,9 +316,9 @@ Scheduling utilities for asynchronous execution.
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **task.spawn(fn, ...)** | `function, ...` | Schedules `fn` to run on the VM worker thread. Extra arguments are passed to `fn`. |
-| **task.defer(fn, ...)** | `function, ...` | Schedules `fn` the same way as `task.spawn`. Both enter the scheduler at the next tick. |
-| **task.delay(seconds, fn)** | `number, function` | Runs `fn` after `seconds`. The callback runs on the worker thread. |
+| **task.spawn(fn, ...)** | `function, ...` | Runs `fn` asynchronously. Extra arguments are passed to `fn`. |
+| **task.defer(fn, ...)** | `function, ...` | Runs `fn` asynchronously, like `task.spawn`. |
+| **task.delay(seconds, fn)** | `number, function` | Runs `fn` after `seconds`. |
 | **task.wait(seconds?)** | `number?` | Yields the current coroutine and returns the measured elapsed time. Defaults to `0`. Calling it from the main script body raises an error; wrap the script in `task.spawn` first. |
 
 ### Example
@@ -359,7 +358,7 @@ Interpolate instance properties smoothly over time. Modelled on Roblox's TweenSe
 | Method | Signature | Description |
 | --- | --- | --- |
 | **tween:Play(waitForFinish?)** | `bool?` | Starts the tween. When `waitForFinish` is `true`, blocks the calling coroutine until every property has finished tweening; otherwise returns immediately. Both `tween:Play(...)` and `tween.Play(...)` syntaxes are accepted. |
-| **tween:Cancel()** |  | Snaps every property back to the value it had when the tween was created. Does not stop already-scheduled ticks – for that, let the tween finish or overwrite the property. |
+| **tween:Cancel()** |  | Snaps every property back to the value it had when the tween was created. The tween itself keeps running, so values may move again; let it finish or overwrite the property to stop it. |
 
 ### Easing Styles
 
@@ -373,9 +372,9 @@ Interpolate instance properties smoothly over time. Modelled on Roblox's TweenSe
 
 - `Color3` – e.g. `Color`
 
-Hand-written property maps exist for `Part`, `MeshPart`, `VehicleSeat` and the other classes in the property table. Any other class works through its reflected property offsets as long as the game exposes the property.
+Common classes such as `Part`, `MeshPart` and `VehicleSeat` are supported directly. Other classes work as long as the game exposes the property.
 
-The property must be writable on that instance. Hand-written class properties and reflected properties both work; [Auto Complete](#/autocomplete) lists what is available for the selected instance. Read-only properties, unknown names and unsupported value types raise an error at `tween.Create` time.
+The property must be writable on that instance. [Auto Complete](#/autocomplete) lists what is available for the selected instance. Read-only properties, unknown names and unsupported value types raise an error at `tween.Create` time.
 
 ### Example – Move a part
 
@@ -423,11 +422,11 @@ end)
 
 - Each property tweens independently. Passing multiple properties runs them in parallel on the same schedule.
 
-- `tween:Play(true)` blocks the VM worker thread until every property finishes, pausing all scripts. `task.spawn` does not avoid this. Use `Play()` without the flag and schedule follow-up work with `task.delay`.
+- `tween:Play(true)` waits until every property finishes and pauses all scripts while waiting. `task.spawn` does not avoid this. Use `Play()` without the flag and schedule follow-up work with `task.delay`.
 
-- Tweens write directly to memory. Physics-driven properties (`Position`, `CFrame`, velocities) update visually but the engine may resimulate them next physics step; combine with anchoring or velocity-zeroing for full control.
+- Physics-driven properties (`Position`, `CFrame`, velocities) update visually, but the engine may resimulate them on the next physics step; combine with anchoring or velocity-zeroing for full control.
 
-- Tween ticks run on a dedicated background thread and continue even if the script yields.
+- Tweens continue while the script is yielded.
 
 ---
 
@@ -442,7 +441,7 @@ Requires: Memory library enabled
 | **memory.Read(address, type)** | `uintptr, string` | Reads from memory and converts to the given type. Unknown or write-only types raise an error. |
 | **memory.Write(address, value)** | `uintptr, any` | Writes a value, choosing the width from its Lua type |
 | **memory.Write(address, value, type)** | `uintptr, any, string` | Writes a value using an explicit type |
-| **memory.GetRTTI(address)** | `uintptr` | Returns the RTTI class name for an object pointer. If the address is not a vtable pointer, it tries the pointer stored at that address. Returns `???` when neither resolves. |
+| **memory.GetRTTI(address)** | `uintptr` | Returns the class name for an object address, or `???` when the address cannot be read. |
 | **memory.GetBase()** |  | Returns the Roblox process base address |
 | **memory.Rebase(offset)** | `uintptr` | Returns `base + offset` |
 
@@ -500,10 +499,10 @@ Frame events, custom ESP elements, game modules, raycasting, server and teleport
 
 | Event | Description |
 | --- | --- |
-| **onPaint** | Runs on the overlay render thread every rendered frame. Drawing belongs here. |
-| **onUpdate** | Runs from the game's fast update listener |
-| **onSlowUpdate** | Runs from the game's slow update listener |
-| **teleport** | Runs from the game's teleport listener |
+| **onPaint** | Runs every rendered frame. Drawing belongs here. |
+| **onUpdate** | Runs frequently, on the game's update |
+| **onSlowUpdate** | Runs less often than `onUpdate` |
+| **teleport** | Runs when the player teleports |
 
 Callbacks receive no arguments and cannot yield. Errors are written to the console and the callback stays registered. `Register` raises `unknown cheat event` for a bad name; `Unregister` silently returns for unknown names or functions that were never registered.
 
@@ -522,20 +521,20 @@ cheat.Unregister("onPaint", onPaint)
 
 ### Custom ESP
 
-Registers an element in the ESP layout without touching the built-in element list. Each id is placed with the same anchor, order, smoothing and preview drag behaviour as the built-in labels. The element belongs to the script's slot and is removed when the script stops or the id is unregistered.
+Adds an element to the ESP layout. It uses the same anchors, ordering and drag behaviour as the built-in labels, and is removed when the script stops or the id is unregistered.
 
 | Function | Signature | Description |
 | --- | --- | --- |
 | **RegisterEsp(id, options)** | `string, table` | Registers or replaces an ESP element. The id must be non-empty and must not collide with a built-in element or a reserved name. |
 | **SetEspOrder(id, order)** | `string, number` | Changes the element's sort order. Lower numbers render first. Default is `15`. |
-| **UnregisterEsp(id)** | `string` | Removes the element and its cached text. |
+| **UnregisterEsp(id)** | `string` | Removes the element. |
 
 #### Options
 
 | Key | Type | Description |
 | --- | --- | --- |
-| `text` | `function` | Called per player with the player table. Returns the label text and optionally a `Color3`. Results are cached for 33 ms per player and truncated to 64 characters. |
-| `measure` | `function` | Called per player with the player table. Must return `width, height` numbers; they are clamped to 0-2000. Used when the element is positioned or dragged. |
+| `text` | `function` | Called per player with the player table. Returns the label text and optionally a `Color3`. |
+| `measure` | `function` | Called per player with the player table. Must return `width, height` numbers, used when the element is positioned or dragged. |
 | `draw` | `function` | Called per player as `draw(player, x, y, w, h)` after layout. Use the draw library inside it. |
 | `anchor` | `string` | `Top` (default), `Bottom`, `TopLeft`, `TopRight`, `BottomLeft`, `BottomRight`, `CenterLeft`, `CenterRight` |
 | `order` | `number` | Sort order, default `15` |
@@ -556,7 +555,7 @@ At least one of `text`, `measure` or `draw` is required. A Lua error inside a ca
 | `team` | `string` | Team name |
 | `isSameTeam` | `bool` | Whether the player shares the local team |
 | `isAlive` | `bool` | Alive state |
-| `isActiveUser` | `bool` | Active-user flag from the player cache |
+| `isActiveUser` | `bool` | Whether the player is marked as an active user |
 | `position` | `Vector3` | Head position |
 | `distance` | `number` | Distance from the local head to this player's head |
 
@@ -587,7 +586,7 @@ Some games parent characters outside `Players` or use a bone layout the default 
 
 | Function | Signature | Description |
 | --- | --- | --- |
-| **RegisterGame(definition)** | `table` | Registers the module, adds a tab named after `name`, and makes it the active player provider. |
+| **RegisterGame(definition)** | `table` | Registers the module, adds a tab named after `name`, and makes it the active game module. |
 | **UnregisterGame()** |  | Removes the module if the calling script owns it. The default module returns. |
 
 #### Definition
@@ -626,15 +625,15 @@ cheat.RegisterGame({
 
 ### Garbage Collector
 
-Read and write the target process's Luau GC directly. `getgc` enumerates live objects or looks up one key; `rawget`/`rawset` operate on a single external table by address; `setgc` writes one key into the first table that has it.
+Read and write values in the game's Lua objects. `getgc` lists objects or finds a key; `rawget` and `rawset` work on one object address; `setgc` writes a key.
 
 | Function | Signature | Description |
 | --- | --- | --- |
 | **getgc(includeAll?)** | `bool?` | Returns an array of GC object addresses. The default returns tables only; `true` also includes strings, functions, userdata and threads. Use `type(address)` to identify each entry. |
-| **getgc(key)** | `string` | Scans the GC for the first table that has `key` and returns its value. Primitive values are decoded to Lua values; tables, functions and userdata come back as their address. Returns `nil` when no table has the key. The string form and the boolean form cannot be combined. |
-| **setgc(key, value)** | `string, bool \| number \| address` | Finds the first table with `key` and overwrites it. Accepts `bool`, `number`, or a GC address for object values. Strings are rejected – pass an existing TString address instead. It does not create keys, does not write a GC barrier, and silently does nothing if no table has the key. |
-| **rawget(addr, key \| true)** | `number, string \| bool` | Reads a field on the external table at `addr`. Pass a `string` key for one field, or `true` to dump the whole table as a Lua table. Missing keys return `nil`. GC-typed values come back as address numbers; call `rawget` on those addresses to go deeper. |
-| **rawset(addr, key, value)** | `number, string, any` | Writes an existing field on the external table at `addr`. Accepts `nil`, `bool`, `number`, or an address for object values. Returns `true` on success and `false` if the key does not exist. It does not create keys or write a GC barrier. |
+| **getgc(key)** | `string` | Returns the value of the first object that has `key`. Object values come back as addresses. Returns `nil` when nothing matches. Cannot be combined with the boolean form. |
+| **setgc(key, value)** | `string, bool \| number \| address` | Writes to the first object that has `key`. Accepts `bool`, `number`, or an address for object values. Strings must be passed as an existing string address. Missing keys are ignored. |
+| **rawget(addr, key \| true)** | `number, string \| bool` | Reads a field from the object at `addr`. Pass a `string` key for one field, or `true` to dump the whole table. Missing keys return `nil`. Object values come back as addresses. |
+| **rawset(addr, key, value)** | `number, string, any` | Writes an existing field on the object at `addr`. Accepts `nil`, `bool`, `number`, or an address for object values. Returns `true` on success and `false` if the key does not exist. |
 
 #### Example
 
@@ -922,6 +921,48 @@ An entity is a regular character model with a fake negative user id. Once added,
 | **entity.Clear()** |  | Removes every entity, not real players. Returns `true`. |
 | **entity.GetEntity(key)** | `string` | Returns the entity table or `nil`. Fields: `Character`, `PrimaryPart`, `Name`, `DisplayName`, `Team`, `Humanoid`, `MaxHealth`, `Health`, `UserId`, `IsEntity`. |
 | **entity.GetPlayers(includeEnemies?, includeEntities?)** | `bool?, bool?` | Returns an array of player and entity tables. Defaults: `includeEnemies = true`, `includeEntities = false`. |
+| **entity.GetPositions(opts?)** | `table?` | Returns the cached positions of every player, the same data the built-in ESP draws from. It reads no game memory, so it is safe and fast to call every frame inside `onPaint`. See Positions table below. |
+
+### Positions table
+
+`entity.GetPositions` is the recommended way to follow players in `onPaint`. The cache is updated every frame by Sheldon, so drawings stay as smooth as the built-in ESP. A `task.spawn` loop that reads `Position` itself only updates a few times per second and looks choppy.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `IncludeLocal` | `false` | Include the local player. |
+| `IncludeEntities` | `false` | Include entities added with `AddEntity`. |
+| `Bones` | `false` | Add a `Bones` table to each entry. Only enable it for skeletons or per-part boxes, as it creates many tables every frame. |
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Name` / `DisplayName` | `string` | Username and display name. |
+| `UserId` | `number` | User id (negative for entities). |
+| `IsLocal`, `IsEntity`, `IsEnemy`, `IsFriend` | `bool` | Flags from the player cache. |
+| `Health` / `MaxHealth` | `number` | Cached health. `MaxHealth` is at least 1. |
+| `RigType` | `string` | `"R6"` or `"R15"`. |
+| `Distance` | `number` | Studs from the camera to the root. |
+| `Position` | `Vector3` | Root part position. |
+| `Head` | `Vector3` | Head position. |
+| `Top` / `Bottom` | `Vector3` | Points above the head and below the feet, computed like the built-in ESP box. |
+| `Center` | `Vector3` | Torso center. |
+| `Bones` | `table` | Only with `Bones = true`. Map of part name (`"Head"`, `"HumanoidRootPart"`, R15 `"UpperTorso"`, `"LeftUpperArm"`, ..., R6 `"Torso"`, `"Left Arm"`, ...) to `{ Position, Size, RightVector, UpVector, LookVector }`, all `Vector3`. |
+
+A bone's corners are `Position ± RightVector * Size.x / 2 ± UpVector * Size.y / 2 ± LookVector * Size.z / 2`.
+
+```lua
+cheat.Register("onPaint", function()
+    for _, e in ipairs(entity.GetPositions()) do
+        local top, topVisible = cheat.WorldToScreen(e.Top)
+        local bottom, bottomVisible = cheat.WorldToScreen(e.Bottom)
+        if topVisible and bottomVisible then
+            local h = bottom.y - top.y
+            local w = h * 0.5
+            draw.Rect(top.x - w / 2, top.y, w, h, Color3.new(1, 0.3, 0.3), 1, 2, 1)
+            draw.TextOutlined(e.Name, top.x - w / 2, top.y - 16, Color3.new(1, 1, 1))
+        end
+    end
+end)
+```
 
 ### Entity fields
 
@@ -974,6 +1015,20 @@ end
 Immediate 2D primitives drawn on the overlay's background draw list.
 
 All functions draw immediately. Call them from `cheat.Register("onPaint", ...)`, an ESP `draw` callback, or a `gui.AddTab` callback. Coordinates are pixels in the overlay window. Colors are `Color3` with 0-1 components unless noted; `alpha` is 0-1.
+
+Drawing functions only work on the overlay's render thread. Calling them from the script body, a `task.spawn` loop or a signal handler raises an error. `draw.ComputeConvexHull` and `draw.GetPartCorners` are pure helpers and work anywhere.
+
+### Keeping it smooth
+
+`onPaint` runs every frame. Keep it to math and drawing:
+
+- For players, call `entity.GetPositions()` inside `onPaint`. It reads Sheldon's cache, not the game.
+
+- For anything else (parts, tools, map objects), read the game in one `task.spawn` loop with `task.wait(0.03)` or slower, store plain values (`Vector3`, numbers, strings) in a table and draw only from that table.
+
+- Avoid `FindFirstChild`, `GetChildren`, `.Character` or `.Position` reads inside `onPaint`, and avoid one loop per player.
+
+If a frame lands while a script loop holds the VM, the last finished frame is shown again, so drawings do not flicker. Callbacks that stay too slow are removed; the limits are under Lua VM > Settings > Safety Limits.
 
 | Function | Signature | Description |
 | --- | --- | --- |
@@ -1388,7 +1443,7 @@ Vector3.new(n)          -- (n, n, n)
 
 | Member | Type | Description |
 | --- | --- | --- |
-| .x / .y / .z | float | Mutable components |
+| .x / .y / .z | float | Mutable components. `.X` / `.Y` / `.Z` are aliases. |
 | .Magnitude | float | Read-only length |
 | .Unit | Vector3 | Read-only normalized vector; zero stays zero |
 
@@ -1404,7 +1459,7 @@ Vector2.new(n)          -- (n, n)
 
 | Member | Type | Description |
 | --- | --- | --- |
-| .x / .y | float | Mutable components |
+| .x / .y | float | Mutable components. `.X` / `.Y` are aliases. |
 | **:Magnitude()** | float | Method, not a property. Call `v:Magnitude()`. |
 | .Unit | Vector2 | Read-only normalized vector |
 
